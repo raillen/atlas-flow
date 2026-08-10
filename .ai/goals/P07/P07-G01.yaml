@@ -1,0 +1,26 @@
+id: P07-G01
+phase: P07
+title: Verification and Evidence
+state: DRAFT
+objective: Implement deterministic gate execution, independent review and evidence
+  attachment.
+constraints:
+- Follow Project Atlas authority order
+- Do not silently weaken acceptance
+- Update canonical documentation when behavior/architecture changes
+non_goals: []
+dependencies:
+- P05-G01
+acceptance:
+- Goal cannot reach DONE without required evidence
+- Test/CI evidence captured
+- Review findings structured
+- Repair path supported
+- Goal amendment is distinct from repair
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history: []

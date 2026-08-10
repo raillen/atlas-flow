@@ -1,0 +1,25 @@
+id: P04-G01
+phase: P04
+title: Atlas Harness
+state: DRAFT
+objective: Implement runner abstraction, ACP client and generic CLI runner.
+constraints:
+- Follow Project Atlas authority order
+- Do not silently weaken acceptance
+- Update canonical documentation when behavior/architecture changes
+non_goals: []
+dependencies:
+- P03-G01
+acceptance:
+- ACP session lifecycle works against fixture agent
+- CLI runner supports start/cancel/result capture
+- Permissions are surfaced
+- Transcripts/events normalized
+- Runner capability negotiation works
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history: []

@@ -1,0 +1,28 @@
+version: 1
+development_harness: command-code
+runtime_discovery:
+  required: true
+  command: cmd --list-models
+  on_missing_model: use_role_fallback
+roster:
+- key: deepseek-v4-pro
+  provider: deepseek
+  command_code_id: deepseek/deepseek-v4-pro
+  priority: primary
+  availability: expected
+- key: mimo-v2.5-pro
+  provider: xiaomi
+  command_code_id: xiaomi/mimo-v2.5-pro
+  priority: primary
+  availability: expected
+- key: gpt-5.6-luna
+  provider: openai
+  command_code_id: gpt-5.6-luna
+  priority: efficient-third
+  availability: probe-required
+principles:
+- roles are model-agnostic
+- runtime availability beats static assumptions
+- high-risk review prefers cross-provider diversity
+- bounded retries
+- cheapest reliable model for low-risk bulk work

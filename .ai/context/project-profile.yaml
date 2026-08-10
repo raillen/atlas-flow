@@ -1,0 +1,38 @@
+project:
+  id: atlas-flow
+  type:
+    - ai-development-platform
+    - agent-orchestrator
+    - desktop-application
+  languages:
+    - python
+    - typescript
+    - rust
+  technologies:
+    - project-atlas-framework
+    - fastapi
+    - sqlite
+    - tauri
+    - react
+    - vite
+    - ag-ui
+    - acp
+    - mcp
+    - git
+  features:
+    - chat
+    - decision-ledger
+    - documentation-generation
+    - goals
+    - task-dag
+    - multi-agent
+    - multi-model-routing
+    - worktrees
+    - verification
+    - recovery
+    - local-first
+  risk:
+    security: high
+    reliability: high
+    performance: medium
+    accessibility: high

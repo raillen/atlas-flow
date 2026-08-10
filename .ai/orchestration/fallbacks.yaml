@@ -1,0 +1,14 @@
+availability: select next candidate immediately
+quality:
+  max_same_model_repairs: 1
+  max_cross_model_attempts: 2
+  then: BLOCKED
+confidence:
+  high_risk_architecture: independent alternate review
+  high_risk_security: cross-provider review
+human_escalation:
+- fallback exhaustion
+- policy conflict
+- goal amendment required
+- destructive operation outside allowed policy
+- budget exhaustion

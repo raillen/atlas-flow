@@ -1,0 +1,27 @@
+{
+  "name": "@atlas-flow/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "tauri": "tauri",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@atlas-flow/ag-ui-client": "workspace:*",
+    "@atlas-flow/domain-types": "workspace:*",
+    "@atlas-flow/ui": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.5.0",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

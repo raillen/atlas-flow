@@ -1,0 +1,30 @@
+id: P00-G01
+phase: P00
+title: Repository Foundation
+state: DONE
+objective: Create implementation repository structure, CI, Project Atlas bootstrap,
+  dependency policy and Command Code adapter.
+constraints:
+- Follow Project Atlas authority order
+- Do not silently weaken acceptance
+- Update canonical documentation when behavior/architecture changes
+non_goals: []
+dependencies: []
+acceptance:
+- Repository builds from clean checkout
+- CI runs lint/typecheck/tests
+- Project Atlas validation passes
+- Command Code agents/skills are discoverable
+- Architecture docs are linked from ATLAS
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence:
+- build: ruff/mypy clean, 3 tests pass (pytest), tsc -b clean, eslint clean, 5 vitest tests pass
+- ci: .github/workflows/foundation-ci.yml covers 3 jobs (python, js, atlas validation)
+- validation: validate_docs.py (PASS), validate_goals.py (PASS, 11 goals)
+- command_code: 9 custom agents, 15 project skills, validate_command_code.sh
+- docs: ATLAS links verified, DEPENDENCIES.md added
+history: []

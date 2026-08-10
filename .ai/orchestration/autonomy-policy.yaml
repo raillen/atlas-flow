@@ -1,0 +1,18 @@
+default: agentic
+modes:
+  controlled:
+    planning_requires_human: true
+    integration_requires_human: true
+  agentic:
+    planning_requires_human: true
+    repairs_automatic_within_limits: true
+    goal_completion_requires_gate: true
+  autonomous:
+    planning_requires_human: false
+    exceptions_escalate: true
+project_policy:
+  current: agentic
+  architecture_changes: human_gate
+  security_boundary_changes: human_gate
+  protocol_changes: human_gate
+  release: human_gate

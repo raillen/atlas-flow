@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "atlas-flow"
+version = "0.1.0"
+description = "Provider-agnostic orchestration runtime for Project Atlas Framework"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "pydantic>=2.9,<3.0",
+    "pyyaml>=6.0.2,<7.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.9,<3.0",
+    "mypy>=1.15,<2.0",
+    "pytest>=8.3,<9.0",
+    "pytest-asyncio>=0.26,<1.0",
+    "ruff>=0.11,<1.0",
+    "types-pyyaml>=6.0.12,<7.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["atlas_flow"]

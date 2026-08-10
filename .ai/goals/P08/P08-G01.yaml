@@ -1,0 +1,28 @@
+id: P08-G01
+phase: P08
+title: Routing, Budgets and Scorecards
+state: DRAFT
+objective: Implement role routing, fallbacks, cross-provider policy, budget limits
+  and local scorecards.
+constraints:
+- Follow Project Atlas authority order
+- Do not silently weaken acceptance
+- Update canonical documentation when behavior/architecture changes
+non_goals: []
+dependencies:
+- P05-G01
+- P07-G01
+acceptance:
+- Runtime model discovery
+- Requested three-model roster supported through policy
+- Bounded retry/fallback
+- Cross-provider reviewer selection when possible
+- Why-this-model explanation
+- Usage observations update scorecard
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history: []

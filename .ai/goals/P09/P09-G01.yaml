@@ -1,0 +1,26 @@
+id: P09-G01
+phase: P09
+title: Hardening
+state: DRAFT
+objective: Harden security, recovery, accessibility, protocol compatibility and performance.
+constraints:
+- Follow Project Atlas authority order
+- Do not silently weaken acceptance
+- Update canonical documentation when behavior/architecture changes
+non_goals: []
+dependencies:
+- P06-G01
+- P08-G01
+acceptance:
+- Fault-injection suite passes
+- Security high findings closed
+- Accessibility acceptance met
+- Performance budgets measured
+- Supported platform packaging smoke tests pass
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history: []

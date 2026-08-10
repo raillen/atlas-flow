@@ -1,0 +1,28 @@
+id: P06-G01
+phase: P06
+title: Desktop Modes
+state: DRAFT
+objective: Implement Tauri/React shell with Discuss, Plan, Build, Review and Project
+  modes.
+constraints:
+- Follow Project Atlas authority order
+- Do not silently weaken acceptance
+- Update canonical documentation when behavior/architecture changes
+non_goals: []
+dependencies:
+- P02-G01
+- P05-G01
+acceptance:
+- Keyboard-navigable primary navigation
+- Discuss Project Draft visible
+- Plan DAG rendered
+- Build live task/agent status visible
+- Review evidence/gates visible
+- Project canonical docs browsable
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history: []

@@ -1,0 +1,855 @@
+{
+  "version": 1,
+  "nodes": [
+    {
+      "id": "doc:.commandcode/AGENTS.md",
+      "type": "document",
+      "path": ".commandcode/AGENTS.md",
+      "title": "Command Code Adapter — Atlas Flow"
+    },
+    {
+      "id": "doc:.commandcode/agents/atlas-architect.md",
+      "type": "document",
+      "path": ".commandcode/agents/atlas-architect.md",
+      "title": "atlas-architect"
+    },
+    {
+      "id": "doc:.commandcode/agents/docs-maintainer.md",
+      "type": "document",
+      "path": ".commandcode/agents/docs-maintainer.md",
+      "title": "docs-maintainer"
+    },
+    {
+      "id": "doc:.commandcode/agents/flow-implementer.md",
+      "type": "document",
+      "path": ".commandcode/agents/flow-implementer.md",
+      "title": "flow-implementer"
+    },
+    {
+      "id": "doc:.commandcode/agents/goal-planner.md",
+      "type": "document",
+      "path": ".commandcode/agents/goal-planner.md",
+      "title": "goal-planner"
+    },
+    {
+      "id": "doc:.commandcode/agents/protocol-engineer.md",
+      "type": "document",
+      "path": ".commandcode/agents/protocol-engineer.md",
+      "title": "protocol-engineer"
+    },
+    {
+      "id": "doc:.commandcode/agents/release-verifier.md",
+      "type": "document",
+      "path": ".commandcode/agents/release-verifier.md",
+      "title": "release-verifier"
+    },
+    {
+      "id": "doc:.commandcode/agents/security-reviewer.md",
+      "type": "document",
+      "path": ".commandcode/agents/security-reviewer.md",
+      "title": "security-reviewer"
+    },
+    {
+      "id": "doc:.commandcode/agents/test-engineer.md",
+      "type": "document",
+      "path": ".commandcode/agents/test-engineer.md",
+      "title": "test-engineer"
+    },
+    {
+      "id": "doc:.commandcode/agents/ui-engineer.md",
+      "type": "document",
+      "path": ".commandcode/agents/ui-engineer.md",
+      "title": "ui-engineer"
+    },
+    {
+      "id": "doc:AGENTS.md",
+      "type": "document",
+      "path": "AGENTS.md",
+      "title": "Atlas Flow Agent Guide"
+    },
+    {
+      "id": "doc:ENTRYPOINT.md",
+      "type": "document",
+      "path": "ENTRYPOINT.md",
+      "title": "Atlas Flow Entry Point"
+    },
+    {
+      "id": "doc:PROJECT_STATE.md",
+      "type": "document",
+      "path": "PROJECT_STATE.md",
+      "title": "Current Project State"
+    },
+    {
+      "id": "doc:README.md",
+      "type": "document",
+      "path": "README.md",
+      "title": "Atlas Flow"
+    },
+    {
+      "id": "doc:docs/00-product/BRANDING.md",
+      "type": "document",
+      "path": "docs/00-product/BRANDING.md",
+      "title": "Branding Direction"
+    },
+    {
+      "id": "doc:docs/00-product/FEATURE_MATRIX.md",
+      "type": "document",
+      "path": "docs/00-product/FEATURE_MATRIX.md",
+      "title": "Feature Matrix"
+    },
+    {
+      "id": "doc:docs/00-product/PERSONAS.md",
+      "type": "document",
+      "path": "docs/00-product/PERSONAS.md",
+      "title": "Personas"
+    },
+    {
+      "id": "doc:docs/00-product/PRODUCT_REQUIREMENTS.md",
+      "type": "document",
+      "path": "docs/00-product/PRODUCT_REQUIREMENTS.md",
+      "title": "Product Requirements"
+    },
+    {
+      "id": "doc:docs/00-product/ROADMAP.md",
+      "type": "document",
+      "path": "docs/00-product/ROADMAP.md",
+      "title": "Roadmap"
+    },
+    {
+      "id": "doc:docs/00-product/SCOPE.md",
+      "type": "document",
+      "path": "docs/00-product/SCOPE.md",
+      "title": "Scope"
+    },
+    {
+      "id": "doc:docs/00-product/SUCCESS_METRICS.md",
+      "type": "document",
+      "path": "docs/00-product/SUCCESS_METRICS.md",
+      "title": "Success Metrics"
+    },
+    {
+      "id": "doc:docs/00-product/USE_CASES.md",
+      "type": "document",
+      "path": "docs/00-product/USE_CASES.md",
+      "title": "Primary Use Cases"
+    },
+    {
+      "id": "doc:docs/00-product/VISION.md",
+      "type": "document",
+      "path": "docs/00-product/VISION.md",
+      "title": "Vision"
+    },
+    {
+      "id": "doc:docs/01-architecture/ACP_INTEGRATION.md",
+      "type": "document",
+      "path": "docs/01-architecture/ACP_INTEGRATION.md",
+      "title": "ACP Integration"
+    },
+    {
+      "id": "doc:docs/01-architecture/AG_UI_INTEGRATION.md",
+      "type": "document",
+      "path": "docs/01-architecture/AG_UI_INTEGRATION.md",
+      "title": "AG-UI Integration"
+    },
+    {
+      "id": "doc:docs/01-architecture/ATLAS_HARNESS.md",
+      "type": "document",
+      "path": "docs/01-architecture/ATLAS_HARNESS.md",
+      "title": "Atlas Harness"
+    },
+    {
+      "id": "doc:docs/01-architecture/CHAT_DISCUSS_MODE.md",
+      "type": "document",
+      "path": "docs/01-architecture/CHAT_DISCUSS_MODE.md",
+      "title": "Chat / Discuss Mode"
+    },
+    {
+      "id": "doc:docs/01-architecture/COMPONENT_ARCHITECTURE.md",
+      "type": "document",
+      "path": "docs/01-architecture/COMPONENT_ARCHITECTURE.md",
+      "title": "Component Architecture"
+    },
+    {
+      "id": "doc:docs/01-architecture/CONTEXT_ENGINE.md",
+      "type": "document",
+      "path": "docs/01-architecture/CONTEXT_ENGINE.md",
+      "title": "Context Engine"
+    },
+    {
+      "id": "doc:docs/01-architecture/DECISION_LEDGER.md",
+      "type": "document",
+      "path": "docs/01-architecture/DECISION_LEDGER.md",
+      "title": "Decision Ledger"
+    },
+    {
+      "id": "doc:docs/01-architecture/DOMAIN_MODEL.md",
+      "type": "document",
+      "path": "docs/01-architecture/DOMAIN_MODEL.md",
+      "title": "Domain Model"
+    },
+    {
+      "id": "doc:docs/01-architecture/EVENT_MODEL.md",
+      "type": "document",
+      "path": "docs/01-architecture/EVENT_MODEL.md",
+      "title": "Event Model"
+    },
+    {
+      "id": "doc:docs/01-architecture/EXECUTION_ENGINE.md",
+      "type": "document",
+      "path": "docs/01-architecture/EXECUTION_ENGINE.md",
+      "title": "Execution Engine"
+    },
+    {
+      "id": "doc:docs/01-architecture/EXTENSIBILITY.md",
+      "type": "document",
+      "path": "docs/01-architecture/EXTENSIBILITY.md",
+      "title": "Extensibility"
+    },
+    {
+      "id": "doc:docs/01-architecture/GIT_WORKTREES.md",
+      "type": "document",
+      "path": "docs/01-architecture/GIT_WORKTREES.md",
+      "title": "Git and Worktrees"
+    },
+    {
+      "id": "doc:docs/01-architecture/GOAL_ENGINE.md",
+      "type": "document",
+      "path": "docs/01-architecture/GOAL_ENGINE.md",
+      "title": "Goal Engine"
+    },
+    {
+      "id": "doc:docs/01-architecture/MCP_INTEGRATION.md",
+      "type": "document",
+      "path": "docs/01-architecture/MCP_INTEGRATION.md",
+      "title": "MCP Integration"
+    },
+    {
+      "id": "doc:docs/01-architecture/MODEL_ROUTER.md",
+      "type": "document",
+      "path": "docs/01-architecture/MODEL_ROUTER.md",
+      "title": "Model Router"
+    },
+    {
+      "id": "doc:docs/01-architecture/OBSERVABILITY.md",
+      "type": "document",
+      "path": "docs/01-architecture/OBSERVABILITY.md",
+      "title": "Observability"
+    },
+    {
+      "id": "doc:docs/01-architecture/PERSISTENCE.md",
+      "type": "document",
+      "path": "docs/01-architecture/PERSISTENCE.md",
+      "title": "Persistence"
+    },
+    {
+      "id": "doc:docs/01-architecture/PLANNER_DAG.md",
+      "type": "document",
+      "path": "docs/01-architecture/PLANNER_DAG.md",
+      "title": "Planner and Task DAG"
+    },
+    {
+      "id": "doc:docs/01-architecture/RECOVERY.md",
+      "type": "document",
+      "path": "docs/01-architecture/RECOVERY.md",
+      "title": "Recovery"
+    },
+    {
+      "id": "doc:docs/01-architecture/SYSTEM_OVERVIEW.md",
+      "type": "document",
+      "path": "docs/01-architecture/SYSTEM_OVERVIEW.md",
+      "title": "System Overview"
+    },
+    {
+      "id": "doc:docs/01-architecture/WORKFORCE_RESOLVER.md",
+      "type": "document",
+      "path": "docs/01-architecture/WORKFORCE_RESOLVER.md",
+      "title": "Workforce Resolver"
+    },
+    {
+      "id": "doc:docs/02-ui-ux/ACCESSIBILITY.md",
+      "type": "document",
+      "path": "docs/02-ui-ux/ACCESSIBILITY.md",
+      "title": "Accessibility"
+    },
+    {
+      "id": "doc:docs/02-ui-ux/BUILD.md",
+      "type": "document",
+      "path": "docs/02-ui-ux/BUILD.md",
+      "title": "Build UX"
+    },
+    {
+      "id": "doc:docs/02-ui-ux/DESIGN_SYSTEM.md",
+      "type": "document",
+      "path": "docs/02-ui-ux/DESIGN_SYSTEM.md",
+      "title": "Design System"
+    },
+    {
+      "id": "doc:docs/02-ui-ux/DISCUSS.md",
+      "type": "document",
+      "path": "docs/02-ui-ux/DISCUSS.md",
+      "title": "Discuss UX"
+    },
+    {
+      "id": "doc:docs/02-ui-ux/INFORMATION_ARCHITECTURE.md",
+      "type": "document",
+      "path": "docs/02-ui-ux/INFORMATION_ARCHITECTURE.md",
+      "title": "Information Architecture"
+    },
+    {
+      "id": "doc:docs/02-ui-ux/PLAN.md",
+      "type": "document",
+      "path": "docs/02-ui-ux/PLAN.md",
+      "title": "Plan UX"
+    },
+    {
+      "id": "doc:docs/02-ui-ux/PROJECT.md",
+      "type": "document",
+      "path": "docs/02-ui-ux/PROJECT.md",
+      "title": "Project UX"
+    },
+    {
+      "id": "doc:docs/02-ui-ux/REVIEW.md",
+      "type": "document",
+      "path": "docs/02-ui-ux/REVIEW.md",
+      "title": "Review UX"
+    },
+    {
+      "id": "doc:docs/03-implementation/API_CONTRACTS.md",
+      "type": "document",
+      "path": "docs/03-implementation/API_CONTRACTS.md",
+      "title": "API Contracts"
+    },
+    {
+      "id": "doc:docs/03-implementation/COMMAND_CODE_INTEGRATION.md",
+      "type": "document",
+      "path": "docs/03-implementation/COMMAND_CODE_INTEGRATION.md",
+      "title": "Command Code Development Integration"
+    },
+    {
+      "id": "doc:docs/03-implementation/CONFIGURATION.md",
+      "type": "document",
+      "path": "docs/03-implementation/CONFIGURATION.md",
+      "title": "Configuration"
+    },
+    {
+      "id": "doc:docs/03-implementation/DATABASE_SCHEMA.md",
+      "type": "document",
+      "path": "docs/03-implementation/DATABASE_SCHEMA.md",
+      "title": "Operational Database Schema"
+    },
+    {
+      "id": "doc:docs/03-implementation/DATA_MODELS.md",
+      "type": "document",
+      "path": "docs/03-implementation/DATA_MODELS.md",
+      "title": "Data Models"
+    },
+    {
+      "id": "doc:docs/03-implementation/ERROR_HANDLING.md",
+      "type": "document",
+      "path": "docs/03-implementation/ERROR_HANDLING.md",
+      "title": "Error Handling"
+    },
+    {
+      "id": "doc:docs/03-implementation/PACKAGING.md",
+      "type": "document",
+      "path": "docs/03-implementation/PACKAGING.md",
+      "title": "Packaging and Distribution"
+    },
+    {
+      "id": "doc:docs/03-implementation/PROJECT_ATLAS_INTEGRATION.md",
+      "type": "document",
+      "path": "docs/03-implementation/PROJECT_ATLAS_INTEGRATION.md",
+      "title": "Project Atlas Integration"
+    },
+    {
+      "id": "doc:docs/03-implementation/REPOSITORY_STRUCTURE.md",
+      "type": "document",
+      "path": "docs/03-implementation/REPOSITORY_STRUCTURE.md",
+      "title": "Proposed Repository Structure"
+    },
+    {
+      "id": "doc:docs/03-implementation/STATE_MACHINES.md",
+      "type": "document",
+      "path": "docs/03-implementation/STATE_MACHINES.md",
+      "title": "State Machines"
+    },
+    {
+      "id": "doc:docs/03-implementation/TECH_STACK.md",
+      "type": "document",
+      "path": "docs/03-implementation/TECH_STACK.md",
+      "title": "Technology Stack"
+    },
+    {
+      "id": "doc:docs/04-quality/PERFORMANCE_BUDGETS.md",
+      "type": "document",
+      "path": "docs/04-quality/PERFORMANCE_BUDGETS.md",
+      "title": "Performance Budgets"
+    },
+    {
+      "id": "doc:docs/04-quality/QUALITY_STRATEGY.md",
+      "type": "document",
+      "path": "docs/04-quality/QUALITY_STRATEGY.md",
+      "title": "Quality Strategy"
+    },
+    {
+      "id": "doc:docs/04-quality/RELEASE_GATES.md",
+      "type": "document",
+      "path": "docs/04-quality/RELEASE_GATES.md",
+      "title": "Release Gates"
+    },
+    {
+      "id": "doc:docs/04-quality/RELIABILITY.md",
+      "type": "document",
+      "path": "docs/04-quality/RELIABILITY.md",
+      "title": "Reliability and Fault Injection"
+    },
+    {
+      "id": "doc:docs/04-quality/SECURITY_TESTING.md",
+      "type": "document",
+      "path": "docs/04-quality/SECURITY_TESTING.md",
+      "title": "Security Testing"
+    },
+    {
+      "id": "doc:docs/04-quality/TEST_MATRIX.md",
+      "type": "document",
+      "path": "docs/04-quality/TEST_MATRIX.md",
+      "title": "Test Matrix"
+    },
+    {
+      "id": "doc:docs/04-quality/VISUAL_TESTING.md",
+      "type": "document",
+      "path": "docs/04-quality/VISUAL_TESTING.md",
+      "title": "Visual Testing"
+    },
+    {
+      "id": "doc:docs/05-governance/AI_ORCHESTRATION.md",
+      "type": "document",
+      "path": "docs/05-governance/AI_ORCHESTRATION.md",
+      "title": "AI Orchestration"
+    },
+    {
+      "id": "doc:docs/05-governance/CONTRIBUTING.md",
+      "type": "document",
+      "path": "docs/05-governance/CONTRIBUTING.md",
+      "title": "Contribution Workflow"
+    },
+    {
+      "id": "doc:docs/05-governance/DOCUMENTATION_MAINTENANCE.md",
+      "type": "document",
+      "path": "docs/05-governance/DOCUMENTATION_MAINTENANCE.md",
+      "title": "Documentation Maintenance"
+    },
+    {
+      "id": "doc:docs/05-governance/GOAL_SYSTEM.md",
+      "type": "document",
+      "path": "docs/05-governance/GOAL_SYSTEM.md",
+      "title": "Goal System Governance"
+    },
+    {
+      "id": "doc:docs/05-governance/MODEL_POLICY.md",
+      "type": "document",
+      "path": "docs/05-governance/MODEL_POLICY.md",
+      "title": "Development Model Policy"
+    },
+    {
+      "id": "doc:docs/05-governance/PROJECT_ORCHESTRATION_PROTOCOL.md",
+      "type": "document",
+      "path": "docs/05-governance/PROJECT_ORCHESTRATION_PROTOCOL.md",
+      "title": "Project Orchestration Protocol — Atlas Flow"
+    },
+    {
+      "id": "doc:docs/05-governance/SECURITY.md",
+      "type": "document",
+      "path": "docs/05-governance/SECURITY.md",
+      "title": "Security Governance"
+    },
+    {
+      "id": "doc:docs/06-user-guide/COMMAND_CODE_DEVELOPMENT.md",
+      "type": "document",
+      "path": "docs/06-user-guide/COMMAND_CODE_DEVELOPMENT.md",
+      "title": "Developing Atlas Flow with Command Code"
+    },
+    {
+      "id": "doc:docs/06-user-guide/DISCUSS_TO_PROJECT.md",
+      "type": "document",
+      "path": "docs/06-user-guide/DISCUSS_TO_PROJECT.md",
+      "title": "From Discussion to Project"
+    },
+    {
+      "id": "doc:docs/06-user-guide/GETTING_STARTED.md",
+      "type": "document",
+      "path": "docs/06-user-guide/GETTING_STARTED.md",
+      "title": "Getting Started — Target UX"
+    },
+    {
+      "id": "doc:docs/06-user-guide/MODEL_ROUTING.md",
+      "type": "document",
+      "path": "docs/06-user-guide/MODEL_ROUTING.md",
+      "title": "Model Routing"
+    },
+    {
+      "id": "doc:docs/06-user-guide/RECOVERY.md",
+      "type": "document",
+      "path": "docs/06-user-guide/RECOVERY.md",
+      "title": "Recovery"
+    },
+    {
+      "id": "doc:docs/06-user-guide/RUNNING_GOALS.md",
+      "type": "document",
+      "path": "docs/06-user-guide/RUNNING_GOALS.md",
+      "title": "Running Goals"
+    },
+    {
+      "id": "doc:docs/07-decisions/ADR-001-PROJECT-ATLAS-SEPARATION.md",
+      "type": "document",
+      "path": "docs/07-decisions/ADR-001-PROJECT-ATLAS-SEPARATION.md",
+      "title": "ADR-001 — Separate Project Atlas Framework and Atlas Flow"
+    },
+    {
+      "id": "doc:docs/07-decisions/ADR-002-LOCAL-FIRST.md",
+      "type": "document",
+      "path": "docs/07-decisions/ADR-002-LOCAL-FIRST.md",
+      "title": "ADR-002 — Local-first architecture"
+    },
+    {
+      "id": "doc:docs/07-decisions/ADR-003-PYTHON-BACKEND.md",
+      "type": "document",
+      "path": "docs/07-decisions/ADR-003-PYTHON-BACKEND.md",
+      "title": "ADR-003 — Python orchestration backend"
+    },
+    {
+      "id": "doc:docs/07-decisions/ADR-004-TAURI-REACT.md",
+      "type": "document",
+      "path": "docs/07-decisions/ADR-004-TAURI-REACT.md",
+      "title": "ADR-004 — Tauri 2 + React desktop"
+    },
+    {
+      "id": "doc:docs/07-decisions/ADR-005-AGUI.md",
+      "type": "document",
+      "path": "docs/07-decisions/ADR-005-AGUI.md",
+      "title": "ADR-005 — AG-UI at frontend/runtime boundary"
+    },
+    {
+      "id": "doc:docs/07-decisions/ADR-006-ACP.md",
+      "type": "document",
+      "path": "docs/07-decisions/ADR-006-ACP.md",
+      "title": "ADR-006 — ACP preferred coding-agent boundary"
+    },
+    {
+      "id": "doc:docs/07-decisions/ADR-007-MCP.md",
+      "type": "document",
+      "path": "docs/07-decisions/ADR-007-MCP.md",
+      "title": "ADR-007 — MCP for external tools"
+    },
+    {
+      "id": "doc:docs/07-decisions/ADR-008-META-HARNESS.md",
+      "type": "document",
+      "path": "docs/07-decisions/ADR-008-META-HARNESS.md",
+      "title": "ADR-008 — Build a meta-harness, not a coding agent from scratch"
+    },
+    {
+      "id": "doc:docs/07-decisions/ADR-009-GIT-CANONICAL.md",
+      "type": "document",
+      "path": "docs/07-decisions/ADR-009-GIT-CANONICAL.md",
+      "title": "ADR-009 — Git is canonical project memory"
+    },
+    {
+      "id": "doc:docs/07-decisions/ADR-010-SQLITE.md",
+      "type": "document",
+      "path": "docs/07-decisions/ADR-010-SQLITE.md",
+      "title": "ADR-010 — SQLite for operational state"
+    },
+    {
+      "id": "doc:docs/07-decisions/ADR-011-COMMAND-CODE.md",
+      "type": "document",
+      "path": "docs/07-decisions/ADR-011-COMMAND-CODE.md",
+      "title": "ADR-011 — Command Code as development harness"
+    },
+    {
+      "id": "doc:docs/07-decisions/ADR-012-MODEL-ROSTER.md",
+      "type": "document",
+      "path": "docs/07-decisions/ADR-012-MODEL-ROSTER.md",
+      "title": "ADR-012 — Initial development model roster"
+    },
+    {
+      "id": "doc:docs/08-rfcs/RFC-001-ADAPTIVE-MODEL-ROUTING.md",
+      "type": "document",
+      "path": "docs/08-rfcs/RFC-001-ADAPTIVE-MODEL-ROUTING.md",
+      "title": "RFC-001 — Adaptive Model Routing"
+    },
+    {
+      "id": "doc:docs/08-rfcs/RFC-002-REMOTE-RUNNERS.md",
+      "type": "document",
+      "path": "docs/08-rfcs/RFC-002-REMOTE-RUNNERS.md",
+      "title": "RFC-002 — Remote Runners"
+    },
+    {
+      "id": "doc:docs/08-rfcs/RFC-003-A2A.md",
+      "type": "document",
+      "path": "docs/08-rfcs/RFC-003-A2A.md",
+      "title": "RFC-003 — Distributed Agent-to-Agent Protocol"
+    },
+    {
+      "id": "doc:docs/08-rfcs/RFC-004-FRAMEWORK-FEEDBACK.md",
+      "type": "document",
+      "path": "docs/08-rfcs/RFC-004-FRAMEWORK-FEEDBACK.md",
+      "title": "RFC-004 — Evidence-driven Framework Feedback"
+    },
+    {
+      "id": "doc:docs/08-rfcs/RFC-005-HOSTED-COLLABORATION.md",
+      "type": "document",
+      "path": "docs/08-rfcs/RFC-005-HOSTED-COLLABORATION.md",
+      "title": "RFC-005 — Hosted Collaboration"
+    },
+    {
+      "id": "doc:docs/09-references/EXTERNAL_REFERENCES.md",
+      "type": "document",
+      "path": "docs/09-references/EXTERNAL_REFERENCES.md",
+      "title": "External Technical References"
+    },
+    {
+      "id": "doc:docs/ATLAS.md",
+      "type": "document",
+      "path": "docs/ATLAS.md",
+      "title": "Atlas Flow — ATLAS"
+    },
+    {
+      "id": "goal:P00-G01",
+      "type": "goal",
+      "path": ".ai/goals/P00/P00-G01.yaml",
+      "title": "Repository Foundation"
+    },
+    {
+      "id": "goal:P01-G01",
+      "type": "goal",
+      "path": ".ai/goals/P01/P01-G01.yaml",
+      "title": "Project Atlas Integration"
+    },
+    {
+      "id": "goal:P02-G01",
+      "type": "goal",
+      "path": ".ai/goals/P02/P02-G01.yaml",
+      "title": "Discuss and Decision Ledger"
+    },
+    {
+      "id": "goal:P03-G01",
+      "type": "goal",
+      "path": ".ai/goals/P03/P03-G01.yaml",
+      "title": "Orchestration Runtime"
+    },
+    {
+      "id": "goal:P04-G01",
+      "type": "goal",
+      "path": ".ai/goals/P04/P04-G01.yaml",
+      "title": "Atlas Harness"
+    },
+    {
+      "id": "goal:P05-G01",
+      "type": "goal",
+      "path": ".ai/goals/P05/P05-G01.yaml",
+      "title": "Goal Planner and DAG Execution"
+    },
+    {
+      "id": "goal:P06-G01",
+      "type": "goal",
+      "path": ".ai/goals/P06/P06-G01.yaml",
+      "title": "Desktop Modes"
+    },
+    {
+      "id": "goal:P07-G01",
+      "type": "goal",
+      "path": ".ai/goals/P07/P07-G01.yaml",
+      "title": "Verification and Evidence"
+    },
+    {
+      "id": "goal:P08-G01",
+      "type": "goal",
+      "path": ".ai/goals/P08/P08-G01.yaml",
+      "title": "Routing, Budgets and Scorecards"
+    },
+    {
+      "id": "goal:P09-G01",
+      "type": "goal",
+      "path": ".ai/goals/P09/P09-G01.yaml",
+      "title": "Hardening"
+    },
+    {
+      "id": "goal:P10-G01",
+      "type": "goal",
+      "path": ".ai/goals/P10/P10-G01.yaml",
+      "title": "Beta and 1.0 Validation"
+    }
+  ],
+  "edges": [
+    {
+      "from": "goal:P00-G01",
+      "to": "doc:docs/ATLAS.md",
+      "type": "navigated-by"
+    },
+    {
+      "from": "goal:P01-G01",
+      "to": "doc:docs/ATLAS.md",
+      "type": "navigated-by"
+    },
+    {
+      "from": "goal:P01-G01",
+      "to": "goal:P00-G01",
+      "type": "depends-on"
+    },
+    {
+      "from": "goal:P02-G01",
+      "to": "doc:docs/ATLAS.md",
+      "type": "navigated-by"
+    },
+    {
+      "from": "goal:P02-G01",
+      "to": "goal:P01-G01",
+      "type": "depends-on"
+    },
+    {
+      "from": "goal:P03-G01",
+      "to": "doc:docs/ATLAS.md",
+      "type": "navigated-by"
+    },
+    {
+      "from": "goal:P03-G01",
+      "to": "goal:P01-G01",
+      "type": "depends-on"
+    },
+    {
+      "from": "goal:P04-G01",
+      "to": "doc:docs/ATLAS.md",
+      "type": "navigated-by"
+    },
+    {
+      "from": "goal:P04-G01",
+      "to": "goal:P03-G01",
+      "type": "depends-on"
+    },
+    {
+      "from": "goal:P05-G01",
+      "to": "doc:docs/ATLAS.md",
+      "type": "navigated-by"
+    },
+    {
+      "from": "goal:P05-G01",
+      "to": "goal:P03-G01",
+      "type": "depends-on"
+    },
+    {
+      "from": "goal:P05-G01",
+      "to": "goal:P04-G01",
+      "type": "depends-on"
+    },
+    {
+      "from": "goal:P06-G01",
+      "to": "doc:docs/ATLAS.md",
+      "type": "navigated-by"
+    },
+    {
+      "from": "goal:P06-G01",
+      "to": "goal:P02-G01",
+      "type": "depends-on"
+    },
+    {
+      "from": "goal:P06-G01",
+      "to": "goal:P05-G01",
+      "type": "depends-on"
+    },
+    {
+      "from": "goal:P07-G01",
+      "to": "doc:docs/ATLAS.md",
+      "type": "navigated-by"
+    },
+    {
+      "from": "goal:P07-G01",
+      "to": "goal:P05-G01",
+      "type": "depends-on"
+    },
+    {
+      "from": "goal:P08-G01",
+      "to": "doc:docs/ATLAS.md",
+      "type": "navigated-by"
+    },
+    {
+      "from": "goal:P08-G01",
+      "to": "goal:P05-G01",
+      "type": "depends-on"
+    },
+    {
+      "from": "goal:P08-G01",
+      "to": "goal:P07-G01",
+      "type": "depends-on"
+    },
+    {
+      "from": "goal:P09-G01",
+      "to": "doc:docs/ATLAS.md",
+      "type": "navigated-by"
+    },
+    {
+      "from": "goal:P09-G01",
+      "to": "goal:P06-G01",
+      "type": "depends-on"
+    },
+    {
+      "from": "goal:P09-G01",
+      "to": "goal:P08-G01",
+      "type": "depends-on"
+    },
+    {
+      "from": "goal:P10-G01",
+      "to": "doc:docs/ATLAS.md",
+      "type": "navigated-by"
+    },
+    {
+      "from": "goal:P10-G01",
+      "to": "goal:P09-G01",
+      "type": "depends-on"
+    },
+    {
+      "from": "doc:docs/01-architecture/ATLAS_HARNESS.md",
+      "to": "doc:docs/01-architecture/ACP_INTEGRATION.md",
+      "type": "uses"
+    },
+    {
+      "from": "doc:docs/01-architecture/ATLAS_HARNESS.md",
+      "to": "doc:docs/01-architecture/EXECUTION_ENGINE.md",
+      "type": "supports"
+    },
+    {
+      "from": "doc:docs/01-architecture/EXECUTION_ENGINE.md",
+      "to": "doc:docs/01-architecture/GIT_WORKTREES.md",
+      "type": "uses"
+    },
+    {
+      "from": "doc:docs/01-architecture/MODEL_ROUTER.md",
+      "to": "doc:docs/05-governance/MODEL_POLICY.md",
+      "type": "governed-by"
+    },
+    {
+      "from": "doc:docs/01-architecture/CHAT_DISCUSS_MODE.md",
+      "to": "doc:docs/01-architecture/DECISION_LEDGER.md",
+      "type": "uses"
+    },
+    {
+      "from": "doc:docs/01-architecture/CHAT_DISCUSS_MODE.md",
+      "to": "doc:docs/03-implementation/PROJECT_ATLAS_INTEGRATION.md",
+      "type": "finalizes-through"
+    },
+    {
+      "from": "doc:docs/01-architecture/AG_UI_INTEGRATION.md",
+      "to": "doc:docs/02-ui-ux/DISCUSS.md",
+      "type": "projects-to"
+    },
+    {
+      "from": "doc:docs/01-architecture/GOAL_ENGINE.md",
+      "to": "doc:docs/05-governance/GOAL_SYSTEM.md",
+      "type": "governed-by"
+    },
+    {
+      "from": "doc:docs/03-implementation/COMMAND_CODE_INTEGRATION.md",
+      "to": "doc:docs/05-governance/AI_ORCHESTRATION.md",
+      "type": "implements"
+    }
+  ]
+}

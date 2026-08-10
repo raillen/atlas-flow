@@ -1,0 +1,16 @@
+development:
+  harness: command-code
+  default_mode: agentic-with-gates
+  headless_supported: true
+product:
+  orchestrator: atlas-flow
+  project_atlas_native: true
+  source_of_truth: git
+protocols:
+  ui_agent: ag-ui
+  coding_agent: acp-preferred
+  tools: mcp
+execution:
+  isolate_mutating_tasks: true
+  worktree_strategy: per-task
+  unbounded_retries: false

@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+dist/
+build/
+
+# Node / frontend
+node_modules/
+*.local
+.apps_dist/
+apps/desktop/dist/
+packages/*/dist/
+coverage/
+*.tsbuildinfo
+
+# Rust / Tauri
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/schemas
+
+# Operational state (SQLite is operational, Git is canonical — ADR-009/010)
+*.sqlite
+*.sqlite-journal
+*.db
+*.db-journal
+.atlas-flow/state/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

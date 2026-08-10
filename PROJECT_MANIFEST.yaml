@@ -1,0 +1,38 @@
+framework:
+  name: project-atlas-framework
+  version: "0.1.0"
+  entrypoint: ENTRYPOINT.md
+
+project:
+  id: atlas-flow
+  name: Atlas Flow
+  type:
+    - ai-development-platform
+    - agent-orchestrator
+    - desktop-application
+  status: pre-implementation
+  repository: TBD
+
+documentation:
+  atlas: docs/ATLAS.md
+  state: PROJECT_STATE.md
+
+orchestration:
+  protocol: Project Atlas POP
+  product_orchestrator: Atlas Flow
+  development_harness: Command Code
+  autonomy: agentic-with-gates
+
+goals:
+  root: .ai/goals
+  current_phase: P00
+  current_goal: P00-G01
+
+ai:
+  model_policy: .ai/orchestration/model-policy.yaml
+  role_routing: .ai/orchestration/role-routing.yaml
+  fallbacks: .ai/orchestration/fallbacks.yaml
+
+runtime:
+  canonical_store: git
+  operational_store: sqlite

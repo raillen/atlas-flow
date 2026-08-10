@@ -1,0 +1,775 @@
+{
+  "generated": "2026-08-10",
+  "files": [
+    {
+      "path": ".ai/agents/manifest.yaml",
+      "sha256": "8d1ffafb6c814d0e505a44d164608ef34bbb8121259a48b0a8b0e74806fe3c12",
+      "bytes": 345
+    },
+    {
+      "path": ".ai/context/project-profile.yaml",
+      "sha256": "938859f9f738056aa3e76293a7e1351cfb2a97e9841981cf8b54e685838b9623",
+      "bytes": 631
+    },
+    {
+      "path": ".ai/goals/P00/P00-G01.yaml",
+      "sha256": "8134ef0d8a4b8fa744823da88ef18ea5b547c3dbe023937b494d451993a91a12",
+      "bytes": 702
+    },
+    {
+      "path": ".ai/goals/P01/P01-G01.yaml",
+      "sha256": "c9ed8084e86558e4f355b187a1a679df787d8201269ac6cdb9408aa5f896a4ff",
+      "bytes": 684
+    },
+    {
+      "path": ".ai/goals/P02/P02-G01.yaml",
+      "sha256": "37f5d7fdcc18ce86dc4d107b3917b7790ce35c4addf8ecd5ebfbfbee3e91c0fd",
+      "bytes": 740
+    },
+    {
+      "path": ".ai/goals/P03/P03-G01.yaml",
+      "sha256": "4e3cfb8bed7bad2edc11e95ede354ef634a08219d8418018b21a504222891e04",
+      "bytes": 661
+    },
+    {
+      "path": ".ai/goals/P04/P04-G01.yaml",
+      "sha256": "1d0d84aa9a62db4efb3e4d96d7b52a5a04430ba2e96232edd83868350aa2f599",
+      "bytes": 651
+    },
+    {
+      "path": ".ai/goals/P05/P05-G01.yaml",
+      "sha256": "f9c5e61e7b9589c37e3003ce9e08e723b5279de8ec38afc52ef103c8be3e8c40",
+      "bytes": 705
+    },
+    {
+      "path": ".ai/goals/P06/P06-G01.yaml",
+      "sha256": "403a68e4e7f5138fddf27179988de986bd004f393db722b12a2ba23786b4547a",
+      "bytes": 678
+    },
+    {
+      "path": ".ai/goals/P07/P07-G01.yaml",
+      "sha256": "bcba5d1f58f9d5968d6f14a9d161de37c84607ec396e70d4b0bc72d3985d68ff",
+      "bytes": 658
+    },
+    {
+      "path": ".ai/goals/P08/P08-G01.yaml",
+      "sha256": "4aa99ee0e190ca5652580f8fd9872ce1c3b1af656172c385960acae87a819a95",
+      "bytes": 735
+    },
+    {
+      "path": ".ai/goals/P09/P09-G01.yaml",
+      "sha256": "f0312414fa34c62503cab0c665b1594d01dc91dbad3bf9089c296a69d1365ca3",
+      "bytes": 648
+    },
+    {
+      "path": ".ai/goals/P10/P10-G01.yaml",
+      "sha256": "ff05261d95ba0e29af8559a3e7f12ec6db49c6c85588cb2eede63cce2d7e7d34",
+      "bytes": 677
+    },
+    {
+      "path": ".ai/orchestration/autonomy-policy.yaml",
+      "sha256": "e0ed04c9368ed63f4e8b6d0a7538e9da68114260b4add5c986784d09d8be4875",
+      "bytes": 478
+    },
+    {
+      "path": ".ai/orchestration/fallbacks.yaml",
+      "sha256": "165df048de571e08a2157e7ce3576d4edef0806c07bef097348dea6577ec872d",
+      "bytes": 393
+    },
+    {
+      "path": ".ai/orchestration/model-policy.yaml",
+      "sha256": "599d44d37c7a514561c87a8a911142968f898d21d462c39e59ddab1138596dab",
+      "bytes": 750
+    },
+    {
+      "path": ".ai/orchestration/orchestrator.yaml",
+      "sha256": "c519ef159f329e83d341b566faa4f77bd0aadcd19f9adcbadad2e85f3e453084",
+      "bytes": 358
+    },
+    {
+      "path": ".ai/orchestration/role-routing.yaml",
+      "sha256": "c4b2703b5def25b3b22becb0374306c3e3d12d200e14e29fda87ced6af5b33b3",
+      "bytes": 1031
+    },
+    {
+      "path": ".ai/recipes/manifest.yaml",
+      "sha256": "bd4c8fe5e112f7c7d4084218cbb9ea1d9a0fa563a98e2112a006fbba0a1e67d9",
+      "bytes": 127
+    },
+    {
+      "path": ".ai/skills/manifest.yaml",
+      "sha256": "15ad62a6a24afe6de30ea2f62bda6daf9be8a22965d4b0ce712257b926291e7a",
+      "bytes": 321
+    },
+    {
+      "path": ".commandcode/AGENTS.md",
+      "sha256": "512c4632150ea532b1c29e3daf3457187d93367b73bd8f85dd1938ebf88df288",
+      "bytes": 637
+    },
+    {
+      "path": ".commandcode/agents/atlas-architect.md",
+      "sha256": "c5808968daa9628fa380aacddb59f1796841fd7dbc5dc5849701cc9bc13da3bd",
+      "bytes": 552
+    },
+    {
+      "path": ".commandcode/agents/docs-maintainer.md",
+      "sha256": "1bcbff22be27be7d50a8c4bd9157bef1b7c720a5cc01898204c310adbab24084",
+      "bytes": 440
+    },
+    {
+      "path": ".commandcode/agents/flow-implementer.md",
+      "sha256": "9ccc3e81861e6942c601d52cc71c2dd0ad096c184a7d0d7eea3af51065166a83",
+      "bytes": 355
+    },
+    {
+      "path": ".commandcode/agents/goal-planner.md",
+      "sha256": "5e69ba25cf0f4d07caaed94c67fe487bb74f0ac9942274e3298b7babd9afa528",
+      "bytes": 460
+    },
+    {
+      "path": ".commandcode/agents/protocol-engineer.md",
+      "sha256": "4a6e13898df0c7d934a0395800c7aaadc39b1389856b2085e6e3be968feec455",
+      "bytes": 380
+    },
+    {
+      "path": ".commandcode/agents/release-verifier.md",
+      "sha256": "e14d50e12c965b1a32cf46ed7dcb192346bb640f7bba05e415de4ce6915b262c",
+      "bytes": 371
+    },
+    {
+      "path": ".commandcode/agents/security-reviewer.md",
+      "sha256": "c9eb7eb0fc354295d7fcb065c22060de20070a22122b2783b29c732402be1206",
+      "bytes": 431
+    },
+    {
+      "path": ".commandcode/agents/test-engineer.md",
+      "sha256": "ef62e5484a43a26af8a17a2c843e1023e307879c2686c43090c02e3bd7b04359",
+      "bytes": 353
+    },
+    {
+      "path": ".commandcode/agents/ui-engineer.md",
+      "sha256": "68b14b258edaf5e8a0367d90cf14f4620cacc92c94341b20d9d5342113031e93",
+      "bytes": 370
+    },
+    {
+      "path": ".commandcode/skills/acp-integration/SKILL.md",
+      "sha256": "cf1bd67f0d03d982dcfa0ff820d81518b33993f3605b987ee2bc6bf786d93b3d",
+      "bytes": 325
+    },
+    {
+      "path": ".commandcode/skills/ag-ui-integration/SKILL.md",
+      "sha256": "03b2783549f5040378e37529b118b2556d2811d6f3307231a948891d974af459",
+      "bytes": 313
+    },
+    {
+      "path": ".commandcode/skills/atlas-navigation/SKILL.md",
+      "sha256": "e1953022be5abde422533a7a409797222709fb99aa8ff4e2c78c50dc93ccbbc1",
+      "bytes": 323
+    },
+    {
+      "path": ".commandcode/skills/command-code-execution/SKILL.md",
+      "sha256": "8657ff1fdf824af5439d434ac3e7bddbd72b678868f4d868fa8eab8bde2dfff6",
+      "bytes": 323
+    },
+    {
+      "path": ".commandcode/skills/context-packing/SKILL.md",
+      "sha256": "96d89d5bd1963d5f768c34ff06eddcf57af42a09d0ffd38eab60beff29f66fb2",
+      "bytes": 302
+    },
+    {
+      "path": ".commandcode/skills/dag-planning/SKILL.md",
+      "sha256": "53c6f394d86f6799609b0b431beac18e6f46425dcd4c41c834690c14d13bb917",
+      "bytes": 296
+    },
+    {
+      "path": ".commandcode/skills/decision-ledger/SKILL.md",
+      "sha256": "0fe8562e1d8cb3b1cfa199d12d29cd7a25aec0108b5325f25ad8b5ead2f31a53",
+      "bytes": 316
+    },
+    {
+      "path": ".commandcode/skills/desktop-accessibility/SKILL.md",
+      "sha256": "bfc968098e1a737bc129bb840907e53c9cbfaa740f4a8f0882a737b9f1ebb784",
+      "bytes": 306
+    },
+    {
+      "path": ".commandcode/skills/docs-maintenance/SKILL.md",
+      "sha256": "b04c85585b82b544aafb00ed6b769452ad307313cf983627bb43c2667dd84e90",
+      "bytes": 313
+    },
+    {
+      "path": ".commandcode/skills/evidence-gates/SKILL.md",
+      "sha256": "bce8fc760b9d0386fe0e04bcd34e3969eb141f3982f38589990cbdc5b44ffb21",
+      "bytes": 268
+    },
+    {
+      "path": ".commandcode/skills/fault-injection/SKILL.md",
+      "sha256": "4b4de5c59f3b52a230285939837583348fa88897e3357396991cbb2f74c0115a",
+      "bytes": 303
+    },
+    {
+      "path": ".commandcode/skills/goal-contracts/SKILL.md",
+      "sha256": "c08051e8cd1b1d8255c6631009aa4539a5bda990590cfd8dc758d37e698462a8",
+      "bytes": 281
+    },
+    {
+      "path": ".commandcode/skills/mcp-integration/SKILL.md",
+      "sha256": "cd2a7b527f6a3bb97cc348fc252609f27a442b36138d7b85805530eb0f66f415",
+      "bytes": 269
+    },
+    {
+      "path": ".commandcode/skills/model-routing/SKILL.md",
+      "sha256": "031693e41de18a1efd01ca32b9dc45224bee7746ac225b070ecc87ee862c91ec",
+      "bytes": 380
+    },
+    {
+      "path": ".commandcode/skills/worktree-isolation/SKILL.md",
+      "sha256": "9127a48780b2ca2e4e017a1ebc25ef228d384e9c249e30a926a1c995b1dc39de",
+      "bytes": 297
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "7dfa0faaffd7663dcc04307d23737186186ce9a5ebce4bc3a06dafa76ff9c083",
+      "bytes": 1281
+    },
+    {
+      "path": "ENTRYPOINT.md",
+      "sha256": "29ae477dfc6cb55d84870ddfda625f498a38a1791b631f6053bd5fa8f79c7326",
+      "bytes": 934
+    },
+    {
+      "path": "PROJECT_MANIFEST.yaml",
+      "sha256": "e1d05da094bd0e6132cc4dd5d691a4a7a7f956c2b336f0500addfc711bb5719c",
+      "bytes": 772
+    },
+    {
+      "path": "PROJECT_STATE.md",
+      "sha256": "cddfa9921f73206e9182c8518abcb3c4790470074426a68991946bf8b6b47d7a",
+      "bytes": 1338
+    },
+    {
+      "path": "README.md",
+      "sha256": "370ea217095a504bbe882bb92b0d051888395c5a9d428d82f3c51fc8d65df063",
+      "bytes": 1496
+    },
+    {
+      "path": "VALIDATION_REPORT.md",
+      "sha256": "a2f99fb2878d86d8a43b3cf48aaf1cd5928f27656649a568ed242bf196cf40e2",
+      "bytes": 665
+    },
+    {
+      "path": "docs/00-product/BRANDING.md",
+      "sha256": "1af642e48a37ced0c4c18e690cdeef8da3b67460f04bda2c3002371d1cf7367a",
+      "bytes": 525
+    },
+    {
+      "path": "docs/00-product/FEATURE_MATRIX.md",
+      "sha256": "f7a0419cae2d9b9c99fec347b06d2fa4fb2f5238b1c6265c6eda27d270941d57",
+      "bytes": 701
+    },
+    {
+      "path": "docs/00-product/PERSONAS.md",
+      "sha256": "012ec42a0ae8b4503ec72b56f2b5aa4935170137ac041697fbef1101f96d03b0",
+      "bytes": 536
+    },
+    {
+      "path": "docs/00-product/PRODUCT_REQUIREMENTS.md",
+      "sha256": "6d635660fcb0b9ad685146b49fc74eaab85c9edb4aa756ea7afdb5feea06a323",
+      "bytes": 1389
+    },
+    {
+      "path": "docs/00-product/ROADMAP.md",
+      "sha256": "afb788c697b16736af22668324134914353729ab49440a2c31aca57671d507f6",
+      "bytes": 874
+    },
+    {
+      "path": "docs/00-product/SCOPE.md",
+      "sha256": "cb19038e43a5b4f558bf08b0bf3ae1a80ac11a48233076f66846d47569339f89",
+      "bytes": 611
+    },
+    {
+      "path": "docs/00-product/SUCCESS_METRICS.md",
+      "sha256": "1833b0df65e0bfeb93ed7996d84afb68b65a12e52d2a5d875d559d4e90559ba7",
+      "bytes": 477
+    },
+    {
+      "path": "docs/00-product/USE_CASES.md",
+      "sha256": "ad656fffd83be6283128406f43db9523e8a42c7f3c757398a01c0d8c618c9719",
+      "bytes": 709
+    },
+    {
+      "path": "docs/00-product/VISION.md",
+      "sha256": "cd7bbcdfade8f7f8b524de98bac47f48715356641ce741e18129a76f3ed4c42f",
+      "bytes": 1183
+    },
+    {
+      "path": "docs/01-architecture/ACP_INTEGRATION.md",
+      "sha256": "8e0ac46e427c763222246be60c62ea6c2daf968549350af61ca1dcc14abd79ce",
+      "bytes": 386
+    },
+    {
+      "path": "docs/01-architecture/AG_UI_INTEGRATION.md",
+      "sha256": "fb9ab989fa72ebcf3b329689ee84720005f05fe2ab856d6e8599a93f0462bfa0",
+      "bytes": 424
+    },
+    {
+      "path": "docs/01-architecture/ATLAS_HARNESS.md",
+      "sha256": "90064d8af5cc841573a7c4024d13bedfabd3cf674b5a5932dff69c704eac4ad8",
+      "bytes": 472
+    },
+    {
+      "path": "docs/01-architecture/CHAT_DISCUSS_MODE.md",
+      "sha256": "aa640c95f84e9fb60aede439664196bcd80f4860b42a811de1832c4986746db9",
+      "bytes": 671
+    },
+    {
+      "path": "docs/01-architecture/COMPONENT_ARCHITECTURE.md",
+      "sha256": "aab451a64eb3ff98811c3ad3a8afe332f1d6473e73d4b0c92d1008bd1412acd6",
+      "bytes": 451
+    },
+    {
+      "path": "docs/01-architecture/CONTEXT_ENGINE.md",
+      "sha256": "5548b4bfc2e8f4d7534bf72f59b2ff3cc2c927697e0f3cb382662652dd48ab3a",
+      "bytes": 454
+    },
+    {
+      "path": "docs/01-architecture/DECISION_LEDGER.md",
+      "sha256": "020510059f2cdfa8e0a82a313213aa22d856415f8235c84de4bfdedd84c287c6",
+      "bytes": 388
+    },
+    {
+      "path": "docs/01-architecture/DOMAIN_MODEL.md",
+      "sha256": "ba5f13230c3e31a1089183bb4d9b2cc8bd74ed1d43787030f646cbcf38e87803",
+      "bytes": 418
+    },
+    {
+      "path": "docs/01-architecture/EVENT_MODEL.md",
+      "sha256": "ffb368c5da2b23819fd49cd5bcabee1f64f3ed0a156fa171e4289d61f58700ad",
+      "bytes": 439
+    },
+    {
+      "path": "docs/01-architecture/EXECUTION_ENGINE.md",
+      "sha256": "c6299479a6172ab053ccb7d2ee549079327844a76313f5b9567edb9bb4104d91",
+      "bytes": 421
+    },
+    {
+      "path": "docs/01-architecture/EXTENSIBILITY.md",
+      "sha256": "14cec08cd4a8273fecd99b274577da04248072978a0b6689aedd4388d9a68404",
+      "bytes": 341
+    },
+    {
+      "path": "docs/01-architecture/GIT_WORKTREES.md",
+      "sha256": "73d011a1c2c19dfdf2e4dd2b077457ea5e9f1a65ad525e4212cb39aad2f8b5b8",
+      "bytes": 359
+    },
+    {
+      "path": "docs/01-architecture/GOAL_ENGINE.md",
+      "sha256": "18196e7f6456cb842d9f51836165701b121cdc93067525ba7c1c78ec7047145a",
+      "bytes": 434
+    },
+    {
+      "path": "docs/01-architecture/MCP_INTEGRATION.md",
+      "sha256": "ed82d44cafca54b3da8382e7b859291a91ba555efc8fa8d78792bb9c075f569a",
+      "bytes": 334
+    },
+    {
+      "path": "docs/01-architecture/MODEL_ROUTER.md",
+      "sha256": "c20570607ba1a3ed98767f132e0404b8200f59e678122ec47bcb5fae9179f32b",
+      "bytes": 598
+    },
+    {
+      "path": "docs/01-architecture/OBSERVABILITY.md",
+      "sha256": "209c2d9198c7d6b69ae15ef02f953985029097b3a05b945cfa2558e339222acd",
+      "bytes": 373
+    },
+    {
+      "path": "docs/01-architecture/PERSISTENCE.md",
+      "sha256": "05080ef9c00f73223f977295679ed380a33ad845848f631be6a1928d730eddce",
+      "bytes": 445
+    },
+    {
+      "path": "docs/01-architecture/PLANNER_DAG.md",
+      "sha256": "5ecfa47ed6c7b72d3af25f302b856754a5c83ca436b34515efdbedbc51926d52",
+      "bytes": 443
+    },
+    {
+      "path": "docs/01-architecture/RECOVERY.md",
+      "sha256": "bd6f51d18748f90757d1c941203231e84e532f7baa2c1ca66d308590b136e58d",
+      "bytes": 417
+    },
+    {
+      "path": "docs/01-architecture/SYSTEM_OVERVIEW.md",
+      "sha256": "96eca825c3e2ee55d432e6cf314166c8a73fb5489ceb1ae21752ed053d49d025",
+      "bytes": 1457
+    },
+    {
+      "path": "docs/01-architecture/WORKFORCE_RESOLVER.md",
+      "sha256": "6b3b344f5221f233f72f2c3d30aa5977ebef75443f92325aa6c563252fd9e049",
+      "bytes": 310
+    },
+    {
+      "path": "docs/02-ui-ux/ACCESSIBILITY.md",
+      "sha256": "0f9e7360d131ef04473602ca6c3dcbc06fbed499d0c778bded4005c2e0825e27",
+      "bytes": 293
+    },
+    {
+      "path": "docs/02-ui-ux/BUILD.md",
+      "sha256": "fcbdf657ab4dca7c9b98c5f9a21eac3903d84735a953faf012cdc48c2574719c",
+      "bytes": 315
+    },
+    {
+      "path": "docs/02-ui-ux/DESIGN_SYSTEM.md",
+      "sha256": "7c7a448b675503c34e2929bd91849846626e384468afd4cc731dddde865b51ff",
+      "bytes": 444
+    },
+    {
+      "path": "docs/02-ui-ux/DISCUSS.md",
+      "sha256": "2096c2cfb310110024fa29a5fbaca38f699cf1960adeaf7ebddf93ba75a9361d",
+      "bytes": 406
+    },
+    {
+      "path": "docs/02-ui-ux/INFORMATION_ARCHITECTURE.md",
+      "sha256": "944b3e71d3cf0675818936999d3e464508aa420a58aaf593000b32c4b2d93ada",
+      "bytes": 460
+    },
+    {
+      "path": "docs/02-ui-ux/PLAN.md",
+      "sha256": "5c3cc8183c263295381379dbc4a18256c1af971bb3197850bba3b3e845096540",
+      "bytes": 320
+    },
+    {
+      "path": "docs/02-ui-ux/PROJECT.md",
+      "sha256": "a7aaf4822037f9cf582194095a201a750fbc122ab4108b0d113e92e4bb9a2422",
+      "bytes": 222
+    },
+    {
+      "path": "docs/02-ui-ux/REVIEW.md",
+      "sha256": "69ea2b7ec5f3a8b11918b9ecb2573542937263158916184e2ac391a3ad28faa8",
+      "bytes": 253
+    },
+    {
+      "path": "docs/03-implementation/API_CONTRACTS.md",
+      "sha256": "2cc55449b859a0198941c225f452266986cb62ba2345999477d504420b9f1aa2",
+      "bytes": 459
+    },
+    {
+      "path": "docs/03-implementation/COMMAND_CODE_INTEGRATION.md",
+      "sha256": "7c855b04a50f67359c2e1297534ed872d04f5b08ab7f76bf659ebfe3da23d60a",
+      "bytes": 675
+    },
+    {
+      "path": "docs/03-implementation/CONFIGURATION.md",
+      "sha256": "3c0a0b5af4734d336edf686e0bc4abaf06bf0b83d4b4c189a31f8c662342c2e4",
+      "bytes": 343
+    },
+    {
+      "path": "docs/03-implementation/DATABASE_SCHEMA.md",
+      "sha256": "c9b00f216f1d0807577673ed3419858e80afe9378b7786b3c31685bd0ac1b15d",
+      "bytes": 447
+    },
+    {
+      "path": "docs/03-implementation/DATA_MODELS.md",
+      "sha256": "1c3d436d49557fdc5d63ca8da09cfffe79a4249ceed731ca62f88810dcf4fd2f",
+      "bytes": 453
+    },
+    {
+      "path": "docs/03-implementation/ERROR_HANDLING.md",
+      "sha256": "04c6044a92108bee5792bd48bfc3463c31288a3a99343a1e32076e079ceea863",
+      "bytes": 309
+    },
+    {
+      "path": "docs/03-implementation/PACKAGING.md",
+      "sha256": "3b3828b3a6027c1a18a5813d48c4d061d6766e5756e25c3e87a57ab6c6eb0d9c",
+      "bytes": 371
+    },
+    {
+      "path": "docs/03-implementation/PROJECT_ATLAS_INTEGRATION.md",
+      "sha256": "229ca4acf85ba22467d0f5cebccf0bdaeb021b6ae2459566f0fdf18192ed0c2f",
+      "bytes": 462
+    },
+    {
+      "path": "docs/03-implementation/REPOSITORY_STRUCTURE.md",
+      "sha256": "d370cbf763d40ca4b0ba6694993172640bd6d84d45470655f802a5505502586a",
+      "bytes": 776
+    },
+    {
+      "path": "docs/03-implementation/STATE_MACHINES.md",
+      "sha256": "f2cb23727e4a9a482b068c5eceea61ecede023de609c7045a788064d5a97a4b9",
+      "bytes": 423
+    },
+    {
+      "path": "docs/03-implementation/TECH_STACK.md",
+      "sha256": "cce4eae3d8b245163479ec67c155a4d82cac1cffa5db696a9509306fea801a23",
+      "bytes": 618
+    },
+    {
+      "path": "docs/04-quality/PERFORMANCE_BUDGETS.md",
+      "sha256": "30fd19799ed39f22bb59e6d088c3966e38a9ae5415579059c96f3b3a0446f30c",
+      "bytes": 359
+    },
+    {
+      "path": "docs/04-quality/QUALITY_STRATEGY.md",
+      "sha256": "fae51525ba5ffcb338884d5891bad1b96804a687e98da6071db9dc6837cf1e96",
+      "bytes": 329
+    },
+    {
+      "path": "docs/04-quality/RELEASE_GATES.md",
+      "sha256": "16703b444ed670d9d6414fb896fc6a9908cbe366090c0addac50f30fd46434f8",
+      "bytes": 291
+    },
+    {
+      "path": "docs/04-quality/RELIABILITY.md",
+      "sha256": "438c64e92db8ab460768aa71144b93517163bac7afb54fa3c2aaa63091b3a1f7",
+      "bytes": 289
+    },
+    {
+      "path": "docs/04-quality/SECURITY_TESTING.md",
+      "sha256": "626281571cf974a314777dd49ebad41ab4d965b75bffbc424c68fd52f55dc0ae",
+      "bytes": 382
+    },
+    {
+      "path": "docs/04-quality/TEST_MATRIX.md",
+      "sha256": "82b2e302dbe1fad8f33ebfd1dee3c006a9a3ddee9f0c41740360eca26b79be32",
+      "bytes": 544
+    },
+    {
+      "path": "docs/04-quality/VISUAL_TESTING.md",
+      "sha256": "b7f7c3ab0ab560485ab3f2faede47d059552c0f0640ce147cb0f8153cade3a8b",
+      "bytes": 329
+    },
+    {
+      "path": "docs/05-governance/AI_ORCHESTRATION.md",
+      "sha256": "47f8b366fc6d3411e61d8aa14bd76c637fa70945ee791365afe4fe3ca5d06804",
+      "bytes": 445
+    },
+    {
+      "path": "docs/05-governance/CONTRIBUTING.md",
+      "sha256": "dc4dabda8c43d128631adfafde02aaad5c9a5a8e74bde564e6943dee8c4f1831",
+      "bytes": 263
+    },
+    {
+      "path": "docs/05-governance/DOCUMENTATION_MAINTENANCE.md",
+      "sha256": "79d2fa46867c6fb47f68278f2325faa617bcef65d9797ba250de7599a99fb9af",
+      "bytes": 334
+    },
+    {
+      "path": "docs/05-governance/GOAL_SYSTEM.md",
+      "sha256": "31282effbf7c34abf842b6dc9e55028cf1ba6b6892e38f312cd501843b82505a",
+      "bytes": 334
+    },
+    {
+      "path": "docs/05-governance/MODEL_POLICY.md",
+      "sha256": "eced4fe71cdb30b6ed5e1683ba238eaba4f9da1149040e70802fbb0b6f29b0c9",
+      "bytes": 530
+    },
+    {
+      "path": "docs/05-governance/PROJECT_ORCHESTRATION_PROTOCOL.md",
+      "sha256": "b26b630e99733051e1e2bbe1fe99937467d3f1ce92339b32dfd0bd0986ed9c09",
+      "bytes": 539
+    },
+    {
+      "path": "docs/05-governance/SECURITY.md",
+      "sha256": "7372f29d864f0b6c01127a7056781048f35e20236c0026ea34335773a6b42787",
+      "bytes": 434
+    },
+    {
+      "path": "docs/06-user-guide/COMMAND_CODE_DEVELOPMENT.md",
+      "sha256": "58faeae3dcd95c37da22a09bab17ce2072c091472eaf32c025d26e6b83400d16",
+      "bytes": 448
+    },
+    {
+      "path": "docs/06-user-guide/DISCUSS_TO_PROJECT.md",
+      "sha256": "65668f25dd22fb4f2ead5678d61f50addb5da502af77e12c98e587b7f31a9862",
+      "bytes": 268
+    },
+    {
+      "path": "docs/06-user-guide/GETTING_STARTED.md",
+      "sha256": "bef8b8827cd1a991711d094049672cf9b14190adf6e582d6bfa18c8db30bd4a3",
+      "bytes": 274
+    },
+    {
+      "path": "docs/06-user-guide/MODEL_ROUTING.md",
+      "sha256": "c400fdcb688037bd31e9d651cdc984380308aca8048c732a88ddd0a4807e1ae6",
+      "bytes": 224
+    },
+    {
+      "path": "docs/06-user-guide/RECOVERY.md",
+      "sha256": "b735ac3b24c0fcb7653a5e9d383186583ea5ab86bfa930591519369d786ec848",
+      "bytes": 245
+    },
+    {
+      "path": "docs/06-user-guide/RUNNING_GOALS.md",
+      "sha256": "b7989c7b06d999121a80b4c25ef813e49b9e270c60d5d1483ccfca10baa7fbb7",
+      "bytes": 209
+    },
+    {
+      "path": "docs/07-decisions/ADR-001-PROJECT-ATLAS-SEPARATION.md",
+      "sha256": "c6f9e5c187a555d50fb2fef2b80c9d1c3a587141ec3cc336389534b6101ac7a5",
+      "bytes": 199
+    },
+    {
+      "path": "docs/07-decisions/ADR-002-LOCAL-FIRST.md",
+      "sha256": "e897845e964696ddfb5e910fc3c91e33d51188e66289cfcf5f284ac2260805bf",
+      "bytes": 159
+    },
+    {
+      "path": "docs/07-decisions/ADR-003-PYTHON-BACKEND.md",
+      "sha256": "52efb39cb97b97b47417cd45d51028e3dc5775a6b90ad19eaec69c60d523bd51",
+      "bytes": 172
+    },
+    {
+      "path": "docs/07-decisions/ADR-004-TAURI-REACT.md",
+      "sha256": "256d0a281dfffc8dc527888d852f4adf9abb43babdaa1cdb5e2c0eeb1d6a6cfb",
+      "bytes": 131
+    },
+    {
+      "path": "docs/07-decisions/ADR-005-AGUI.md",
+      "sha256": "327f32877895aa783fd33109d0b7decba65b0fbd82fd5b8d52e3b7ef04e63a6b",
+      "bytes": 135
+    },
+    {
+      "path": "docs/07-decisions/ADR-006-ACP.md",
+      "sha256": "2054b4fd62df0fbbc9e6c885a9460d1c34a135baa5271ac70e50479b03bcb3ad",
+      "bytes": 166
+    },
+    {
+      "path": "docs/07-decisions/ADR-007-MCP.md",
+      "sha256": "22fed90cb892508cf4236268f331dec9df4ac812d6ae087a8a80260563df86e7",
+      "bytes": 98
+    },
+    {
+      "path": "docs/07-decisions/ADR-008-META-HARNESS.md",
+      "sha256": "9e47b0f0ef936a93f49ae9d4fc62710fcf775360c4575ef4a0a4f6450217f632",
+      "bytes": 227
+    },
+    {
+      "path": "docs/07-decisions/ADR-009-GIT-CANONICAL.md",
+      "sha256": "a761571b299a83382ec85c40e7e562ecc08a103002475ca8d383b7cc68206263",
+      "bytes": 166
+    },
+    {
+      "path": "docs/07-decisions/ADR-010-SQLITE.md",
+      "sha256": "247079b638c0bb88c365fbcd162a2e3627571b4ff5d505d75c13422d334c4184",
+      "bytes": 137
+    },
+    {
+      "path": "docs/07-decisions/ADR-011-COMMAND-CODE.md",
+      "sha256": "0b7aaba4962c7d102c61a32d541efbb993ab49d1dc6a40e8b68ac463e581003e",
+      "bytes": 179
+    },
+    {
+      "path": "docs/07-decisions/ADR-012-MODEL-ROSTER.md",
+      "sha256": "ba1070d24a488dc8ad86cac64025f2bce8bf7796109dc2f98d5845d6052f2e80",
+      "bytes": 193
+    },
+    {
+      "path": "docs/08-rfcs/RFC-001-ADAPTIVE-MODEL-ROUTING.md",
+      "sha256": "f58f3c568b82ef354384e6413c2d7e2a337128898dce538aac9c11d4d4aad3b0",
+      "bytes": 172
+    },
+    {
+      "path": "docs/08-rfcs/RFC-002-REMOTE-RUNNERS.md",
+      "sha256": "4a5ac3f093ff4e3ba1824cfae703e04e3ae64233d7bda9308a3d1fa96b3a127c",
+      "bytes": 165
+    },
+    {
+      "path": "docs/08-rfcs/RFC-003-A2A.md",
+      "sha256": "47aa3abfda695af0434f6da20be546c009d7717389e6838fae3c65271d179d46",
+      "bytes": 167
+    },
+    {
+      "path": "docs/08-rfcs/RFC-004-FRAMEWORK-FEEDBACK.md",
+      "sha256": "450cd82426002a6415a40d2b1910c210a7ce6c1ff3050a126ef357f63f7f0a1c",
+      "bytes": 192
+    },
+    {
+      "path": "docs/08-rfcs/RFC-005-HOSTED-COLLABORATION.md",
+      "sha256": "21dec59839599b58ce4cc2f027b224c056f68ef0aca4efc5158a7cec738c5ad0",
+      "bytes": 134
+    },
+    {
+      "path": "docs/09-references/EXTERNAL_REFERENCES.md",
+      "sha256": "36c60fc566c419259840b1adea0d8106aa43e62a8d7eb7cde9f3bfd8df37a148",
+      "bytes": 1061
+    },
+    {
+      "path": "docs/ATLAS.md",
+      "sha256": "a9afd7bc7d1af7b2dbbef1c82de2b7392f4cdee9e44b7b9faa7052b23277a15d",
+      "bytes": 2945
+    },
+    {
+      "path": "docs/_meta/document-registry.yaml",
+      "sha256": "32854f93b1440ca802e3d6268e40611f9b0d4ebebc58c19ac6b99205ba317734",
+      "bytes": 11912
+    },
+    {
+      "path": "docs/_meta/knowledge-graph.json",
+      "sha256": "da0f7ac1d3f4c37da34612bc732398447af5f2d4dac7d0da843471804549bbf5",
+      "bytes": 24639
+    },
+    {
+      "path": "docs/_meta/query-packs/architecture-change.md",
+      "sha256": "cd1dd9e026d2cf396e50653c69dad0f3261d43cb93d5fc1104d57c25bb7822c0",
+      "bytes": 164
+    },
+    {
+      "path": "docs/_meta/query-packs/goal-execution.md",
+      "sha256": "e9a56d3bf1f9ed2538f9031c9b2103c95154addf9a64e9a0e94cd3901a22ebc3",
+      "bytes": 157
+    },
+    {
+      "path": "docs/_meta/query-packs/model-routing.md",
+      "sha256": "f4ba8f286b831aaa143bb981b77c2916e120e3b1b37a00428a8b4d22c6abaad5",
+      "bytes": 152
+    },
+    {
+      "path": "docs/_meta/query-packs/project-recovery.md",
+      "sha256": "26f45c0017b500b1390ce81806261f5860e33214ca1107f8a50802e7e54669f6",
+      "bytes": 142
+    },
+    {
+      "path": "docs/_meta/query-packs/protocol-change.md",
+      "sha256": "c704619571d7a8b6f1e8eed371c0553d8afbc4ff1c86aa8c0b35107e6d7117e1",
+      "bytes": 158
+    },
+    {
+      "path": "docs/_meta/query-packs/release.md",
+      "sha256": "c9f56c797f204d584a796e374b5586fac3e1704a8549824b655dae1ee6ffb4ac",
+      "bytes": 149
+    },
+    {
+      "path": "docs/_meta/query-packs/security-review.md",
+      "sha256": "1c8e617de138234b1dedc8aa8c9c4490f65de27230b4a689fd7168af7d4d37da",
+      "bytes": 174
+    },
+    {
+      "path": "docs/_meta/query-packs/ui-change.md",
+      "sha256": "5e131c23d51f4431e7b64fb8b60817274a5824db83b07cec8a037f550b995098",
+      "bytes": 171
+    },
+    {
+      "path": "prompts/command-code-start.md",
+      "sha256": "6bc2e2ab3439aed376a869032cadb1a5b60a60daa35a5baa36af454fc9f0006b",
+      "bytes": 668
+    },
+    {
+      "path": "prompts/implement-active-goal.md",
+      "sha256": "2ad60e67d9323402d40d74609414788e6623439dd8d6a663ae5496390386b268",
+      "bytes": 548
+    },
+    {
+      "path": "scripts/check_command_code_models.sh",
+      "sha256": "7efa2d45fb7f5a9b90a3b0c5c0ef6b18779087b6fbf1c2fe9799dae82a85d2d5",
+      "bytes": 471
+    },
+    {
+      "path": "scripts/validate_docs.py",
+      "sha256": "dd8b4dac9298bcac18a9805c322e9cc35dab575c1ef345a62f31b747a9187cd6",
+      "bytes": 980
+    },
+    {
+      "path": "scripts/validate_goals.py",
+      "sha256": "536d83ab09e6465640d95e4415fd8988234912c976b2b699209e1184e634d22f",
+      "bytes": 781
+    }
+  ]
+}

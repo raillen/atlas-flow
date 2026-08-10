@@ -1,0 +1,6 @@
+recipes:
+  - discuss-to-project
+  - locked-goal-implementation
+  - protocol-change
+  - high-risk-feature
+  - release-candidate

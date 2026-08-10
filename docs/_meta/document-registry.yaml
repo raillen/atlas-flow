@@ -1,0 +1,409 @@
+documents:
+- path: .commandcode/AGENTS.md
+  title: Command Code Adapter — Atlas Flow
+  section: root
+  canonical: true
+- path: .commandcode/agents/atlas-architect.md
+  title: atlas-architect
+  section: root
+  canonical: true
+- path: .commandcode/agents/docs-maintainer.md
+  title: docs-maintainer
+  section: root
+  canonical: true
+- path: .commandcode/agents/flow-implementer.md
+  title: flow-implementer
+  section: root
+  canonical: true
+- path: .commandcode/agents/goal-planner.md
+  title: goal-planner
+  section: root
+  canonical: true
+- path: .commandcode/agents/protocol-engineer.md
+  title: protocol-engineer
+  section: root
+  canonical: true
+- path: .commandcode/agents/release-verifier.md
+  title: release-verifier
+  section: root
+  canonical: true
+- path: .commandcode/agents/security-reviewer.md
+  title: security-reviewer
+  section: root
+  canonical: true
+- path: .commandcode/agents/test-engineer.md
+  title: test-engineer
+  section: root
+  canonical: true
+- path: .commandcode/agents/ui-engineer.md
+  title: ui-engineer
+  section: root
+  canonical: true
+- path: AGENTS.md
+  title: Atlas Flow Agent Guide
+  section: root
+  canonical: true
+- path: ENTRYPOINT.md
+  title: Atlas Flow Entry Point
+  section: root
+  canonical: true
+- path: PROJECT_STATE.md
+  title: Current Project State
+  section: root
+  canonical: true
+- path: README.md
+  title: Atlas Flow
+  section: root
+  canonical: true
+- path: docs/00-product/BRANDING.md
+  title: Branding Direction
+  section: 00-product
+  canonical: true
+- path: docs/00-product/FEATURE_MATRIX.md
+  title: Feature Matrix
+  section: 00-product
+  canonical: true
+- path: docs/00-product/PERSONAS.md
+  title: Personas
+  section: 00-product
+  canonical: true
+- path: docs/00-product/PRODUCT_REQUIREMENTS.md
+  title: Product Requirements
+  section: 00-product
+  canonical: true
+- path: docs/00-product/ROADMAP.md
+  title: Roadmap
+  section: 00-product
+  canonical: true
+- path: docs/00-product/SCOPE.md
+  title: Scope
+  section: 00-product
+  canonical: true
+- path: docs/00-product/SUCCESS_METRICS.md
+  title: Success Metrics
+  section: 00-product
+  canonical: true
+- path: docs/00-product/USE_CASES.md
+  title: Primary Use Cases
+  section: 00-product
+  canonical: true
+- path: docs/00-product/VISION.md
+  title: Vision
+  section: 00-product
+  canonical: true
+- path: docs/01-architecture/ACP_INTEGRATION.md
+  title: ACP Integration
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/AG_UI_INTEGRATION.md
+  title: AG-UI Integration
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/ATLAS_HARNESS.md
+  title: Atlas Harness
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/CHAT_DISCUSS_MODE.md
+  title: Chat / Discuss Mode
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/COMPONENT_ARCHITECTURE.md
+  title: Component Architecture
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/CONTEXT_ENGINE.md
+  title: Context Engine
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/DECISION_LEDGER.md
+  title: Decision Ledger
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/DOMAIN_MODEL.md
+  title: Domain Model
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/EVENT_MODEL.md
+  title: Event Model
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/EXECUTION_ENGINE.md
+  title: Execution Engine
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/EXTENSIBILITY.md
+  title: Extensibility
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/GIT_WORKTREES.md
+  title: Git and Worktrees
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/GOAL_ENGINE.md
+  title: Goal Engine
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/MCP_INTEGRATION.md
+  title: MCP Integration
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/MODEL_ROUTER.md
+  title: Model Router
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/OBSERVABILITY.md
+  title: Observability
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/PERSISTENCE.md
+  title: Persistence
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/PLANNER_DAG.md
+  title: Planner and Task DAG
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/RECOVERY.md
+  title: Recovery
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/SYSTEM_OVERVIEW.md
+  title: System Overview
+  section: 01-architecture
+  canonical: true
+- path: docs/01-architecture/WORKFORCE_RESOLVER.md
+  title: Workforce Resolver
+  section: 01-architecture
+  canonical: true
+- path: docs/02-ui-ux/ACCESSIBILITY.md
+  title: Accessibility
+  section: 02-ui-ux
+  canonical: true
+- path: docs/02-ui-ux/BUILD.md
+  title: Build UX
+  section: 02-ui-ux
+  canonical: true
+- path: docs/02-ui-ux/DESIGN_SYSTEM.md
+  title: Design System
+  section: 02-ui-ux
+  canonical: true
+- path: docs/02-ui-ux/DISCUSS.md
+  title: Discuss UX
+  section: 02-ui-ux
+  canonical: true
+- path: docs/02-ui-ux/INFORMATION_ARCHITECTURE.md
+  title: Information Architecture
+  section: 02-ui-ux
+  canonical: true
+- path: docs/02-ui-ux/PLAN.md
+  title: Plan UX
+  section: 02-ui-ux
+  canonical: true
+- path: docs/02-ui-ux/PROJECT.md
+  title: Project UX
+  section: 02-ui-ux
+  canonical: true
+- path: docs/02-ui-ux/REVIEW.md
+  title: Review UX
+  section: 02-ui-ux
+  canonical: true
+- path: docs/03-implementation/API_CONTRACTS.md
+  title: API Contracts
+  section: 03-implementation
+  canonical: true
+- path: docs/03-implementation/COMMAND_CODE_INTEGRATION.md
+  title: Command Code Development Integration
+  section: 03-implementation
+  canonical: true
+- path: docs/03-implementation/CONFIGURATION.md
+  title: Configuration
+  section: 03-implementation
+  canonical: true
+- path: docs/03-implementation/DATABASE_SCHEMA.md
+  title: Operational Database Schema
+  section: 03-implementation
+  canonical: true
+- path: docs/03-implementation/DATA_MODELS.md
+  title: Data Models
+  section: 03-implementation
+  canonical: true
+- path: docs/03-implementation/ERROR_HANDLING.md
+  title: Error Handling
+  section: 03-implementation
+  canonical: true
+- path: docs/03-implementation/PACKAGING.md
+  title: Packaging and Distribution
+  section: 03-implementation
+  canonical: true
+- path: docs/03-implementation/PROJECT_ATLAS_INTEGRATION.md
+  title: Project Atlas Integration
+  section: 03-implementation
+  canonical: true
+- path: docs/03-implementation/REPOSITORY_STRUCTURE.md
+  title: Proposed Repository Structure
+  section: 03-implementation
+  canonical: true
+- path: docs/03-implementation/STATE_MACHINES.md
+  title: State Machines
+  section: 03-implementation
+  canonical: true
+- path: docs/03-implementation/TECH_STACK.md
+  title: Technology Stack
+  section: 03-implementation
+  canonical: true
+- path: docs/04-quality/PERFORMANCE_BUDGETS.md
+  title: Performance Budgets
+  section: 04-quality
+  canonical: true
+- path: docs/04-quality/QUALITY_STRATEGY.md
+  title: Quality Strategy
+  section: 04-quality
+  canonical: true
+- path: docs/04-quality/RELEASE_GATES.md
+  title: Release Gates
+  section: 04-quality
+  canonical: true
+- path: docs/04-quality/RELIABILITY.md
+  title: Reliability and Fault Injection
+  section: 04-quality
+  canonical: true
+- path: docs/04-quality/SECURITY_TESTING.md
+  title: Security Testing
+  section: 04-quality
+  canonical: true
+- path: docs/04-quality/TEST_MATRIX.md
+  title: Test Matrix
+  section: 04-quality
+  canonical: true
+- path: docs/04-quality/VISUAL_TESTING.md
+  title: Visual Testing
+  section: 04-quality
+  canonical: true
+- path: docs/05-governance/AI_ORCHESTRATION.md
+  title: AI Orchestration
+  section: 05-governance
+  canonical: true
+- path: docs/05-governance/CONTRIBUTING.md
+  title: Contribution Workflow
+  section: 05-governance
+  canonical: true
+- path: docs/05-governance/DOCUMENTATION_MAINTENANCE.md
+  title: Documentation Maintenance
+  section: 05-governance
+  canonical: true
+- path: docs/05-governance/GOAL_SYSTEM.md
+  title: Goal System Governance
+  section: 05-governance
+  canonical: true
+- path: docs/05-governance/MODEL_POLICY.md
+  title: Development Model Policy
+  section: 05-governance
+  canonical: true
+- path: docs/05-governance/PROJECT_ORCHESTRATION_PROTOCOL.md
+  title: Project Orchestration Protocol — Atlas Flow
+  section: 05-governance
+  canonical: true
+- path: docs/05-governance/SECURITY.md
+  title: Security Governance
+  section: 05-governance
+  canonical: true
+- path: docs/06-user-guide/COMMAND_CODE_DEVELOPMENT.md
+  title: Developing Atlas Flow with Command Code
+  section: 06-user-guide
+  canonical: true
+- path: docs/06-user-guide/DISCUSS_TO_PROJECT.md
+  title: From Discussion to Project
+  section: 06-user-guide
+  canonical: true
+- path: docs/06-user-guide/GETTING_STARTED.md
+  title: Getting Started — Target UX
+  section: 06-user-guide
+  canonical: true
+- path: docs/06-user-guide/MODEL_ROUTING.md
+  title: Model Routing
+  section: 06-user-guide
+  canonical: true
+- path: docs/06-user-guide/RECOVERY.md
+  title: Recovery
+  section: 06-user-guide
+  canonical: true
+- path: docs/06-user-guide/RUNNING_GOALS.md
+  title: Running Goals
+  section: 06-user-guide
+  canonical: true
+- path: docs/07-decisions/ADR-001-PROJECT-ATLAS-SEPARATION.md
+  title: ADR-001 — Separate Project Atlas Framework and Atlas Flow
+  section: 07-decisions
+  canonical: true
+- path: docs/07-decisions/ADR-002-LOCAL-FIRST.md
+  title: ADR-002 — Local-first architecture
+  section: 07-decisions
+  canonical: true
+- path: docs/07-decisions/ADR-003-PYTHON-BACKEND.md
+  title: ADR-003 — Python orchestration backend
+  section: 07-decisions
+  canonical: true
+- path: docs/07-decisions/ADR-004-TAURI-REACT.md
+  title: ADR-004 — Tauri 2 + React desktop
+  section: 07-decisions
+  canonical: true
+- path: docs/07-decisions/ADR-005-AGUI.md
+  title: ADR-005 — AG-UI at frontend/runtime boundary
+  section: 07-decisions
+  canonical: true
+- path: docs/07-decisions/ADR-006-ACP.md
+  title: ADR-006 — ACP preferred coding-agent boundary
+  section: 07-decisions
+  canonical: true
+- path: docs/07-decisions/ADR-007-MCP.md
+  title: ADR-007 — MCP for external tools
+  section: 07-decisions
+  canonical: true
+- path: docs/07-decisions/ADR-008-META-HARNESS.md
+  title: ADR-008 — Build a meta-harness, not a coding agent from scratch
+  section: 07-decisions
+  canonical: true
+- path: docs/07-decisions/ADR-009-GIT-CANONICAL.md
+  title: ADR-009 — Git is canonical project memory
+  section: 07-decisions
+  canonical: true
+- path: docs/07-decisions/ADR-010-SQLITE.md
+  title: ADR-010 — SQLite for operational state
+  section: 07-decisions
+  canonical: true
+- path: docs/07-decisions/ADR-011-COMMAND-CODE.md
+  title: ADR-011 — Command Code as development harness
+  section: 07-decisions
+  canonical: true
+- path: docs/07-decisions/ADR-012-MODEL-ROSTER.md
+  title: ADR-012 — Initial development model roster
+  section: 07-decisions
+  canonical: true
+- path: docs/08-rfcs/RFC-001-ADAPTIVE-MODEL-ROUTING.md
+  title: RFC-001 — Adaptive Model Routing
+  section: 08-rfcs
+  canonical: false
+- path: docs/08-rfcs/RFC-002-REMOTE-RUNNERS.md
+  title: RFC-002 — Remote Runners
+  section: 08-rfcs
+  canonical: false
+- path: docs/08-rfcs/RFC-003-A2A.md
+  title: RFC-003 — Distributed Agent-to-Agent Protocol
+  section: 08-rfcs
+  canonical: false
+- path: docs/08-rfcs/RFC-004-FRAMEWORK-FEEDBACK.md
+  title: RFC-004 — Evidence-driven Framework Feedback
+  section: 08-rfcs
+  canonical: false
+- path: docs/08-rfcs/RFC-005-HOSTED-COLLABORATION.md
+  title: RFC-005 — Hosted Collaboration
+  section: 08-rfcs
+  canonical: false
+- path: docs/09-references/EXTERNAL_REFERENCES.md
+  title: External Technical References
+  section: 09-references
+  canonical: true
+- path: docs/ATLAS.md
+  title: Atlas Flow — ATLAS
+  section: root
+  canonical: true

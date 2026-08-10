@@ -1,0 +1,53 @@
+version: 1
+roles:
+  chief-architect:
+  - deepseek-v4-pro
+  - mimo-v2.5-pro
+  - gpt-5.6-luna
+  goal-planner:
+  - deepseek-v4-pro
+  - mimo-v2.5-pro
+  - gpt-5.6-luna
+  protocol-engineer:
+  - deepseek-v4-pro
+  - mimo-v2.5-pro
+  - gpt-5.6-luna
+  core-implementer:
+  - mimo-v2.5-pro
+  - deepseek-v4-pro
+  - gpt-5.6-luna
+  ui-engineer:
+  - mimo-v2.5-pro
+  - deepseek-v4-pro
+  - gpt-5.6-luna
+  debugger:
+  - deepseek-v4-pro
+  - mimo-v2.5-pro
+  - gpt-5.6-luna
+  tester:
+  - gpt-5.6-luna
+  - mimo-v2.5-pro
+  - deepseek-v4-pro
+  repo-explorer:
+  - gpt-5.6-luna
+  - mimo-v2.5-pro
+  - deepseek-v4-pro
+  documentation-maintainer:
+  - gpt-5.6-luna
+  - mimo-v2.5-pro
+  - deepseek-v4-pro
+  security-reviewer:
+  - deepseek-v4-pro
+  - mimo-v2.5-pro
+  - gpt-5.6-luna
+  performance-reviewer:
+  - deepseek-v4-pro
+  - mimo-v2.5-pro
+  - gpt-5.6-luna
+  release-verifier:
+  - deepseek-v4-pro
+  - mimo-v2.5-pro
+  - gpt-5.6-luna
+review_policy:
+  high_risk_cross_provider_required_when_possible: true
+  skip_implementer_provider_before_ordered_fallbacks: true

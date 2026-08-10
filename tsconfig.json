@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/domain-types" },
+    { "path": "packages/ag-ui-client" },
+    { "path": "packages/ui" },
+    { "path": "apps/desktop" }
+  ]
+}

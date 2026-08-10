@@ -1,0 +1,25 @@
+id: P10-G01
+phase: P10
+title: Beta and 1.0 Validation
+state: DRAFT
+objective: Dogfood Atlas Flow on multiple project classes and prepare stable release.
+constraints:
+- Follow Project Atlas authority order
+- Do not silently weaken acceptance
+- Update canonical documentation when behavior/architecture changes
+non_goals: []
+dependencies:
+- P09-G01
+acceptance:
+- Validated on at least three materially different project categories
+- Fresh install/recovery walkthrough passes
+- Project Atlas compatibility matrix documented
+- User guide complete
+- Release gates pass
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history: []

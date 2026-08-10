@@ -1,0 +1,27 @@
+id: P05-G01
+phase: P05
+title: Goal Planner and DAG Execution
+state: DRAFT
+objective: Implement Goal decomposition contract, DAG validation, worktree isolation,
+  concurrency and integration.
+constraints:
+- Follow Project Atlas authority order
+- Do not silently weaken acceptance
+- Update canonical documentation when behavior/architecture changes
+non_goals: []
+dependencies:
+- P03-G01
+- P04-G01
+acceptance:
+- DAG cycle detection
+- Dependency-aware scheduler
+- Parallel tasks use isolated worktrees
+- Overlapping write scopes do not run unsafely in parallel
+- Integration conflict is explicit
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history: []

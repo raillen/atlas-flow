@@ -1,0 +1,19 @@
+agents:
+  - chief-architect
+  - goal-planner
+  - protocol-engineer
+  - core-implementer
+  - ui-engineer
+  - repo-explorer
+  - debugger
+  - tester
+  - security-reviewer
+  - performance-reviewer
+  - documentation-maintainer
+  - release-verifier
+selection_basis:
+  - project-type
+  - protocols
+  - desktop-ui
+  - security-risk
+  - reliability-risk

@@ -1,0 +1,25 @@
+id: P01-G01
+phase: P01
+title: Project Atlas Integration
+state: DRAFT
+objective: Implement compatibility layer that loads and validates Project Atlas manifests,
+  Goals and registries.
+constraints:
+- Follow Project Atlas authority order
+- Do not silently weaken acceptance
+- Update canonical documentation when behavior/architecture changes
+non_goals: []
+dependencies:
+- P00-G01
+acceptance:
+- Open a valid Project Atlas fixture
+- Reject incompatible/invalid manifest with actionable error
+- Resolve selected Agents/Skills/Recipes
+- No forked Goal semantics are introduced
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history: []

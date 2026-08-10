@@ -1,0 +1,26 @@
+{
+  "name": "atlas-flow",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "dev": "pnpm --filter @atlas-flow/desktop dev",
+    "lint": "eslint .",
+    "tauri": "pnpm --filter @atlas-flow/desktop tauri",
+    "test": "vitest run",
+    "typecheck": "tsc -b --force packages/domain-types packages/ag-ui-client packages/ui apps/desktop"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.0",
+    "eslint": "^9.30.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "typescript": "catalog:",
+    "typescript-eslint": "^8.35.0",
+    "vitest": "catalog:"
+  }
+}
