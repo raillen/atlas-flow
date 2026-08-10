@@ -28,6 +28,12 @@ class AtlasFlowConfig:
     max_cost_per_run_usd: float = 10.0
     max_tokens_per_run: int = 1_000_000
 
+    # Operational state. Canonical project truth stays in Git (ADR-009); this
+    # directory only holds run/task/attempt state and the event log, and is
+    # safe to delete at the cost of losing in-flight run history.
+    state_dir: str = ".atlas-flow"
+    database_file: str = "state.db"
+
     # Git
     worktree_base: str = ""
     isolate_mutating_tasks: bool = True
@@ -48,6 +54,14 @@ class AtlasFlowConfig:
     # Retention
     artifact_retention_days: int = 30
     transcript_retention_days: int = 90
+
+    @property
+    def state_path(self) -> Path:
+        return self.project_root / self.state_dir
+
+    @property
+    def database_path(self) -> Path:
+        return self.state_path / self.database_file
 
     @classmethod
     def load(cls, project_root: Path | None = None) -> AtlasFlowConfig:
@@ -91,8 +105,8 @@ class AtlasFlowConfig:
             data = yaml.safe_load(autonomy_path.read_text())
             if isinstance(data, dict):
                 pp = data.get("project_policy", {})
-                if isinstance(pp, dict):
-                    merged["autonomy_mode"] = pp.get("current", merged.get("autonomy_mode"))
+                if isinstance(pp, dict) and pp.get("current") is not None:
+                    merged["autonomy_mode"] = pp["current"]
 
         # orchestrator.yaml → execution config
         orch_path = config_dir / "orchestrator.yaml"
@@ -106,16 +120,16 @@ class AtlasFlowConfig:
                     if "worktree_strategy" in exec_cfg:
                         merged["worktree_strategy"] = exec_cfg["worktree_strategy"]
 
-        # fallbacks.yaml → retry config
+        # fallbacks.yaml → retry config. Only keys the file actually declares
+        # are merged; anything absent must fall through to the dataclass
+        # default rather than being looked up in this partial dict.
         fallback_path = config_dir / "fallbacks.yaml"
         if fallback_path.is_file():
             data = yaml.safe_load(fallback_path.read_text())
             if isinstance(data, dict):
                 quality = data.get("quality", {})
-                if isinstance(quality, dict):
-                    merged["max_retries_per_task"] = quality.get(
-                        "max_cross_model_attempts", merged["max_retries_per_task"]
-                    )
+                if isinstance(quality, dict) and "max_cross_model_attempts" in quality:
+                    merged["max_retries_per_task"] = quality["max_cross_model_attempts"]
 
         return merged
 
@@ -139,6 +153,7 @@ class AtlasFlowConfig:
             "ATLAS_FLOW_MAX_RETRIES": ("max_retries_per_task", int),
             "ATLAS_FLOW_LOG_LEVEL": ("log_level", str),
             "ATLAS_FLOW_AUTONOMY": ("autonomy_mode", str),
+            "ATLAS_FLOW_STATE_DIR": ("state_dir", str),
         }
         for env_var, (attr, converter) in env_map.items():
             value = os.environ.get(env_var)

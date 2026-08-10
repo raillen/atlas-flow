@@ -14,9 +14,6 @@ jobs:
   python-lint-typecheck-test:
     name: Python / lint typecheck test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v5
 
@@ -25,16 +22,20 @@ jobs:
           python-version: "3.12"
 
       - name: Sync
-        run: uv sync --locked
+        run: uv sync --project backend --locked
 
+      # All tool configuration lives in the root pyproject.toml, so every step
+      # runs from the repository root. `--project` selects the backend
+      # environment without changing the working directory: running these from
+      # backend/ makes pytest collect nothing and exit 5.
       - name: Ruff lint
-        run: uv run ruff check ..
+        run: uv run --project backend ruff check .
 
       - name: Mypy
-        run: uv run mypy
+        run: uv run --project backend mypy
 
       - name: Pytest
-        run: uv run pytest
+        run: uv run --project backend pytest
 
   js-lint-typecheck-test:
     name: JS / lint typecheck test
@@ -73,10 +74,15 @@ jobs:
           python-version: "3.12"
 
       - name: Sync
-        run: uv sync --directory backend --locked
+        run: uv sync --project backend --locked
 
+      # scripts/ lives at the repository root; `--directory backend` would run
+      # these from backend/, where the path does not resolve.
       - name: Validate docs
-        run: uv run --directory backend python scripts/validate_docs.py
+        run: uv run --project backend python scripts/validate_docs.py
 
       - name: Validate goals
-        run: uv run --directory backend python scripts/validate_goals.py
+        run: uv run --project backend python scripts/validate_goals.py
+
+      - name: Validate Command Code discoverability
+        run: scripts/validate_command_code.sh

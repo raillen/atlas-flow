@@ -1,7 +1,7 @@
 id: P10-G01
 phase: P10
 title: Beta and 1.0 Validation
-state: DONE
+state: PLANNED
 objective: Dogfood Atlas Flow on multiple project classes and prepare stable release.
 constraints:
 - Follow Project Atlas authority order
@@ -22,4 +22,13 @@ gates:
   review: required
   documentation: required
 evidence: []
-history: []
+history:
+- '2026-08-10: reclassified DONE -> PLANNED after an implementation audit found acceptance
+  criteria that are not met.'
+- '2026-08-10: unmet — Depends on P09, reopened.'
+- '2026-08-10: unmet — Validated on at least three materially different project categories:
+  no dogfooding was performed.'
+- '2026-08-10: unmet — Fresh install/recovery walkthrough passes: not executed.'
+- '2026-08-10: unmet — Release gates pass: gates were never evaluated against evidence.'
+- '2026-08-10: still blocking — Depends on P09.'
+- '2026-08-10: still blocking — No dogfooding on other project categories has been performed.'

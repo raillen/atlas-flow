@@ -1,9 +1,8 @@
 id: P06-G01
 phase: P06
 title: Desktop Modes
-state: DONE
-objective: Implement Tauri/React shell with Discuss, Plan, Build, Review and Project
-  modes.
+state: ACTIVE
+objective: Implement Tauri/React shell with Discuss, Plan, Build, Review and Project modes.
 constraints:
 - Follow Project Atlas authority order
 - Do not silently weaken acceptance
@@ -25,4 +24,22 @@ gates:
   review: required
   documentation: required
 evidence: []
-history: []
+history:
+- '2026-08-10: reclassified DONE -> ACTIVE after an implementation audit found acceptance
+  criteria that are not met.'
+- '2026-08-10: unmet — Plan DAG rendered: DesktopModes.tsx is hardcoded markup with no data
+  source.'
+- '2026-08-10: unmet — Build live task/agent status visible: same, static mockup.'
+- '2026-08-10: unmet — Review evidence/gates visible: same, static mockup.'
+- '2026-08-10: unmet — Project canonical docs browsable: not implemented.'
+- '2026-08-10: unmet — No REST API exists to expose runs, tasks, events or gates to the UI.'
+- '2026-08-10: closed — REST API exposes goals, runs, tasks, attempts, events, gates, evidence,
+  discussions and canonical docs.'
+- '2026-08-10: closed — Plan, Build, Review and Project screens read real backend state; the
+  hardcoded mockups are deleted.'
+- '2026-08-10: closed — Primary navigation implements the WAI-ARIA tabs pattern with arrow,
+  Home and End keys.'
+- '2026-08-10: closed — Run events are broadcast over the AG-UI WebSocket as they commit.'
+- '2026-08-10: still blocking — Tauri shell is still the unmodified template: no IPC commands,
+  no packaging.'
+- '2026-08-10: still blocking — review gate: no independent review has been performed.'

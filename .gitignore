@@ -31,7 +31,9 @@ apps/desktop/src-tauri/gen/schemas
 *.sqlite-journal
 *.db
 *.db-journal
-.atlas-flow/state/
+*.db-wal
+*.db-shm
+.atlas-flow/
 
 # Env / secrets
 .env

@@ -1,9 +1,9 @@
 id: P05-G01
 phase: P05
 title: Goal Planner and DAG Execution
-state: DONE
-objective: Implement Goal decomposition contract, DAG validation, worktree isolation,
-  concurrency and integration.
+state: ACTIVE
+objective: Implement Goal decomposition contract, DAG validation, worktree isolation, concurrency
+  and integration.
 constraints:
 - Follow Project Atlas authority order
 - Do not silently weaken acceptance
@@ -24,4 +24,18 @@ gates:
   review: required
   documentation: required
 evidence: []
-history: []
+history:
+- '2026-08-10: reclassified DONE -> ACTIVE after an implementation audit found acceptance
+  criteria that are not met.'
+- '2026-08-10: unmet — Parallel tasks use isolated worktrees: worktree.py only formats branch
+  and directory names; no git command is ever executed.'
+- '2026-08-10: unmet — Integration conflict is explicit: not implemented.'
+- '2026-08-10: closed — Worktrees are created, committed and removed through real git commands;
+  parallel tasks write to isolated checkouts.'
+- '2026-08-10: closed — Integration conflicts are detected with `git merge-tree` and reported
+  without touching the target checkout.'
+- '2026-08-10: closed — Integration is refused when the target has uncommitted changes, and
+  serialized so concurrent merges cannot race on HEAD.'
+- '2026-08-10: closed — GoalRunner executes a plan end to end respecting dependencies and
+  non-overlapping write scopes.'
+- '2026-08-10: still blocking — review gate: no independent review has been performed.'

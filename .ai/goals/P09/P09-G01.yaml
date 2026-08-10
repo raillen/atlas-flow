@@ -1,7 +1,7 @@
 id: P09-G01
 phase: P09
 title: Hardening
-state: DONE
+state: PLANNED
 objective: Harden security, recovery, accessibility, protocol compatibility and performance.
 constraints:
 - Follow Project Atlas authority order
@@ -23,4 +23,14 @@ gates:
   review: required
   documentation: required
 evidence: []
-history: []
+history:
+- '2026-08-10: reclassified DONE -> PLANNED after an implementation audit found acceptance
+  criteria that are not met.'
+- '2026-08-10: unmet — Depends on P06 and P08, both reopened.'
+- '2026-08-10: unmet — Performance budgets measured: no measurement is wired into CI.'
+- '2026-08-10: unmet — Supported platform packaging smoke tests pass: no packaging pipeline
+  exists; src-tauri is the unmodified template.'
+- '2026-08-10: unmet — Accessibility acceptance met: no accessibility test runs.'
+- '2026-08-10: still blocking — Depends on P08, which is blocked on model invocation.'
+- '2026-08-10: still blocking — No packaging pipeline, no performance measurement in CI, no
+  accessibility test run.'

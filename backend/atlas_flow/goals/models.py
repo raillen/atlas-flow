@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from pydantic import BaseModel, Field
 
 
@@ -94,6 +96,7 @@ class FallbackConfig(BaseModel):
 
 class ProjectAtlasContext(BaseModel):
     """Complete resolved Project Atlas context."""
+    root: Path
     project: ProjectProfile
     phases: list[Phase]
     agents: AgentManifest

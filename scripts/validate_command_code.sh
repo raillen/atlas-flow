@@ -47,14 +47,11 @@ done
 SKILL_COUNT="$(find "$skill_dir" -maxdepth 2 -name 'SKILL.md' | wc -l)"
 echo "  Total project skills: $SKILL_COUNT"
 
-echo "=== Project Atlas validation ==="
-python3 "$ROOT/scripts/validate_docs.py" || { echo "FAIL: docs validation" >&2; FAILED=1; }
-python3 "$ROOT/scripts/validate_goals.py" || { echo "FAIL: goals validation" >&2; FAILED=1; }
-
+# Documentation and Goal validation are run separately by validate_all.sh;
+# duplicating them here made the same failure appear twice under two names.
 if [ "$FAILED" -eq 0 ]; then
   echo "Command Code discoverability: PASS"
   echo "  agents=$AGENT_COUNT skills=$SKILL_COUNT"
-  echo "Project Atlas validation: PASS"
 else
   echo "Validation FAILED" >&2
   exit 1

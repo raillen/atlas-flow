@@ -53,5 +53,33 @@ Release
 - `.ai/orchestration/`
 - `.commandcode/`
 
+## Running it
+
+```sh
+# Backend
+uv run --project backend uvicorn atlas_flow.api.app:create_app --factory
+
+# Frontend, in another terminal
+pnpm --filter @atlas-flow/desktop dev
+```
+
+Open http://localhost:1420. The **Plan** tab lists the Goals declared in Git;
+starting one decomposes it into a task per acceptance criterion, runs each in its
+own git worktree, and switches to **Build**, which follows the run live.
+
+Run every check with `scripts/validate_all.sh`.
+
 ## Current state
-Documentation complete. Implementation begins at **P00-G01 — Repository Foundation**.
+
+Under active development. The Discuss → Goal → DAG → isolated execution →
+evidence path runs end to end, on durable state, with a real ACP client and real
+git worktrees.
+
+**No Goal is DONE**, and that is enforced: `scripts/validate_goals.py` fails CI if
+a Goal claims DONE without passing evidence for every gate it declares required.
+
+The largest open gap is that **no LLM is ever invoked** — the router picks model
+identifiers, but the CLI and ACP runners are the only paths that perform work.
+
+See `PROJECT_STATE.md` for per-Goal status and `VALIDATION_REPORT.md` for the
+current check results and the full list of known gaps.

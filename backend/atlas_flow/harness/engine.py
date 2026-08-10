@@ -3,14 +3,31 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC, datetime
 
-from atlas_flow.execution.models import Attempt, AttemptState, Task, TaskState
+from atlas_flow.execution.models import (
+    Attempt,
+    AttemptState,
+    DomainEvent,
+    EventType,
+    Task,
+    TaskState,
+)
 from atlas_flow.execution.persistence import Persistence
-from atlas_flow.harness.runner import Runner, RunnerConfig, RunnerResult
+from atlas_flow.harness.runner import Runner, RunnerCapability, RunnerConfig, RunnerResult
+
+
+class CapabilityError(Exception):
+    """Raised when a runner cannot satisfy the capabilities a task requires."""
 
 
 class Harness:
-    """Meta-harness: selects runners, manages session lifecycle, transcripts."""
+    """Meta-harness: selects runners, manages session lifecycle, transcripts.
+
+    Every attempt is persisted through its whole lifecycle. The scorecard and
+    the Build screen both read attempts back from the database, so an attempt
+    that only exists in memory is an attempt that never happened.
+    """
 
     def __init__(self, persistence: Persistence) -> None:
         self.db = persistence
@@ -23,16 +40,37 @@ class Harness:
     def resolve(self, name: str) -> Runner | None:
         return self._runners.get(name)
 
+    def runners(self) -> list[str]:
+        return sorted(self._runners)
+
+    def select_runner(self, required: list[RunnerCapability]) -> Runner:
+        """Pick a registered runner that satisfies every required capability."""
+        for name in sorted(self._runners):
+            runner = self._runners[name]
+            if len(runner.negotiate(required)) == len(set(required)):
+                return runner
+        wanted = ", ".join(sorted(set(required))) or "none"
+        raise CapabilityError(f"No registered runner provides all of: {wanted}")
+
     async def execute(
         self,
         runner_name: str,
         task: Task,
         prompt: str,
         config: RunnerConfig | None = None,
-    ) -> RunnerResult:
+        required: list[RunnerCapability] | None = None,
+    ) -> tuple[RunnerResult, Attempt]:
         runner = self.resolve(runner_name)
         if runner is None:
             raise ValueError(f"Unknown runner: {runner_name}")
+
+        if required:
+            missing = set(required) - set(runner.negotiate(required))
+            if missing:
+                raise CapabilityError(
+                    f"Runner {runner_name} is missing capabilities: "
+                    f"{', '.join(sorted(missing))}"
+                )
 
         config = config or RunnerConfig(model="default")
 
@@ -41,29 +79,94 @@ class Harness:
             run_id=task.run_id,
             runner=runner_name,
             model_id=config.model,
-            state=AttemptState.STARTING,
+        )
+        await self.db.save_attempt(attempt)
+
+        attempt = await self.db.record_attempt_transition(
+            attempt,
+            AttemptState.STARTING,
+            self._attempt_event(attempt, EventType.ATTEMPT_STARTED),
+        )
+        attempt = attempt.model_copy(update={"started_at": _now_iso()})
+        attempt = await self.db.record_attempt_transition(
+            attempt,
+            AttemptState.RUNNING,
+            self._attempt_event(attempt, EventType.STATE_CHANGE),
         )
 
-        task.state = TaskState.RUNNING
-        await self.db.save_task(task)
+        if task.state == TaskState.READY:
+            task = await self.db.record_task_transition(
+                task,
+                TaskState.RUNNING,
+                self._task_event(task, EventType.STATE_CHANGE),
+            )
 
         try:
             result = await runner.run(task.id, prompt, config)
-            attempt.state = AttemptState.COMPLETED if result.success else AttemptState.FAILED
-            if result.error:
-                attempt.error_msg = result.error
-            return result
         except asyncio.CancelledError:
-            attempt.state = AttemptState.CANCELLED
+            await self._close_attempt(
+                attempt, AttemptState.CANCELLED, EventType.ATTEMPT_FAILED
+            )
             raise
         except Exception as exc:
-            attempt.state = AttemptState.FAILED
-            attempt.error_msg = str(exc)
-            return RunnerResult(
-                task_id=task.id,
-                success=False,
+            attempt = await self._close_attempt(
+                attempt,
+                AttemptState.FAILED,
+                EventType.ATTEMPT_FAILED,
                 error=str(exc),
             )
+            return RunnerResult(task_id=task.id, success=False, error=str(exc)), attempt
+
+        if result.success:
+            attempt = await self._close_attempt(
+                attempt, AttemptState.COMPLETED, EventType.ATTEMPT_COMPLETED
+            )
+        else:
+            attempt = await self._close_attempt(
+                attempt,
+                AttemptState.FAILED,
+                EventType.ATTEMPT_FAILED,
+                error=result.error,
+            )
+        return result, attempt
+
+    async def _close_attempt(
+        self,
+        attempt: Attempt,
+        state: AttemptState,
+        event_type: EventType,
+        error: str = "",
+    ) -> Attempt:
+        finished = attempt.model_copy(
+            update={"completed_at": _now_iso(), "error_msg": error or None}
+        )
+        return await self.db.record_attempt_transition(
+            finished, state, self._attempt_event(finished, event_type)
+        )
+
+    @staticmethod
+    def _attempt_event(attempt: Attempt, event_type: EventType) -> DomainEvent:
+        return DomainEvent(
+            project_id="atlas-flow",
+            run_id=attempt.run_id,
+            type=event_type,
+            payload={
+                "attempt_id": attempt.id,
+                "task_id": attempt.task_id,
+                "runner": attempt.runner,
+                "model_id": attempt.model_id,
+                "previous": str(attempt.state),
+            },
+        )
+
+    @staticmethod
+    def _task_event(task: Task, event_type: EventType) -> DomainEvent:
+        return DomainEvent(
+            project_id="atlas-flow",
+            run_id=task.run_id,
+            type=event_type,
+            payload={"task_id": task.id, "previous": str(task.state)},
+        )
 
     async def cancel_task(self, task_id: str) -> bool:
         future = self._active_tasks.get(task_id)
@@ -71,3 +174,7 @@ class Harness:
             future.cancel()
             return True
         return False
+
+
+def _now_iso() -> str:
+    return datetime.now(UTC).isoformat()

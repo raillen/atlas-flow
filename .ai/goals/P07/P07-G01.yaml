@@ -1,9 +1,8 @@
 id: P07-G01
 phase: P07
 title: Verification and Evidence
-state: DONE
-objective: Implement deterministic gate execution, independent review and evidence
-  attachment.
+state: ACTIVE
+objective: Implement deterministic gate execution, independent review and evidence attachment.
 constraints:
 - Follow Project Atlas authority order
 - Do not silently weaken acceptance
@@ -23,4 +22,16 @@ gates:
   review: required
   documentation: required
 evidence: []
-history: []
+history:
+- '2026-08-10: reclassified DONE -> ACTIVE after an implementation audit found acceptance
+  criteria that are not met.'
+- '2026-08-10: unmet — Goal cannot reach DONE without required evidence: nothing enforces
+  this; every goal was set to DONE with an empty evidence list.'
+- '2026-08-10: unmet — Test/CI evidence captured: gates accept evidence in memory but it is
+  never persisted or attached to a goal.'
+- '2026-08-10: closed — A Goal cannot reach DONE without passing evidence for every required
+  gate: enforced by check_completion, by complete_goal, and by scripts/validate_goals.py in
+  CI.'
+- '2026-08-10: closed — Evidence is persisted and reloadable; gate evaluation no longer exempts
+  the review and documentation gates.'
+- '2026-08-10: still blocking — review gate: no independent review has been performed.'

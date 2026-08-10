@@ -1,9 +1,9 @@
 id: P08-G01
 phase: P08
 title: Routing, Budgets and Scorecards
-state: DONE
-objective: Implement role routing, fallbacks, cross-provider policy, budget limits
-  and local scorecards.
+state: ACTIVE
+objective: Implement role routing, fallbacks, cross-provider policy, budget limits and local
+  scorecards.
 constraints:
 - Follow Project Atlas authority order
 - Do not silently weaken acceptance
@@ -25,4 +25,18 @@ gates:
   review: required
   documentation: required
 evidence: []
-history: []
+history:
+- '2026-08-10: reclassified DONE -> ACTIVE after an implementation audit found acceptance
+  criteria that are not met.'
+- '2026-08-10: unmet — Runtime model discovery: probe_available exists but no caller discovers
+  models at runtime.'
+- '2026-08-10: unmet — Usage observations update scorecard: the scorecard is never fed from
+  real attempts because attempts are not persisted.'
+- '2026-08-10: unmet — The router selects model identifiers but no model is ever invoked;
+  there is no LLM client in the dependency set.'
+- '2026-08-10: closed — Routing decisions are applied per task by the GoalRunner and fed back
+  into the scorecard from real attempt outcomes.'
+- '2026-08-10: still blocking — No LLM client exists: the router selects model identifiers
+  but no model is invoked. Runtime model discovery is still unimplemented.'
+- '2026-08-10: still blocking — Budget limits are configured but not enforced during a run.'
+- '2026-08-10: still blocking — review gate: no independent review has been performed.'

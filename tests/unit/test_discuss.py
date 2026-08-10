@@ -1,5 +1,7 @@
 """P02 Decision Ledger and finalization tests."""
 
+from pathlib import Path
+
 import pytest
 
 from atlas_flow.discuss.finalize import FinalizationPipeline
@@ -144,9 +146,85 @@ class TestFinalization:
         DecisionLedger.propose(s, d)
         DecisionLedger.accept(s, d.id)
         artifacts = FinalizationPipeline.generate_artifacts(s)
-        assert len(artifacts) >= 1
-        assert any(d.id in k for k in artifacts)
+
+        # ADRs follow the repository's own naming convention so the generated
+        # file sits alongside the hand-written ones.
+        assert "docs/07-decisions/ADR-001-USE-PYTHON.md" in artifacts
+        assert "docs/01-architecture/DECISION_LEDGER.md" in artifacts
+
+        adr = artifacts["docs/07-decisions/ADR-001-USE-PYTHON.md"]
+        assert "# ADR-001: Use Python" in adr
+        assert "Python backend" in adr
+        assert "Ecosystem" in adr
+        assert s.id in adr
 
     def test_cannot_finalize_incomplete_draft(self, session: DiscussionSession) -> None:
         with pytest.raises(RuntimeError, match="Cannot finalize"):
             FinalizationPipeline.generate_artifacts(session)
+
+    def test_write_artifacts_creates_real_files(self, tmp_path: Path) -> None:
+        session = _complete_session()
+        result = FinalizationPipeline.write_artifacts(session, tmp_path)
+
+        assert result.adr_count == 1
+        adr = tmp_path / "docs/07-decisions/ADR-001-USE-PYTHON.md"
+        ledger = tmp_path / "docs/01-architecture/DECISION_LEDGER.md"
+        assert adr.is_file()
+        assert ledger.is_file()
+        assert "Use Python" in ledger.read_text(encoding="utf-8")
+        assert set(result.paths) == {str(adr), str(ledger)}
+
+    def test_write_artifacts_does_not_clobber_existing_documentation(
+        self, tmp_path: Path
+    ) -> None:
+        """Re-finalizing must not destroy documentation someone edited."""
+        session = _complete_session()
+        ledger = tmp_path / "docs/01-architecture/DECISION_LEDGER.md"
+        ledger.parent.mkdir(parents=True)
+        ledger.write_text("# Hand written\n", encoding="utf-8")
+
+        result = FinalizationPipeline.write_artifacts(session, tmp_path)
+
+        assert ledger.read_text(encoding="utf-8") == "# Hand written\n"
+        assert str(ledger) not in result.paths
+
+        overwritten = FinalizationPipeline.write_artifacts(
+            session, tmp_path, overwrite=True
+        )
+        assert str(ledger) in overwritten.paths
+        assert "Use Python" in ledger.read_text(encoding="utf-8")
+
+    def test_rejected_decisions_are_not_written(self, tmp_path: Path) -> None:
+        session = _complete_session()
+        rejected = DecisionCandidate(
+            title="Use Perl", statement="no", rationale="no", requires_adr=True
+        )
+        DecisionLedger.propose(session, rejected)
+        DecisionLedger.reject(session, rejected.id)
+
+        FinalizationPipeline.write_artifacts(session, tmp_path)
+        written = [p.name for p in (tmp_path / "docs/07-decisions").glob("*.md")]
+        assert written == ["ADR-001-USE-PYTHON.md"]
+
+
+def _complete_session() -> DiscussionSession:
+    session = DiscussionSession(project_id="atlas-flow")
+    session.draft = type(session.draft)(
+        **{
+            domain: Completeness.SUFFICIENT
+            for domain in (
+                "product", "architecture", "ux", "data", "security",
+                "quality", "operations", "ai_orchestration", "roadmap",
+            )
+        }
+    )
+    decision = DecisionCandidate(
+        title="Use Python",
+        statement="Python backend",
+        rationale="Ecosystem",
+        affected_domains=["architecture"],
+        requires_adr=True,
+    )
+    DecisionLedger.propose(session, decision)
+    DecisionLedger.accept(session, decision.id)
+    return session

@@ -1,7 +1,7 @@
 id: P01-G01
 phase: P01
 title: Project Atlas Integration
-state: DONE
+state: ACTIVE
 objective: Implement compatibility layer that loads and validates Project Atlas manifests,
   Goals and registries.
 constraints:
@@ -21,8 +21,14 @@ gates:
   tests: required
   review: required
   documentation: required
-evidence:
-- build: ruff/mypy clean, 8 loader tests pass (unit)
-- test: AtlasLoadError on missing/incompatible manifests, resolves all 11 goals + agents + skills + recipes + model policy
-- docs: ATLAS linked, no forked semantics
-history: []
+evidence: []
+history:
+- '2026-08-10: reclassified DONE -> ACTIVE after an implementation audit found acceptance
+  criteria that are not met.'
+- '2026-08-10: unmet — Reject incompatible/invalid manifest with actionable error: validate_compatibility
+  ignores its ctx argument and reads Path.cwd(), so it validates whatever directory the process
+  happens to run from rather than the resolved project.'
+- '2026-08-10: closed — validate_compatibility now reads the resolved project''s manifest
+  instead of Path.cwd(); ProjectAtlasContext carries its root. Regression test runs the loader
+  from an unrelated directory.'
+- '2026-08-10: still blocking — review gate: no independent review has been performed.'

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import yaml
 
+from atlas_flow.bootstrap import detect_framework
 from atlas_flow.goals.models import (
     AgentManifest,
     AutonomyPolicy,
@@ -98,6 +99,7 @@ def resolve_project(root: Path) -> ProjectAtlasContext:
     Project Atlas format exactly.
     """
     return ProjectAtlasContext(
+        root=root,
         project=load_project_profile(root),
         phases=load_goals(root),
         agents=load_agent_manifest(root),
@@ -113,13 +115,18 @@ def resolve_project(root: Path) -> ProjectAtlasContext:
 def validate_compatibility(ctx: ProjectAtlasContext) -> None:
     """Detect incompatible Project Atlas version before proceeding.
 
-    The framework version is read from PROJECT_MANIFEST.yaml.
-    Currently we only accept 0.1.0 of project-atlas-framework.
+    The framework version is read from the PROJECT_MANIFEST.yaml of the
+    resolved project — never from the process working directory, which is
+    unrelated to which project was opened. Currently we only accept 0.1.x of
+    project-atlas-framework.
     """
-    from atlas_flow.bootstrap import detect_framework
+    try:
+        fw = detect_framework(ctx.root)
+    except (FileNotFoundError, ValueError) as exc:
+        raise AtlasLoadError(
+            f"Cannot read framework version for project at {ctx.root}: {exc}"
+        ) from exc
 
-    root = Path.cwd()
-    fw = detect_framework(root)
     if fw.name != "project-atlas-framework":
         raise AtlasLoadError(f"Expected project-atlas-framework, got {fw.name}")
     major, minor, *_ = fw.version.split(".")

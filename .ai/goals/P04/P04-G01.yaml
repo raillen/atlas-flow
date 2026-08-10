@@ -1,7 +1,7 @@
 id: P04-G01
 phase: P04
 title: Atlas Harness
-state: DONE
+state: ACTIVE
 objective: Implement runner abstraction, ACP client and generic CLI runner.
 constraints:
 - Follow Project Atlas authority order
@@ -22,4 +22,20 @@ gates:
   review: required
   documentation: required
 evidence: []
-history: []
+history:
+- '2026-08-10: reclassified DONE -> ACTIVE after an implementation audit found acceptance
+  criteria that are not met.'
+- '2026-08-10: unmet — ACP session lifecycle works against fixture agent: no ACP implementation
+  exists in the codebase.'
+- '2026-08-10: unmet — Permissions are surfaced: not implemented.'
+- '2026-08-10: unmet — Runner capability negotiation works: capabilities are declared but
+  never negotiated against a task''s requirements.'
+- '2026-08-10: closed — ACP client implemented over JSON-RPC/stdio with session lifecycle,
+  capability negotiation and bidirectional requests.'
+- '2026-08-10: closed — Permission requests are surfaced to a policy and denied by default;
+  AcpRunner reports denials as task failure.'
+- '2026-08-10: closed — Harness negotiates required capabilities and refuses a runner that
+  cannot satisfy them.'
+- '2026-08-10: still blocking — MCP forwarding through ACP is not implemented.'
+- '2026-08-10: still blocking — Terminal and file-event streaming are not implemented.'
+- '2026-08-10: still blocking — review gate: no independent review has been performed.'
