@@ -2,8 +2,8 @@
 
 **Project:** Atlas Flow  
 **Framework:** Project Atlas Framework 0.1.0  
-**Status:** P00-P09 DONE — hardened with fault injection, security guard, a11y labels, performance instrumentation  
-**Current phase:** P09 — Hardening (DONE)
+**Status:** ALL GOALS DONE — Atlas Flow 0.1.0 complete  
+**Current phase:** P10 — Beta and 1.0 Validation (DONE)
 
 ## Approved direction
 - Atlas Flow is generic; no Brasa Engine-specific behavior.
@@ -24,4 +24,4 @@
 - GPT-5.6 Luna is used for efficient/high-volume roles when available in Command Code.
 
 ## Next action
-Proceed to P10 Beta Release — dogfood on project classes, user guide, release gates.
+Release 0.1.0 — all 10 phases complete. See docs/06-user-guide/ for getting started.

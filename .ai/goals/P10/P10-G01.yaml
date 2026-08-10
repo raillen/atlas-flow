@@ -1,7 +1,7 @@
 id: P10-G01
 phase: P10
 title: Beta and 1.0 Validation
-state: DRAFT
+state: DONE
 objective: Dogfood Atlas Flow on multiple project classes and prepare stable release.
 constraints:
 - Follow Project Atlas authority order
