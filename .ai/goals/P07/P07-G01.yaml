@@ -1,7 +1,7 @@
 id: P07-G01
 phase: P07
 title: Verification and Evidence
-state: DRAFT
+state: DONE
 objective: Implement deterministic gate execution, independent review and evidence
   attachment.
 constraints:

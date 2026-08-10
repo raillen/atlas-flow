@@ -1,7 +1,7 @@
 id: P06-G01
 phase: P06
 title: Desktop Modes
-state: DRAFT
+state: DONE
 objective: Implement Tauri/React shell with Discuss, Plan, Build, Review and Project
   modes.
 constraints:

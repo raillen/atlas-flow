@@ -2,7 +2,7 @@
 
 **Project:** Atlas Flow  
 **Framework:** Project Atlas Framework 0.1.0  
-**Status:** MVP ready — P00-P05 DONE  
+**Status:** P00-P08 DONE — Desktop shell with 5-mode navigation, verification gates, model routing  
 **Current phase:** P05 — Planner & DAG execution (MVP complete)
 
 ## Approved direction

@@ -1,7 +1,7 @@
 id: P08-G01
 phase: P08
 title: Routing, Budgets and Scorecards
-state: DRAFT
+state: DONE
 objective: Implement role routing, fallbacks, cross-provider policy, budget limits
   and local scorecards.
 constraints:
