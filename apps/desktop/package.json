@@ -13,8 +13,15 @@
     "@atlas-flow/ag-ui-client": "workspace:*",
     "@atlas-flow/domain-types": "workspace:*",
     "@atlas-flow/ui": "workspace:*",
+    "@radix-ui/react-slot": "^1.3.3",
+    "@tailwindcss/vite": "^4.3.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.540.0",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.5.0",

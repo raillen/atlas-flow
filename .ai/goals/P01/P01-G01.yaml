@@ -1,7 +1,7 @@
 id: P01-G01
 phase: P01
 title: Project Atlas Integration
-state: DRAFT
+state: DONE
 objective: Implement compatibility layer that loads and validates Project Atlas manifests,
   Goals and registries.
 constraints:
@@ -21,5 +21,8 @@ gates:
   tests: required
   review: required
   documentation: required
-evidence: []
+evidence:
+- build: ruff/mypy clean, 8 loader tests pass (unit)
+- test: AtlasLoadError on missing/incompatible manifests, resolves all 11 goals + agents + skills + recipes + model policy
+- docs: ATLAS linked, no forked semantics
 history: []

@@ -1,7 +1,7 @@
 id: P05-G01
 phase: P05
 title: Goal Planner and DAG Execution
-state: DRAFT
+state: DONE
 objective: Implement Goal decomposition contract, DAG validation, worktree isolation,
   concurrency and integration.
 constraints:

@@ -20,6 +20,12 @@ export interface DomainEvent<TPayload = unknown> {
   payload: TPayload;
 }
 
+export interface AgUiMessage {
+  type: string;
+  timestamp: string;
+  payload: Record<string, unknown>;
+}
+
 export function isAtlasEventType(type: string): boolean {
   return ATLAS_EVENT_NAMESPACES.some((ns) => type === ns || type.startsWith(`${ns}.`));
 }
@@ -42,4 +48,43 @@ export function createDomainEvent<TPayload>(
     version: 1,
     payload,
   };
+}
+
+export class AgUiClient {
+  private ws: WebSocket | null = null;
+  private _onMessage: ((msg: AgUiMessage) => void) | null = null;
+  private _onStatus: ((connected: boolean) => void) | null = null;
+
+  get connected() {
+    return this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  connect(sessionId: string, serverUrl: string) {
+    if (this.ws?.readyState === WebSocket.OPEN) return;
+    const ws = new WebSocket(`${serverUrl}/ws/${sessionId}`);
+    this.ws = ws;
+    ws.onopen = () => this._onStatus?.(true);
+    ws.onclose = () => this._onStatus?.(false);
+    ws.onerror = () => ws.close();
+    ws.onmessage = (e) => {
+      try {
+        const msg: AgUiMessage = JSON.parse(e.data as string);
+        this._onMessage?.(msg);
+      } catch { /* ignore */ }
+    };
+  }
+
+  disconnect() {
+    this.ws?.close();
+    this.ws = null;
+  }
+
+  onMessage(fn: (msg: AgUiMessage) => void) { this._onMessage = fn; }
+  onStatus(fn: (connected: boolean) => void) { this._onStatus = fn; }
+
+  send(message: Record<string, unknown>) {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(message));
+    }
+  }
 }

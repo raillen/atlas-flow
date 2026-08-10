@@ -1,7 +1,7 @@
 id: P04-G01
 phase: P04
 title: Atlas Harness
-state: DRAFT
+state: DONE
 objective: Implement runner abstraction, ACP client and generic CLI runner.
 constraints:
 - Follow Project Atlas authority order

@@ -2,9 +2,8 @@
 
 **Project:** Atlas Flow  
 **Framework:** Project Atlas Framework 0.1.0  
-**Status:** P00-G01 DONE — repository foundation complete  
-**Current phase:** P00 — Foundation  
-**Current Goal:** P00-G01 — Repository Foundation
+**Status:** MVP ready — P00-P05 DONE  
+**Current phase:** P05 — Planner & DAG execution (MVP complete)
 
 ## Approved direction
 - Atlas Flow is generic; no Brasa Engine-specific behavior.
@@ -25,4 +24,4 @@
 - GPT-5.6 Luna is used for efficient/high-volume roles when available in Command Code.
 
 ## Next action
-Review foundation commit; proceed to P01-G01 (Discuss/Chat mode scaffold) after independent review gate.
+Review MVP; launch backend (uvicorn atlas_flow.api.app:create_app) and test Discuss UI at localhost:1420.
