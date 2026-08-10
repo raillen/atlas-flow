@@ -1,7 +1,7 @@
 id: P09-G01
 phase: P09
 title: Hardening
-state: DRAFT
+state: DONE
 objective: Harden security, recovery, accessibility, protocol compatibility and performance.
 constraints:
 - Follow Project Atlas authority order

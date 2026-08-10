@@ -2,8 +2,8 @@
 
 **Project:** Atlas Flow  
 **Framework:** Project Atlas Framework 0.1.0  
-**Status:** P00-P08 DONE — Desktop shell with 5-mode navigation, verification gates, model routing  
-**Current phase:** P05 — Planner & DAG execution (MVP complete)
+**Status:** P00-P09 DONE — hardened with fault injection, security guard, a11y labels, performance instrumentation  
+**Current phase:** P09 — Hardening (DONE)
 
 ## Approved direction
 - Atlas Flow is generic; no Brasa Engine-specific behavior.
@@ -24,4 +24,4 @@
 - GPT-5.6 Luna is used for efficient/high-volume roles when available in Command Code.
 
 ## Next action
-Review MVP; launch backend (uvicorn atlas_flow.api.app:create_app) and test Discuss UI at localhost:1420.
+Proceed to P10 Beta Release — dogfood on project classes, user guide, release gates.

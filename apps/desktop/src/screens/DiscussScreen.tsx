@@ -136,7 +136,7 @@ export function DiscussScreen({ sessionId, serverUrl }: Props) {
         </span>
       </div>
 
-      <div style={feedStyle}>
+      <div style={feedStyle} role="log" aria-live="polite" aria-label="Discussion messages">
         {events.length === 0 && (
           <div style={{ color: "#94a3b8", fontStyle: "italic", padding: "0.5rem" }}>
             No messages yet. Start the conversation.
@@ -144,7 +144,7 @@ export function DiscussScreen({ sessionId, serverUrl }: Props) {
         )}
         {events.map((evt, i) => (
           <div key={i} style={eventStyle}>
-            <span style={{ marginRight: "0.5rem" }}>
+            <span style={{ marginRight: "0.5rem" }} aria-hidden="true">
               {eventLabel[evt.type] ?? "●"}
             </span>
             <span style={{ color: "#64748b", fontSize: "0.75rem" }}>
@@ -159,12 +159,17 @@ export function DiscussScreen({ sessionId, serverUrl }: Props) {
       </div>
 
       <div style={inputRowStyle}>
+        <label htmlFor="discuss-input" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}>
+          Type a message
+        </label>
         <input
+          id="discuss-input"
           style={inputStyle}
           placeholder="Type a message or decision..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
+          aria-label="Message input"
         />
         <button style={buttonStyle} onClick={handleSend}>
           Send
