@@ -1,1 +1,5 @@
-"""Atlas Flow runners subsystem (scaffold — implemented by its own Goal)."""
+"""Atlas Flow runners — CLI runner, ACP client (GAP-05)."""
+
+from atlas_flow.runners.cli import CliRunner
+
+__all__ = ["CliRunner"]
