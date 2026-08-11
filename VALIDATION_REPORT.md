@@ -17,7 +17,8 @@ Generated: 2026-08-10
 | Command Code | `scripts/validate_command_code.sh` | PASS — 9 agents, 15 skills |
 | Desktop shell | `cargo fmt`, `clippy -D warnings`, `cargo test` | PASS — 9 tests |
 | Dependency audit | `sh scripts/audit_dependencies.sh` | PASS — no vulnerabilities; 17 unmaintained-crate warnings from Tauri's GTK3 chain |
-| Packaging | `sh scripts/package_smoke.sh` | PASS — deb and AppImage, CycloneDX SBOM (840 components), SHA256SUMS, GPG signature |
+| Packaging | `sh scripts/package_smoke.sh` | PASS — deb and AppImage, SBOM (840 components), SHA256SUMS, GPG signature verified from a clean keyring |
+| Packaged app | AppImage launched on a real desktop | PASS — ran a Goal to 5 succeeded tasks, 53 models discovered |
 | Every gate at once | `sh scripts/bootstrap.sh && sh scripts/run_gates.sh` | PASS — 12 gates |
 
 Run everything with `scripts/validate_all.sh`.
@@ -96,7 +97,7 @@ These are tracked in the Goal files, not hidden:
 - **macOS and Windows are out of scope** by an owner decision on 2026-08-11, recorded as non-goals on P06, P09 and P10. The supported platform is Linux on desktop, x86_64.
 - **The screen-reader walkthrough is deferred** by the same decision. The automated rendered-DOM audit stays required and passing (P09).
 - **No screen-reader walkthrough.** Automated rules catch structure, not whether the result is comprehensible when read aloud (P09).
-- **No project signing key exists.** The signing mechanism works and verifies itself, but with no key the artefacts are effectively unsigned (P10).
+- **The signing key has no passphrase**, so it works unattended and anyone with read access to the maintainer's home directory can sign as the project. A deliberate trade, recorded rather than hidden (P10).
 - **17 unmaintained-crate warnings** from the gtk-rs GTK3 bindings Tauri 2 depends on. Reported by the audit rather than swallowed; nothing can be done from this repository.
 - **The review gate is PARTIAL on every Goal.** Two reviews on 2026-08-11: FAILED, then PARTIAL. Both rounds of findings are closed except the ones above, but closing a finding does not move the gate — that takes another review (P00–P10).
 

@@ -28,16 +28,16 @@ passing evidence for every gate it declares required.
 | P07 | Verification and Evidence | ACTIVE | review gate |
 | P08 | Routing, Budgets and Scorecards | ACTIVE | review gate |
 | P09 | Hardening | ACTIVE | review gate |
-| P10 | Beta and 1.0 Validation | ACTIVE | no signing key, review gate |
+| P10 | Beta and 1.0 Validation | ACTIVE | review gate |
 
 Two independent reviews were performed on 2026-08-11 by a different model, as
 required by the model-diversity rule: the author of the work cannot be its
 reviewer. The first failed all eleven Goals; the second moved them to PARTIAL.
 
-Both rounds of findings are now closed, except that no project signing key
-exists. macOS/Windows support and the manual screen-reader walkthrough were
-scoped out by the owner and are recorded as non-goals on the Goals they
-affected. Closing findings does not move the gate — that takes another review.
+Both rounds of findings are now closed. macOS/Windows support and the manual
+screen-reader walkthrough were scoped out by the owner and are recorded as
+non-goals on the Goals they affected. Closing findings does not move the gate —
+that takes another review.
 
 ## What works end to end
 
@@ -83,11 +83,10 @@ Every acceptance criterion across P00–P10 is now either met with evidence or
 recorded in its Goal's history as still blocking. What remains before any Goal
 can be marked DONE:
 
-1. **A project signing key.** The mechanism works and verifies itself; no key
-   exists to sign with, so released artefacts are still effectively unsigned (P10).
-2. **Another independent review.** Every local gate passes and both rounds of
-   findings are closed, so the work is ready to be looked at again — by a
-   different model, not by the one that wrote it.
+1. **Another independent review.** Every local gate passes, both rounds of
+   findings are closed, and the packaged AppImage was launched and drove a real
+   Goal to five succeeded tasks. Nothing else stands between the work and a
+   verdict — and the verdict is not the implementer's to give.
 
 Deferred by owner decision on 2026-08-11, and recorded as non-goals rather than
 quietly dropped: macOS and Windows support (P06, P09, P10), and the manual

@@ -78,6 +78,37 @@ and the record of what is inside it never drift apart:
   success. With no key configured it prints `unsigned` and carries on — an
   unsigned release that claims to be signed is worse than one that admits it.
 
+## Signing and verifying
+
+The release key is `Atlas Flow Release Signing <raillen@atlas-flow.dev>`,
+fingerprint `1AAF FA26 944C 1D56 B850  AAE8 C4EC F972 E0FF C81D`, expiring
+2028-08-10. Its **public half** is committed at
+[`docs/09-references/RELEASE_SIGNING_KEY.asc`](../09-references/RELEASE_SIGNING_KEY.asc);
+the private half lives only in the maintainer's keyring and is never in this
+repository — `.gitignore` refuses the shapes a private key comes in.
+
+To sign a build:
+
+```sh
+ATLAS_SIGNING_KEY=C4ECF972E0FFC81D sh scripts/package_smoke.sh
+```
+
+To verify one, as anybody downloading it would:
+
+```sh
+gpg --import docs/09-references/RELEASE_SIGNING_KEY.asc
+gpg --verify SHA256SUMS.asc SHA256SUMS
+sha256sum -c SHA256SUMS
+```
+
+The key carries **no passphrase**, so scripts and CI can use it unattended. That
+is a deliberate trade: anyone who can read the maintainer's home directory can
+sign as the project. Add one with `gpg --change-passphrase C4ECF972E0FFC81D`
+and give CI a separate exported key if that trade stops being acceptable.
+
+Renewal, before 2028-08-10:
+`gpg --quick-set-expire 1AAFFA26944C1D56B850AAE8C4ECF972E0FFC81D 2y`
+
 ## AppImage
 
 Two things in `linuxdeploy` — not in the application — stood between this

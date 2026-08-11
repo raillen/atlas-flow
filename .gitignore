@@ -46,3 +46,11 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# Never a private key. The release signing key lives in the user's keyring;
+# only the public half belongs in the repository.
+*.gpg
+*.pgp
+secring.*
+*private*.asc
+.gnupg/

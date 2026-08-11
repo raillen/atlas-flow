@@ -91,3 +91,12 @@ history:
   linuxdeploy ships a `strip` older than the .relr.dyn relocation sections current toolchains
   emit, so it failed on every system library it copied. NO_STRIP=1 is exported alongside APPIMAGE_EXTRACT_AND_RUN=1;
   the full build now runs end to end with no manual step.'
+- '2026-08-11: closed — release signing is real, not just a mechanism. Project key C4ECF972E0FFC81D
+  (ed25519, expires 2028-08-10) created by the owner; the public half is committed at docs/09-references/RELEASE_SIGNING_KEY.asc
+  and the private half never enters the repository. The whole chain was exercised from a clean
+  keyring: import, gpg --verify, sha256sum -c, all pass.'
+- '2026-08-11: closed — the packaged AppImage was launched on a real desktop session, loaded
+  the 11 Goals from Git, started P00-G01 with one click, and drove it to 5 SUCCEEDED tasks
+  and 5 completed attempts. Live model discovery reported 53 models reachable through Command
+  Code. This is the product working from a distributed artefact rather than from a development
+  checkout.'

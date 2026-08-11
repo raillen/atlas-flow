@@ -62,7 +62,8 @@ moves.
 ## Release integrity
 
 `SHA256SUMS` covers the `.deb`, the AppImage and the SBOM, and is signed with a
-detached GPG signature when `ATLAS_SIGNING_KEY` names a key. The signature is
+detached GPG signature by the project key `C4ECF972E0FFC81D`, whose public half
+is committed at `docs/09-references/RELEASE_SIGNING_KEY.asc`. The signature is
 over the digest list rather than each artefact — that is what a verifier
 checks, and it cannot be sidestepped by swapping a file the list already names.
 The packaging script verifies its own signature before reporting success, and
@@ -72,8 +73,9 @@ prints `unsigned` when no key is configured rather than staying quiet about it.
 
 - No fuzzing of the ACP wire format beyond the malformed cases in the fixture
   agent.
-- No project signing key exists, so released artefacts are effectively
-  unsigned even though the mechanism works.
+- The signing key has no passphrase, so it is usable unattended and anyone who
+  can read the maintainer's home directory can sign as the project. A deliberate
+  trade, recorded rather than hidden.
 - No independent security review, as opposed to the code review.
 - The AG-UI WebSocket is unauthenticated. The backend binds localhost, so the
   boundary is the machine: any local process can subscribe to run events.

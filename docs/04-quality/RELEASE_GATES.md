@@ -15,14 +15,15 @@ so.
 | Installation tests | **PASS** | `sh scripts/package_smoke.sh` builds and verifies both supported bundles — `.deb` and AppImage, the latter unpacked and checked for its executable — plus SBOM, checksums and signature. |
 | Project Atlas compatibility | **PASS** | Three project categories built and executed end to end; see [the compatibility matrix](../09-references/COMPATIBILITY_MATRIX.md). |
 | Updated documentation | **PASS** | `scripts/validate_docs.py` checks every internal link; canonical docs are updated with each change. |
-| SBOM, checksums and signature | **PASS** (no project key) | `scripts/package_smoke.sh` writes a CycloneDX 1.5 SBOM (840 components), `SHA256SUMS` over the `.deb`, AppImage and SBOM, and a detached GPG signature when `ATLAS_SIGNING_KEY` is set. Exercised end to end with a throwaway key and verified. A project key still has to exist. |
+| SBOM, checksums and signature | **PASS** | `scripts/package_smoke.sh` writes a CycloneDX 1.5 SBOM (840 components), `SHA256SUMS` over the `.deb`, AppImage and SBOM, and a detached GPG signature. The project key exists (`C4ECF972E0FFC81D`), its public half is committed, and the whole chain — import, verify, `sha256sum -c` — was exercised from a clean keyring. |
 | Independent review | **FAIL** | Re-review performed on 2026-08-11 by a model different from the Opus 5 implementer. All local canonical gates now pass, including rendered accessibility (56 tests) and packaging; the gate remains FAIL until signing, AppImage and screen-reader evidence are complete and a final re-review is performed. |
 
 The review row is the reviewer's own wording and verdict, left as written. What
-has changed since it was written: the AppImage is built and verified, signing is
-implemented and self-verifying, and macOS/Windows and the screen-reader
-walkthrough are an owner decision rather than an omission. The verdict is still
-theirs to move.
+has changed since it was written: the AppImage is built and verified, releases
+are signed with a real project key whose verification chain was exercised from a
+clean keyring, the packaged AppImage was launched and drove a real run, and
+macOS/Windows and the screen-reader walkthrough are an owner decision rather
+than an omission. The verdict is still theirs to move.
 
 ## Findings from the 2026-08-11 reviews
 
@@ -37,7 +38,7 @@ Two rounds, both by a model other than the implementer: FAILED, then PARTIAL.
 | Windows/macOS bundles unconfigured | Closed — targets and `.ico`/`.icns` icons |
 | ACP does not resume a session | Closed — resumption with a stale-id fallback |
 | No DOM/screen-reader audit | Partly closed — axe-core/DOM suite passes 11 tests; the manual screen-reader walkthrough is deferred by owner decision |
-| Artefacts unsigned | Closed as a mechanism — detached GPG signature over `SHA256SUMS`, verified by the script itself |
+| Artefacts unsigned | Closed — project key created, releases signed, verification exercised from a clean keyring |
 | AppImage unverified | Closed — `APPIMAGE_EXTRACT_AND_RUN=1` removes the FUSE requirement; built, unpacked, checked |
 | Dependency audit not reproducible locally | Closed — `scripts/audit_dependencies.sh`, used by CI and by `run_gates.sh` |
 | No hosted result for Windows/macOS | Withdrawn — macOS and Windows are out of scope by owner decision (2026-08-11) |
