@@ -1,0 +1,62 @@
+/*
+ * Global rules that inline styles cannot express: focus indication, motion
+ * preferences and text scaling. Everything else is a token in theme.ts.
+ */
+
+:root {
+  color-scheme: light;
+  --focus-ring: #1e40af;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* rem-based sizing throughout, so the OS text-size setting is respected. */
+  font-size: 100%;
+  line-height: 1.5;
+}
+
+body {
+  margin: 0;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+/*
+ * A visible focus ring on every interactive element. Browsers show one by
+ * default, but the default is easy to lose against a light surface, and
+ * keyboard navigation is unusable the moment focus is invisible.
+ */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Never remove the ring; only replace it. */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+button,
+[role="tab"] {
+  font: inherit;
+}
+
+/* Live regions and long logs must not trap a pointer-free reader. */
+[aria-live] {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --focus-ring: #000000;
+  }
+}

@@ -1,4 +1,5 @@
 import type { FC, ReactNode } from "react";
+import { surface, text, tone, toneFor } from "../theme";
 
 export const screen: React.CSSProperties = {
   padding: "1.5rem 2rem",
@@ -9,46 +10,39 @@ export const screen: React.CSSProperties = {
 
 export const card: React.CSSProperties = {
   padding: "0.875rem 1rem",
-  border: "1px solid #e2e8f0",
+  border: `1px solid ${surface.border}`,
   borderRadius: 8,
-  background: "white",
+  background: surface.card,
 };
 
 export const muted: React.CSSProperties = {
-  color: "#64748b",
+  color: text.muted,
   fontSize: "0.8rem",
 };
 
-const VERDICT_COLORS: Record<string, string> = {
-  PASSED: "#059669",
-  SUCCEEDED: "#059669",
-  COMPLETED: "#059669",
-  DONE: "#059669",
-  FAILED: "#dc2626",
-  BLOCKED: "#dc2626",
-  PENDING: "#f59e0b",
-  RUNNING: "#2563eb",
-  READY: "#f59e0b",
-  ACTIVE: "#2563eb",
-  PLANNED: "#94a3b8",
+/**
+ * Colour is never the only cue: the badge always renders its label, so a
+ * grayscale screenshot or a colour-blind reading loses nothing.
+ */
+export const StatusBadge: FC<{ value: string }> = ({ value }) => {
+  const colours = tone[toneFor(value)];
+  return (
+    <span
+      style={{
+        color: colours.fg,
+        background: colours.bg,
+        border: `1px solid ${colours.border}`,
+        borderRadius: 999,
+        padding: "0.1rem 0.5rem",
+        fontSize: "0.7rem",
+        fontWeight: 600,
+        letterSpacing: "0.02em",
+      }}
+    >
+      {value}
+    </span>
+  );
 };
-
-export const StatusBadge: FC<{ value: string }> = ({ value }) => (
-  <span
-    style={{
-      color: VERDICT_COLORS[value] ?? "#475569",
-      background: `${VERDICT_COLORS[value] ?? "#475569"}14`,
-      border: `1px solid ${VERDICT_COLORS[value] ?? "#475569"}33`,
-      borderRadius: 999,
-      padding: "0.1rem 0.5rem",
-      fontSize: "0.7rem",
-      fontWeight: 600,
-      letterSpacing: "0.02em",
-    }}
-  >
-    {value}
-  </span>
-);
 
 export const SectionHeading: FC<{ children: ReactNode; actions?: ReactNode }> = ({
   children,
@@ -74,8 +68,11 @@ export const AsyncPanel: FC<{
 }> = ({ loading, error, isEmpty, emptyMessage, onRetry, children }) => {
   if (error) {
     return (
-      <div style={{ ...card, borderColor: "#fecaca", background: "#fef2f2" }} role="alert">
-        <strong style={{ color: "#b91c1c" }}>Could not reach the backend</strong>
+      <div
+        style={{ ...card, borderColor: tone.negative.border, background: tone.negative.bg }}
+        role="alert"
+      >
+        <strong style={{ color: text.danger }}>Could not reach the backend</strong>
         <p style={muted}>{error}</p>
         {onRetry && (
           <button type="button" onClick={onRetry} style={buttonStyle}>
@@ -101,8 +98,9 @@ export const AsyncPanel: FC<{
 export const buttonStyle: React.CSSProperties = {
   padding: "0.4rem 0.8rem",
   borderRadius: 6,
-  border: "1px solid #cbd5e1",
-  background: "white",
+  border: `1px solid ${tone.neutral.border}`,
+  background: surface.card,
+  color: text.primary,
   cursor: "pointer",
   fontSize: "0.8rem",
   fontWeight: 500,

@@ -13,20 +13,36 @@
     "withGlobalTauri": true,
     "windows": [
       {
+        "label": "main",
         "title": "Atlas Flow",
         "width": 1200,
         "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
         "resizable": true,
         "fullscreen": false
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost http://localhost:8000 ws://localhost:8000 http://127.0.0.1:8000 ws://127.0.0.1:8000 ws://localhost:1420"
     }
   },
-  "plugins": {
-    "shell": {
-      "open": true
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "appimage"],
+    "category": "DeveloperTool",
+    "shortDescription": "Goal-driven orchestration runtime for coding agents",
+    "longDescription": "Atlas Flow turns a Project Atlas Goal into planned, isolated, verified work: it decomposes a Goal into tasks, runs each in its own git worktree through a coding agent, and records the evidence every gate requires.",
+    "copyright": "Atlas Flow Contributors",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/icon.png"
+    ],
+    "linux": {
+      "deb": {
+        "depends": []
+      }
     }
   }
 }

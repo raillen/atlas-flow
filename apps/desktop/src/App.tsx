@@ -5,6 +5,7 @@ import { PlanScreen } from "./screens/PlanScreen";
 import { BuildScreen } from "./screens/BuildScreen";
 import { ReviewScreen } from "./screens/ReviewScreen";
 import { ProjectScreen } from "./screens/ProjectScreen";
+import { accent, surface, text } from "./theme";
 
 export const TABS = ["discuss", "plan", "build", "review", "project"] as const;
 export type Tab = (typeof TABS)[number];
@@ -44,8 +45,8 @@ const shellStyle: React.CSSProperties = {
   height: "100dvh",
   display: "flex",
   flexDirection: "column",
-  background: "#f8fafc",
-  color: "#0f172a",
+  background: surface.raised,
+  color: text.primary,
 };
 
 const navStyle: React.CSSProperties = {
@@ -53,7 +54,7 @@ const navStyle: React.CSSProperties = {
   alignItems: "center",
   gap: "0.25rem",
   padding: "0.5rem 1rem",
-  borderBottom: "1px solid #e2e8f0",
+  borderBottom: `1px solid ${surface.border}`,
   background: "white",
 };
 
@@ -65,12 +66,12 @@ const tabBase: React.CSSProperties = {
   cursor: "pointer",
   fontSize: "0.85rem",
   fontWeight: 500,
-  color: "#475569",
+  color: text.muted,
 };
 
 const tabActive: React.CSSProperties = {
   ...tabBase,
-  background: "#6366f1",
+  background: accent.base,
   color: "white",
 };
 

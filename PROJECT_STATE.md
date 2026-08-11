@@ -3,7 +3,7 @@
 **Project:** Atlas Flow
 **Framework:** Project Atlas Framework 0.1.0
 **Status:** In development — 0 of 11 Goals DONE
-**Current phase:** P09 — Hardening
+**Current phase:** P10 — Beta and 1.0 Validation
 
 ## How to read the Goal states
 
@@ -24,11 +24,11 @@ passing evidence for every gate it declares required.
 | P03 | Orchestration Runtime | ACTIVE | review gate |
 | P04 | Atlas Harness | ACTIVE | session resumption, review gate |
 | P05 | Goal Planner and DAG Execution | ACTIVE | review gate |
-| P06 | Desktop Modes | ACTIVE | Tauri IPC and packaging, review gate |
+| P06 | Desktop Modes | ACTIVE | Windows/macOS bundles, review gate |
 | P07 | Verification and Evidence | ACTIVE | review gate |
 | P08 | Routing, Budgets and Scorecards | ACTIVE | review gate |
-| P09 | Hardening | PLANNED | not started |
-| P10 | Beta and 1.0 Validation | PLANNED | depends on P09 |
+| P09 | Hardening | ACTIVE | non-Linux packaging, rendered-DOM a11y audit, review gate |
+| P10 | Beta and 1.0 Validation | PLANNED | dogfooding not started |
 
 The review gate is outstanding across the board because no independent review
 has been performed. It is deliberately not being self-certified.
@@ -69,10 +69,13 @@ actually reports, and unmeasured spend is reported as unmeasured.
 
 ## Next action
 
-P09 hardening: fault injection across the runner boundary, permission and secret
-handling in the ACP path, accessibility of the desktop screens, and performance
-budgets. P04's MCP forwarding and terminal/file events, and P06's Tauri IPC and
-packaging, remain open and are prerequisites for P10.
+P10: dogfood Atlas Flow on at least three materially different project
+categories, walk through a fresh install and a recovery, and document the
+Project Atlas compatibility matrix. Nothing before P10 blocks that work.
+
+Still open behind it: AppImage, Windows and macOS bundles (P06/P09), a
+rendered-DOM accessibility audit and a screen-reader walkthrough (P09), and ACP
+session resumption across restarts (P04).
 
 The review gate on every Goal stays open until an independent review runs. It is
 not being self-certified.

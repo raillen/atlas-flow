@@ -12,6 +12,7 @@ import {
   SectionHeading,
   StatusBadge,
 } from "../components/Primitives";
+import { accent, tone } from "../theme";
 
 /** Human-readable summary of the live model registry's three states. */
 export function describeRegistry(routing: RoutingView): string {
@@ -121,7 +122,7 @@ export const ReviewScreen: FC = () => {
               onClick={() => setGoalId(goal.id)}
               style={{
                 ...buttonStyle,
-                borderColor: goalId === goal.id ? "#6366f1" : "#cbd5e1",
+                borderColor: goalId === goal.id ? accent.base : tone.neutral.border,
               }}
             >
               {goal.id}
@@ -141,8 +142,12 @@ export const ReviewScreen: FC = () => {
               <div
                 style={{
                   ...card,
-                  borderColor: verification.data.completable ? "#bbf7d0" : "#fde68a",
-                  background: verification.data.completable ? "#f0fdf4" : "#fffbeb",
+                  borderColor: verification.data.completable
+                    ? tone.positive.border
+                    : tone.waiting.border,
+                  background: verification.data.completable
+                    ? tone.positive.bg
+                    : tone.waiting.bg,
                 }}
               >
                 <strong>

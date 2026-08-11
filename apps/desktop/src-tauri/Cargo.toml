@@ -14,8 +14,10 @@ authors = ["Atlas Flow Contributors"]
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tauri = { version = "2", default-features = false, features = [] }
-tauri-build = { version = "2", default-features = false, features = [] }
+# Default features carry the `wry` runtime. Without it `tauri::Builder` has no
+# concrete Runtime to resolve to and the shell does not compile at all.
+tauri = { version = "2" }
+tauri-build = { version = "2" }
 
 [package]
 name = "atlas-flow-desktop"
@@ -29,10 +31,10 @@ name = "atlas_flow_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { workspace = true, features = [] }
+tauri-build = { workspace = true }
 
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
-tauri = { workspace = true, features = [] }
+tauri = { workspace = true }
 tauri-plugin-shell = "2"

@@ -1,7 +1,6 @@
 """Security hardening layer — input sanitization, path boundaries, permission checks (P09)."""
 
 import re
-import shlex
 from pathlib import Path
 
 SHELL_DANGEROUS = re.compile(r'[;&|`$(){}\[\]<>*?!\n\r\t]')
@@ -16,6 +15,14 @@ SECRET_PATTERNS = [
     r'\bsk-[A-Za-z0-9]{16,}',
     r'-----BEGIN [A-Z ]*PRIVATE KEY-----',
 ]
+
+# Publishing, history rewriting, and discarding work the user never handed
+# over. Committing and merging are deliberately absent: they are the job, and a
+# worktree that cannot commit cannot integrate anything.
+FORBIDDEN_GIT_SUBCOMMANDS = frozenset({
+    "push", "reset", "rebase", "filter-branch", "filter-repo",
+    "clean", "gc", "prune", "reflog",
+})
 
 
 class SecurityError(Exception):
@@ -38,26 +45,6 @@ class SecurityGuard:
         return resolved
 
     @staticmethod
-    def sanitize_shell_arg(value: str) -> str:
-        """Detect dangerous shell metacharacters in tool arguments."""
-        if SHELL_DANGEROUS.search(value):
-            raise SecurityError(
-                f"Shell metacharacters detected in argument: {value!r}"
-            )
-        return shlex.quote(value)
-
-    @staticmethod
-    def sanitize_html(value: str) -> str:
-        """Escape HTML entities to prevent injection in UI/transcripts."""
-        return (
-            value.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
-            .replace("'", "&#x27;")
-        )
-
-    @staticmethod
     def redact_secrets(text: str, patterns: list[str] | None = None) -> str:
         """Remove known secret patterns from text before logging/storing.
 
@@ -72,19 +59,22 @@ class SecurityGuard:
 
     @staticmethod
     def validate_git_command(args: list[str]) -> None:
-        """Block destructive git commands in automated runners."""
-        destructive = {"push", "force", "--force", "reset", "rebase", "commit", "merge"}
-        for arg in args:
-            arg_lower = arg.lstrip("-").lower()
-            if arg in destructive or arg_lower in destructive:
-                raise SecurityError(
-                    f"Destructive git operation blocked: {' '.join(args)}"
-                )
+        """Refuse git operations Atlas Flow must never perform.
 
-    @staticmethod
-    def validate_model_output_for_ui(text: str) -> str:
-        """Sanitize model output before rendering in UI."""
-        return SecurityGuard.sanitize_html(text)
+        Committing and merging are the job — a worktree that cannot commit
+        cannot integrate anything — so they are allowed. What is refused is
+        everything that reaches outside the local repository or destroys work
+        the user has not handed over: publishing, rewriting history, and
+        discarding uncommitted state.
+        """
+        # `git worktree prune` is as forbidden as `git prune`, so every word is
+        # checked rather than only the first: a subcommand hidden behind
+        # another verb is still the operation being refused.
+        for word in args:
+            if word.lower() in FORBIDDEN_GIT_SUBCOMMANDS:
+                raise SecurityError(
+                    f"git {word} is never performed by Atlas Flow: {' '.join(args)}"
+                )
 
     @staticmethod
     def is_safe_filename(name: str) -> bool:

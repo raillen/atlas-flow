@@ -12,6 +12,7 @@ import {
   SectionHeading,
   StatusBadge,
 } from "../components/Primitives";
+import { surface, text } from "../theme";
 
 const ACTIVE_RUN_STATES = new Set(["CREATED", "PLANNING", "READY", "RUNNING"]);
 
@@ -86,7 +87,7 @@ const AgentActivityPanel: FC<{ runId: string; live: boolean }> = ({ runId, live 
             margin: 0,
             maxHeight: 220,
             overflowY: "auto",
-            border: "1px solid #e2e8f0",
+            border: `1px solid ${surface.border}`,
             borderRadius: 8,
             fontFamily: "ui-monospace, monospace",
             fontSize: "0.75rem",
@@ -94,8 +95,8 @@ const AgentActivityPanel: FC<{ runId: string; live: boolean }> = ({ runId, live 
           aria-live="polite"
         >
           {activity.map((entry) => (
-            <li key={entry.key} style={{ padding: "0.15rem 0", color: "#475569" }}>
-              <span style={{ color: "#94a3b8" }}>
+            <li key={entry.key} style={{ padding: "0.15rem 0", color: text.muted }}>
+              <span style={{ color: text.faint }}>
                 {ACTIVITY_LABELS[entry.type] ?? entry.type}
               </span>{" "}
               {entry.tool && <strong>{entry.tool} </strong>}
@@ -147,7 +148,7 @@ const RunBody: FC<{ detail: RunDetail; live: boolean }> = ({ detail, live }) => 
                   {task.scope.length > 0 && ` · scope ${task.scope.join(", ")}`}
                 </p>
                 {latest?.errorMsg && (
-                  <p style={{ ...muted, color: "#b91c1c", margin: "0.25rem 0 0" }}>
+                  <p style={{ ...muted, color: text.danger, margin: "0.25rem 0 0" }}>
                     {latest.errorMsg}
                   </p>
                 )}
@@ -166,7 +167,7 @@ const RunBody: FC<{ detail: RunDetail; live: boolean }> = ({ detail, live }) => 
             margin: 0,
             maxHeight: 260,
             overflowY: "auto",
-            border: "1px solid #e2e8f0",
+            border: `1px solid ${surface.border}`,
             borderRadius: 8,
             fontFamily: "ui-monospace, monospace",
             fontSize: "0.75rem",
@@ -174,8 +175,8 @@ const RunBody: FC<{ detail: RunDetail; live: boolean }> = ({ detail, live }) => 
           aria-live={live ? "polite" : "off"}
         >
           {detail.events.map((event) => (
-            <li key={event.id} style={{ padding: "0.15rem 0", color: "#475569" }}>
-              <span style={{ color: "#94a3b8" }}>
+            <li key={event.id} style={{ padding: "0.15rem 0", color: text.muted }}>
+              <span style={{ color: text.faint }}>
                 {event.timestamp.slice(11, 19)}
               </span>{" "}
               {event.type}

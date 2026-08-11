@@ -12,6 +12,7 @@ import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from atlas_flow.security.guard import SecurityGuard
 from atlas_flow.workspace import ensure_private_dir
 
 
@@ -85,7 +86,13 @@ class IntegrationResult:
 
 
 async def run_git(repo: Path, *args: str) -> str:
-    """Run a git command in `repo` and return stdout, raising on failure."""
+    """Run a git command in `repo` and return stdout, raising on failure.
+
+    Every git call in the runtime goes through here, which is why the guard
+    lives here: an operation Atlas Flow must never perform should be impossible
+    to reach, not merely absent from the code that exists today.
+    """
+    SecurityGuard.validate_git_command(list(args))
     stdout, stderr, code = await _run_git_raw(repo, *args)
     if code != 0:
         raise GitError(list(args), code, stderr)

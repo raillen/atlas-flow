@@ -11,6 +11,7 @@ import {
   SectionHeading,
   StatusBadge,
 } from "../components/Primitives";
+import { accent, surface, tone } from "../theme";
 
 /**
  * Lays the plan out in dependency layers.
@@ -117,7 +118,7 @@ export const PlanScreen: FC<{ onRunStarted: (runId: string) => void }> = ({
       </p>
 
       {failure && (
-        <div style={{ ...card, borderColor: "#fecaca", background: "#fef2f2" }} role="alert">
+        <div style={{ ...card, borderColor: tone.negative.border, background: tone.negative.bg }} role="alert">
           {failure}
         </div>
       )}
@@ -199,7 +200,7 @@ const PlanRunPicker: FC<{ selected: string | null; onSelect: (id: string) => voi
                   ...buttonStyle,
                   width: "100%",
                   textAlign: "left",
-                  borderColor: selected === run.id ? "#6366f1" : "#e2e8f0",
+                  borderColor: selected === run.id ? accent.base : surface.border,
                 }}
               >
                 <strong>{run.goalId}</strong> <StatusBadge value={run.state} />

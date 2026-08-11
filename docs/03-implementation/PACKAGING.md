@@ -1,9 +1,77 @@
 # Packaging and Distribution
 
-Tauri bundles for Windows/macOS/Linux.
+The desktop client is a Tauri 2 shell around the React app in
+`apps/desktop/src`, configured in `apps/desktop/src-tauri/tauri.conf.json`.
 
-For 1.0, Tauri manages a local Python backend distribution. Validate this packaging strategy early on all platforms.
+## What the shell owns
 
-Release artifacts: bundle/installer, checksums, SBOM, release notes, compatibility matrix and signatures where feasible.
+Orchestration lives in the Python backend. The shell owns the three things a
+browser cannot do for itself:
 
-Development may run frontend against local FastAPI directly.
+| Command | Purpose |
+| --- | --- |
+| `backend_status` | Whether a backend this window started is still alive, plus the URL, command and project root. |
+| `start_backend` | Starts the backend if this window has not already. Idempotent. |
+| `stop_backend` | Kills the backend this window started. |
+| `project_root` | The nearest ancestor directory holding `PROJECT_MANIFEST.yaml`. |
+
+The backend is started on request rather than at launch, so a developer already
+running `uvicorn` by hand keeps that process instead of racing a second one for
+the port. A backend this shell started is killed when the app exits — leaving it
+holding the port is how the next launch fails for no visible reason.
+
+Overrides: `ATLAS_FLOW_API` (backend URL), `ATLAS_FLOW_BACKEND_CMD` (the argv to
+run), `ATLAS_FLOW_PROJECT_ROOT` (working directory).
+
+Every screen also runs under plain `vite dev`, where there is no Tauri: the
+bridge in `apps/desktop/src/desktop.ts` reports `isDesktop() === false` and each
+call resolves to `null` rather than throwing.
+
+## Security
+
+`capabilities/default.json` grants the window the core defaults plus
+`shell:allow-open`. Nothing grants the frontend permission to execute arbitrary
+commands: it can ask for *the backend* to start, and the argv is decided in
+Rust.
+
+A Content Security Policy is set in `tauri.conf.json` — `default-src 'self'`,
+with `connect-src` limited to the IPC endpoint and the backend on localhost. It
+was previously `null`, which disables CSP entirely.
+
+## Building
+
+```sh
+sh scripts/package_smoke.sh
+```
+
+That builds the frontend, produces the `deb` bundle, and then checks what came
+out: "it compiled" is not the same as "it packages", and the binary, desktop
+entry, icons and control metadata are produced by a different part of the
+toolchain than the one that compiles Rust. `--verify-only` re-runs just the
+checks against an existing bundle.
+
+Targets configured: `deb` and `appimage`. Icons live in `src-tauri/icons` and
+are generated, not hand-drawn — PNG only, which is what the Linux bundlers need.
+
+If the checkout is on a `noexec` mount, set `CARGO_TARGET_DIR` to a path that
+is not: cargo executes build scripts out of the target directory, and a mount
+that forbids that fails the build with a bare `Permission denied`.
+
+## Verified
+
+- `deb`: built and smoke-tested. Contains `/usr/bin/atlas-flow-desktop`, the
+  desktop entry, and 32/128/512px icons.
+
+## Not yet done
+
+- **AppImage.** Configured but not verified — the bundler downloads
+  `linuxdeploy` at build time, which needs network access the build machine did
+  not have.
+- **Windows and macOS bundles.** No `.ico`/`.icns` icons, and neither target has
+  been built or smoke-tested. Only Linux is configured.
+- **Shipping the Python backend inside the bundle.** The packaged app expects a
+  backend it can start from the project directory; it does not carry its own
+  interpreter. This is the main open question for 1.0.
+- **Signing, checksums and SBOM** for release artifacts.
+- **A LICENSE file.** `Cargo.toml` declares MIT but the repository has no
+  license text, so the bundle carries none.

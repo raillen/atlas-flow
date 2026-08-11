@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AgUiClient, type AgUiMessage } from "@atlas-flow/ag-ui-client";
 import { AtlasLogo } from "@atlas-flow/ui";
+import { accent, surface, text, tone } from "../theme";
 
 interface Props {
   sessionId: string;
@@ -22,13 +23,13 @@ const headerStyle: React.CSSProperties = {
   alignItems: "center",
   gap: "0.5rem",
   paddingBottom: "0.75rem",
-  borderBottom: "1px solid #e2e8f0",
+  borderBottom: `1px solid ${surface.border}`,
   marginBottom: "0.5rem",
 };
 
 const statusStyle = (connected: boolean): React.CSSProperties => ({
   fontSize: "0.75rem",
-  color: connected ? "#059669" : "#dc2626",
+  color: connected ? tone.positive.fg : tone.negative.fg,
   marginLeft: "auto",
 });
 
@@ -44,7 +45,7 @@ const feedStyle: React.CSSProperties = {
 const eventStyle: React.CSSProperties = {
   padding: "0.25rem 0.5rem",
   fontSize: "0.85rem",
-  borderBottom: "1px solid #f1f5f9",
+  borderBottom: `1px solid ${tone.neutral.bg}`,
 };
 
 const inputRowStyle: React.CSSProperties = {
@@ -56,7 +57,7 @@ const inputRowStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   flex: 1,
   padding: "0.5rem",
-  border: "1px solid #cbd5e1",
+  border: `1px solid ${tone.neutral.border}`,
   borderRadius: "6px",
   fontSize: "0.9rem",
 };
@@ -65,7 +66,7 @@ const buttonStyle: React.CSSProperties = {
   padding: "0.5rem 1rem",
   border: "none",
   borderRadius: "6px",
-  background: "#6366f1",
+  background: accent.base,
   color: "white",
   cursor: "pointer",
   fontWeight: 500,
@@ -138,7 +139,7 @@ export function DiscussScreen({ sessionId, serverUrl }: Props) {
 
       <div style={feedStyle} role="log" aria-live="polite" aria-label="Discussion messages">
         {events.length === 0 && (
-          <div style={{ color: "#94a3b8", fontStyle: "italic", padding: "0.5rem" }}>
+          <div style={{ color: text.faint, fontStyle: "italic", padding: "0.5rem" }}>
             No messages yet. Start the conversation.
           </div>
         )}
@@ -147,7 +148,7 @@ export function DiscussScreen({ sessionId, serverUrl }: Props) {
             <span style={{ marginRight: "0.5rem" }} aria-hidden="true">
               {eventLabel[evt.type] ?? "●"}
             </span>
-            <span style={{ color: "#64748b", fontSize: "0.75rem" }}>
+            <span style={{ color: text.faint, fontSize: "0.75rem" }}>
               {evt.type}
             </span>{" "}
             {typeof evt.payload.content === "string" && evt.payload.content}
@@ -175,7 +176,7 @@ export function DiscussScreen({ sessionId, serverUrl }: Props) {
           Send
         </button>
         <button
-          style={{ ...buttonStyle, background: "#0ea5e9" }}
+          style={{ ...buttonStyle, background: accent.base }}
           onClick={proposeDecision}
           title="Propose decision"
         >

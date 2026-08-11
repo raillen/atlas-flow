@@ -43,6 +43,7 @@ from atlas_flow.planner.dag import Plan, TaskNode
 from atlas_flow.routing.discovery import ModelRegistry
 from atlas_flow.routing.router import ModelRouter
 from atlas_flow.routing.store import RoutingStore
+from atlas_flow.security.guard import SecurityError, SecurityGuard
 from atlas_flow.verification.gates import GateCoordinator, GateKind
 from atlas_flow.verification.goal_completion import check_completion, required_gates
 
@@ -399,10 +400,17 @@ def list_docs(request: Request) -> list[DocEntry]:
 @router.get("/docs/{doc_path:path}")
 def get_doc(doc_path: str, request: Request) -> DocContent:
     root = (_root(request) / "docs").resolve()
-    target = (root / doc_path).resolve()
 
-    # Path traversal guard: a crafted path must not read outside docs/.
-    if not target.is_relative_to(root) or target.suffix != ".md" or not target.is_file():
+    # One traversal guard for the whole runtime, so there is one place to get
+    # right and one place to test.
+    try:
+        target = SecurityGuard.validate_path(root, doc_path)
+    except SecurityError as exc:
+        raise HTTPException(
+            status_code=404, detail=f"Unknown document: {doc_path}"
+        ) from exc
+
+    if target.suffix != ".md" or not target.is_file():
         raise HTTPException(status_code=404, detail=f"Unknown document: {doc_path}")
 
     return DocContent(path=doc_path, content=target.read_text(encoding="utf-8"))

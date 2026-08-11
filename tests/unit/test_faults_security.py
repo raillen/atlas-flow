@@ -58,19 +58,6 @@ class TestSecurityGuard:
         resolved = SecurityGuard.validate_path(root, "src/main.py")
         assert resolved == Path("/safe/repo/src/main.py")
 
-    def test_shell_metacharacters_blocked(self) -> None:
-        with pytest.raises(SecurityError):
-            SecurityGuard.sanitize_shell_arg("foo; rm -rf /")
-
-    def test_safe_arg_passed_through(self) -> None:
-        result = SecurityGuard.sanitize_shell_arg("hello_world_123")
-        assert "hello_world_123" in result
-
-    def test_html_entity_escape(self) -> None:
-        assert SecurityGuard.sanitize_html("<script>alert(1)</script>") == (
-            "&lt;script&gt;alert(1)&lt;/script&gt;"
-        )
-
     def test_secret_redaction(self) -> None:
         text = "token: sk-abc123 secret and password: mypass"
         redacted = SecurityGuard.redact_secrets(text)
@@ -104,24 +91,27 @@ class TestSecurityGuard:
     def test_ordinary_text_survives_redaction(self) -> None:
         assert SecurityGuard.redact_secrets("2 passed in 4.6s") == "2 passed in 4.6s"
 
-    def test_git_destructive_blocked(self) -> None:
-        with pytest.raises(SecurityError, match="Destructive"):
-            SecurityGuard.validate_git_command(["git", "push", "origin", "main"])
+    def test_publishing_and_rewriting_are_refused(self) -> None:
+        for args in (
+            ["git", "push", "origin", "main"],
+            ["git", "reset", "--hard"],
+            ["git", "rebase", "main"],
+            ["git", "clean", "-fd"],
+            ["git", "filter-branch"],
+            ["git", "worktree", "prune"],
+        ):
+            with pytest.raises(SecurityError, match="never performed"):
+                SecurityGuard.validate_git_command(args)
 
-        with pytest.raises(SecurityError, match="Destructive"):
-            SecurityGuard.validate_git_command(["git", "reset", "--hard"])
-
-    def test_git_safe_allowed(self) -> None:
-        SecurityGuard.validate_git_command(["git", "status"])
-        SecurityGuard.validate_git_command(["git", "log", "--oneline"])
+    def test_committing_and_merging_are_allowed(self) -> None:
+        """They are the job: a worktree that cannot commit cannot integrate."""
+        SecurityGuard.validate_git_command(["commit", "-m", "work"])
+        SecurityGuard.validate_git_command(["merge", "--no-ff", "branch"])
+        SecurityGuard.validate_git_command(["worktree", "remove", "--force", "path"])
+        SecurityGuard.validate_git_command(["status", "--porcelain"])
 
     def test_unsafe_filename_blocked(self) -> None:
         assert not SecurityGuard.is_safe_filename("../escape.sh")
         assert not SecurityGuard.is_safe_filename("bad; rm")
         assert SecurityGuard.is_safe_filename("README.md")
 
-    def test_model_output_sanitized(self) -> None:
-        raw = '<div onclick="bad()">Hello</div>'
-        clean = SecurityGuard.validate_model_output_for_ui(raw)
-        assert "Hello" in clean
-        assert "<" not in clean

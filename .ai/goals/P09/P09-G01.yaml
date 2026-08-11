@@ -1,7 +1,7 @@
 id: P09-G01
 phase: P09
 title: Hardening
-state: PLANNED
+state: ACTIVE
 objective: Harden security, recovery, accessibility, protocol compatibility and performance.
 constraints:
 - Follow Project Atlas authority order
@@ -34,3 +34,26 @@ history:
 - '2026-08-10: still blocking — Depends on P08, which is blocked on model invocation.'
 - '2026-08-10: still blocking — No packaging pipeline, no performance measurement in CI, no
   accessibility test run.'
+- '2026-08-10: closed — Dependencies P06 and P08 have closed their blocking gaps.'
+- '2026-08-10: closed — Fault-injection suite: real runs are driven through timeout, process
+  kill, malformed output, disconnect and git conflict, plus recovery from both a graceful
+  interrupt and a hard kill. Recovery is idempotent and state survives the process that wrote
+  it.'
+- '2026-08-10: closed — Security findings: redaction was never invoked and is now applied
+  at the runner boundary; custom patterns no longer replace the defaults; the desktop had
+  no CSP; validate_git_command forbade the two operations the runtime exists to perform and
+  was never wired in — it now refuses publishing and history rewriting, and every git call
+  passes through it; two sanitizers that could only have corrupted data were removed.'
+- '2026-08-10: closed — Accessibility: colour tokens are data and every pair the screens render
+  is checked against WCAG 2.2 AA, which found two real failures (amber and green badges below
+  4.5:1, and success/failure indistinguishable in grayscale). Focus ring, reduced motion and
+  text scaling are enforced in CSS.'
+- '2026-08-10: closed — Performance budgets are measured and asserted: event append p95 ~0.5ms
+  against a 20ms budget, and every endpoint the desktop polls p95 under 50ms against a 150ms
+  budget.'
+- '2026-08-10: closed — Packaging smoke test: scripts/package_smoke.sh builds the deb bundle
+  and verifies the binary, desktop entry, icons and control metadata are in it.'
+- '2026-08-10: still blocking — Only Linux/deb is verified. AppImage needs network access
+  at build time and was not verified; Windows and macOS are unconfigured.'
+- '2026-08-10: still blocking — No rendered-DOM accessibility audit and no screen-reader walkthrough.'
+- '2026-08-10: still blocking — review gate: no independent review has been performed.'

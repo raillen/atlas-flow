@@ -8,13 +8,15 @@ Generated: 2026-08-10
 |-------|---------|--------|
 | Python lint | `uv run --project backend ruff check .` | PASS |
 | Python types | `uv run --project backend mypy` | PASS (strict, 56 files) |
-| Python tests | `uv run --project backend pytest` | PASS — 269 tests |
+| Python tests | `uv run --project backend pytest` | PASS — 277 tests |
 | TypeScript build | `pnpm run typecheck` | PASS |
 | JS lint | `pnpm run lint` | PASS |
-| JS tests | `pnpm run test` | PASS — 28 tests |
+| JS tests | `pnpm run test` | PASS — 46 tests |
 | Docs links | `python scripts/validate_docs.py` | PASS |
 | Goal contracts | `python scripts/validate_goals.py` | PASS — 11 Goals, 0 DONE |
 | Command Code | `scripts/validate_command_code.sh` | PASS — 9 agents, 15 skills |
+| Desktop shell | `cargo check` in `apps/desktop/src-tauri` | PASS |
+| Packaging | `sh scripts/package_smoke.sh` | PASS — deb bundle with binary, desktop entry and icons |
 
 Run everything with `scripts/validate_all.sh`.
 
@@ -37,7 +39,10 @@ Roughly 8,300 lines of source are covered by roughly 4,000 lines of tests.
 | API | 26 | Every endpoint against the real project, path traversal, event stream |
 | MCP registry | 16 | Role allowlists, read-only planning roles, refused literal secrets |
 | ACP event normalization | 16 | Terminal, file, plan and tool updates; redaction at the boundary |
-| Faults and security | 16 | Fault injection, security guard, redaction |
+| Faults and security | 15 | Security guard, redaction, refused git operations |
+| Fault injection (real runs) | 9 | Timeout, process kill, malformed output, disconnect, conflict, recovery |
+| Performance budgets | 3 | Event append and polled endpoints, measured against the documented budgets |
+| Desktop (TypeScript) | 46 | API client, Tauri bridge, agent stream, tab keyboard model, WCAG contrast |
 
 ## Defects this pass found and fixed
 
@@ -52,6 +57,10 @@ Roughly 8,300 lines of source are covered by roughly 4,000 lines of tests.
 9. **Leaked aiosqlite connections** in tests surfaced as `Event loop is closed` warnings from unrelated tests.
 10. **`SecurityGuard.redact_secrets` was never called.** Redaction existed as a function and nothing invoked it, so agent output reached transcripts, attempt errors and the event stream unfiltered. It is now applied at the runner boundary, and custom patterns add to the built-in set rather than replacing it.
 11. **The AG-UI namespace list did not match the backend.** It allowed `atlas.goal`/`atlas.evidence`, which are never emitted, and rejected `atlas.run`, `atlas.attempt`, `atlas.gate` and `atlas.state`, which are.
+12. **The desktop crate could not compile.** `tauri` was declared with `default-features = false`, leaving `tauri::Builder` with no runtime to resolve to. Nothing had ever built it.
+13. **The desktop had no Content Security Policy** (`csp: null`), and no capabilities file, so the Tauri 2 permission system granted nothing.
+14. **`validate_git_command` forbade `commit` and `merge`** — the operations the runtime exists to perform — and was never called. It now refuses publishing and history rewriting, and every git call in the runtime passes through it.
+15. **Two status colours failed WCAG AA.** Amber `PENDING` and green `SUCCEEDED` badges were below 4.5:1 on white, and success and failure had nearly identical luminance, making them indistinguishable in grayscale.
 
 ## Known gaps
 
@@ -59,9 +68,10 @@ These are tracked in the Goal files, not hidden:
 
 - **Models are reached only through Command Code.** There is no provider SDK and there will not be one (ADR-012). If `cmd` is absent, discovery degrades to the policy roster and the CLI and ACP runners are the only paths that perform work.
 - **Adaptive scoring is post-MVP.** The scorecard is fed and persisted, but routing order is still the deterministic policy order; it does not yet reorder candidates by observed success (RFC-001).
-- **The Tauri shell is the unmodified template** — no IPC commands, no packaging pipeline (P06, P09).
+- **Only the Linux `deb` bundle is verified.** AppImage is configured but its bundler downloads `linuxdeploy` at build time, which the build machine could not reach; Windows and macOS are unconfigured (P06, P09).
+- **No rendered-DOM accessibility audit.** Contrast and the keyboard model are checked as data and pure functions; there is no jsdom or axe pass over the component tree, and no screen-reader walkthrough (P09).
 - **ACP session resumption across process restarts** is not implemented; a restart starts a fresh session (P04).
-- **No independent review has been performed**, so the review gate is outstanding on every Goal (P00–P08).
+- **No independent review has been performed**, so the review gate is outstanding on every Goal (P00–P09).
 - **No dogfooding on other project categories** (P10).
 
 ## How to run

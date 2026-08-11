@@ -43,3 +43,12 @@ history:
 - '2026-08-10: still blocking — Tauri shell is still the unmodified template: no IPC commands,
   no packaging.'
 - '2026-08-10: still blocking — review gate: no independent review has been performed.'
+- '2026-08-10: closed — Tauri shell: real IPC commands for backend lifecycle and project root,
+  a capabilities file, a Content Security Policy replacing csp: null, generated icons, and
+  a deb bundle that was built and smoke-tested. The shell also stops a backend it started
+  when the window closes.'
+- '2026-08-10: fixed — the crate declared tauri with default-features = false, so it had no
+  runtime and could not compile at all; nothing had ever built it.'
+- '2026-08-10: still blocking — Windows and macOS bundles are unconfigured and untested; AppImage
+  is configured but unverified.'
+- '2026-08-10: still blocking — review gate: no independent review has been performed.'
