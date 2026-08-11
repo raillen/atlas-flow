@@ -1,7 +1,7 @@
 id: P10-G01
 phase: P10
 title: Beta and 1.0 Validation
-state: PLANNED
+state: ACTIVE
 objective: Dogfood Atlas Flow on multiple project classes and prepare stable release.
 constraints:
 - Follow Project Atlas authority order
@@ -32,3 +32,21 @@ history:
 - '2026-08-10: unmet — Release gates pass: gates were never evaluated against evidence.'
 - '2026-08-10: still blocking — Depends on P09.'
 - '2026-08-10: still blocking — No dogfooding on other project categories has been performed.'
+- '2026-08-10: closed — Dependency P09 has closed its blocking gaps.'
+- '2026-08-10: closed — Validated on three materially different project categories: a Python
+  library with a cross-phase dependency, a TypeScript web application, and a Rust CLI. Each
+  is built from scratch and run end to end in tests/integration/test_dogfooding.py.'
+- '2026-08-10: fixed by dogfooding — the project id was hardcoded to ''atlas-flow'' in five
+  places, so every run on another project was misattributed; and the project root was resolved
+  by walking up from the installed package, so an installed Atlas Flow would have served its
+  own Goals to somebody else''s project.'
+- '2026-08-10: closed — Fresh install and recovery walkthrough: executed as tests rather than
+  described. A freshly opened project starts with no operational state and leaves the repository
+  clean; a second session sees the previous session''s runs, events and evidence.'
+- '2026-08-10: closed — Project Atlas compatibility matrix documented in docs/09-references/COMPATIBILITY_MATRIX.md,
+  including what is not covered.'
+- '2026-08-10: closed — User guide updated to match the runtime: opening another project,
+  routing and budgets, and what recovery does.'
+- '2026-08-10: still blocking — Release gates: SBOM and checksums are not produced, CI runs
+  on Linux only, and no release Goal is DONE.'
+- '2026-08-10: still blocking — review gate: no independent review has been performed.'

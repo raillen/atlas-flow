@@ -36,8 +36,6 @@ from atlas_flow.verification.gates import (
     GateVerdict,
 )
 
-PROJECT_ID = "atlas-flow"
-
 
 @dataclass
 class TaskOutcome:
@@ -101,7 +99,7 @@ class GoalRunner:
         self.worktrees = worktrees
         self.gates = gates or GateCoordinator(persistence)
         self.routing_store = routing_store
-        self.scheduler = Scheduler(persistence)
+        self.scheduler = Scheduler(persistence, config.project_id)
         self.budget: BudgetLedger | None = None
 
     async def execute(
@@ -116,7 +114,7 @@ class GoalRunner:
             raise DAGError("; ".join(errors))
 
         run = Run(
-            project_id=PROJECT_ID,
+            project_id=self.config.project_id,
             goal_id=plan.goal_id,
             goal_revision=goal_revision,
             autonomy=self.config.autonomy_mode,

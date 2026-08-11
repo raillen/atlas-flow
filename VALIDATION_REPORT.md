@@ -8,7 +8,7 @@ Generated: 2026-08-10
 |-------|---------|--------|
 | Python lint | `uv run --project backend ruff check .` | PASS |
 | Python types | `uv run --project backend mypy` | PASS (strict, 56 files) |
-| Python tests | `uv run --project backend pytest` | PASS — 277 tests |
+| Python tests | `uv run --project backend pytest` | PASS — 291 tests |
 | TypeScript build | `pnpm run typecheck` | PASS |
 | JS lint | `pnpm run lint` | PASS |
 | JS tests | `pnpm run test` | PASS — 46 tests |
@@ -42,6 +42,7 @@ Roughly 8,300 lines of source are covered by roughly 4,000 lines of tests.
 | Faults and security | 15 | Security guard, redaction, refused git operations |
 | Fault injection (real runs) | 9 | Timeout, process kill, malformed output, disconnect, conflict, recovery |
 | Performance budgets | 3 | Event append and polled endpoints, measured against the documented budgets |
+| Dogfooding | 14 | Three project categories built from scratch and run end to end, plus fresh install and restart |
 | Desktop (TypeScript) | 46 | API client, Tauri bridge, agent stream, tab keyboard model, WCAG contrast |
 
 ## Defects this pass found and fixed
@@ -61,6 +62,8 @@ Roughly 8,300 lines of source are covered by roughly 4,000 lines of tests.
 13. **The desktop had no Content Security Policy** (`csp: null`), and no capabilities file, so the Tauri 2 permission system granted nothing.
 14. **`validate_git_command` forbade `commit` and `merge`** — the operations the runtime exists to perform — and was never called. It now refuses publishing and history rewriting, and every git call in the runtime passes through it.
 15. **Two status colours failed WCAG AA.** Amber `PENDING` and green `SUCCEEDED` badges were below 4.5:1 on white, and success and failure had nearly identical luminance, making them indistinguishable in grayscale.
+16. **The project id was hardcoded to `atlas-flow`** in five places, so every run against another project was misattributed in its own event log.
+17. **The project root was resolved by walking up from the installed package.** An installed Atlas Flow would have found its own source tree and served its own Goals to somebody else's project.
 
 ## Known gaps
 
@@ -71,8 +74,9 @@ These are tracked in the Goal files, not hidden:
 - **Only the Linux `deb` bundle is verified.** AppImage is configured but its bundler downloads `linuxdeploy` at build time, which the build machine could not reach; Windows and macOS are unconfigured (P06, P09).
 - **No rendered-DOM accessibility audit.** Contrast and the keyboard model are checked as data and pure functions; there is no jsdom or axe pass over the component tree, and no screen-reader walkthrough (P09).
 - **ACP session resumption across process restarts** is not implemented; a restart starts a fresh session (P04).
-- **No independent review has been performed**, so the review gate is outstanding on every Goal (P00–P09).
-- **No dogfooding on other project categories** (P10).
+- **No independent review has been performed**, so the review gate is outstanding on every Goal (P00–P10).
+- **No SBOM or checksums** are produced for release artefacts (P10).
+- **CI runs on Linux only** (P09, P10).
 
 ## How to run
 
@@ -86,3 +90,6 @@ pnpm --filter @atlas-flow/desktop dev
 
 Open http://localhost:1420. The Plan tab lists the Goals in Git; starting one
 executes it and switches to Build, which follows the run live.
+
+To open a different project, set `ATLAS_FLOW_PROJECT_ROOT`. See
+[Getting Started](docs/06-user-guide/GETTING_STARTED.md).

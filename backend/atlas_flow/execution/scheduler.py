@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 
 from atlas_flow.execution.models import (
+    UNKNOWN_PROJECT,
     Attempt,
     AttemptState,
     DomainEvent,
@@ -16,8 +17,6 @@ from atlas_flow.execution.models import (
 )
 from atlas_flow.execution.persistence import Persistence
 
-PROJECT_ID = "atlas-flow"
-
 
 class Scheduler:
     """Dependency-aware scheduler with transactional state changes.
@@ -26,8 +25,13 @@ class Scheduler:
     the event log always accounts for the state that recovery reads back.
     """
 
-    def __init__(self, persistence: Persistence) -> None:
+    def __init__(
+        self, persistence: Persistence, project_id: str = UNKNOWN_PROJECT
+    ) -> None:
         self.db = persistence
+        # Stamped on every event this scheduler writes. Atlas Flow runs against
+        # whatever project it was opened on, so nothing here may assume one.
+        self.project_id = project_id
         self._lock = asyncio.Lock()
 
     async def start_run(self, run: Run) -> Run:
@@ -79,24 +83,31 @@ class Scheduler:
 
     async def mark_task_ready(self, task: Task) -> Task:
         return await self.db.record_task_transition(
-            task, TaskState.READY, _task_event(task, EventType.TASK_READY)
+            task,
+            TaskState.READY,
+            _task_event(task, EventType.TASK_READY, project_id=self.project_id),
         )
 
     async def start_task(self, task: Task) -> Task:
         return await self.db.record_task_transition(
-            task, TaskState.RUNNING, _task_event(task, EventType.STATE_CHANGE)
+            task,
+            TaskState.RUNNING,
+            _task_event(task, EventType.STATE_CHANGE, project_id=self.project_id),
         )
 
     async def complete_task(self, task: Task) -> Task:
         return await self.db.record_task_transition(
-            task, TaskState.SUCCEEDED, _task_event(task, EventType.TASK_SUCCEEDED)
+            task,
+            TaskState.SUCCEEDED,
+            _task_event(task, EventType.TASK_SUCCEEDED, project_id=self.project_id),
         )
 
     async def fail_task(self, task: Task, reason: str) -> Task:
         return await self.db.record_task_transition(
             task,
             TaskState.FAILED,
-            _task_event(task, EventType.TASK_FAILED, {"reason": reason}),
+            _task_event(task, EventType.TASK_FAILED, {"reason": reason},
+                        project_id=self.project_id),
         )
 
     async def evaluate_run_completion(self, run: Run) -> bool:
@@ -136,7 +147,10 @@ def _run_event(
 
 
 def _task_event(
-    task: Task, event_type: EventType, extra: dict[str, object] | None = None
+    task: Task,
+    event_type: EventType,
+    extra: dict[str, object] | None = None,
+    project_id: str = UNKNOWN_PROJECT,
 ) -> DomainEvent:
     payload: dict[str, object] = {
         "task_id": task.id,
@@ -146,7 +160,7 @@ def _task_event(
     if extra:
         payload.update(extra)
     return DomainEvent(
-        project_id=PROJECT_ID,
+        project_id=project_id,
         run_id=task.run_id,
         type=event_type,
         payload=payload,
@@ -185,7 +199,7 @@ async def recover_run(persistence: Persistence, run_id: str) -> RecoveryReport |
             await persistence.record_attempt_transition(
                 attempt,
                 AttemptState.FAILED,
-                _attempt_recovery_event(attempt),
+                _attempt_recovery_event(attempt, run.project_id),
             )
             report.orphaned_attempts.append(attempt.id)
 
@@ -198,6 +212,7 @@ async def recover_run(persistence: Persistence, run_id: str) -> RecoveryReport |
                     task,
                     EventType.TASK_FAILED,
                     {"reason": "interrupted by process restart"},
+                    project_id=run.project_id,
                 ),
             )
             report.orphaned_tasks.append(task.id)
@@ -217,9 +232,9 @@ async def recover_run(persistence: Persistence, run_id: str) -> RecoveryReport |
     return report
 
 
-def _attempt_recovery_event(attempt: Attempt) -> DomainEvent:
+def _attempt_recovery_event(attempt: Attempt, project_id: str) -> DomainEvent:
     return DomainEvent(
-        project_id=PROJECT_ID,
+        project_id=project_id,
         run_id=attempt.run_id,
         type=EventType.ATTEMPT_FAILED,
         payload={

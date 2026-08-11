@@ -39,6 +39,7 @@ export interface EventView {
   id: string;
   timestamp: string;
   type: string;
+  projectId: string;
   runId: string | null;
   payload: Record<string, unknown>;
 }

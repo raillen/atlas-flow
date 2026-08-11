@@ -15,6 +15,10 @@ class AtlasFlowConfig:
     """Merged configuration from precedence chain: env → user → project → defaults."""
 
     project_root: Path = Path.cwd()
+    # Which project this runtime is serving. Read from PROJECT_MANIFEST.yaml,
+    # never assumed: Atlas Flow is generic, and a hardcoded id would stamp this
+    # repository's name on every event of somebody else's run.
+    project_id: str = ""
 
     # Autonomy
     autonomy_mode: str = "agentic"
@@ -62,6 +66,12 @@ class AtlasFlowConfig:
     artifact_retention_days: int = 30
     transcript_retention_days: int = 90
 
+    def __post_init__(self) -> None:
+        # Resolved here rather than only in load(), so a config built directly
+        # still knows whose project it is.
+        if not self.project_id:
+            self.project_id = self._read_project_id(self.project_root)
+
     @property
     def state_path(self) -> Path:
         return self.project_root / self.state_dir
@@ -97,6 +107,18 @@ class AtlasFlowConfig:
             if (parent / "PROJECT_MANIFEST.yaml").is_file():
                 return parent
         return here
+
+    @staticmethod
+    def _read_project_id(root: Path) -> str:
+        """The id the project declares, falling back to its directory name."""
+        manifest = root / "PROJECT_MANIFEST.yaml"
+        if manifest.is_file():
+            data = yaml.safe_load(manifest.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                project = data.get("project")
+                if isinstance(project, dict) and project.get("id"):
+                    return str(project["id"])
+        return root.name or "unknown-project"
 
     @staticmethod
     def _load_project_config(root: Path) -> dict[str, object]:

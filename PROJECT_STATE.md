@@ -3,7 +3,7 @@
 **Project:** Atlas Flow
 **Framework:** Project Atlas Framework 0.1.0
 **Status:** In development — 0 of 11 Goals DONE
-**Current phase:** P10 — Beta and 1.0 Validation
+**Current phase:** P10 — Beta and 1.0 Validation (release artefacts and independent review outstanding)
 
 ## How to read the Goal states
 
@@ -28,7 +28,7 @@ passing evidence for every gate it declares required.
 | P07 | Verification and Evidence | ACTIVE | review gate |
 | P08 | Routing, Budgets and Scorecards | ACTIVE | review gate |
 | P09 | Hardening | ACTIVE | non-Linux packaging, rendered-DOM a11y audit, review gate |
-| P10 | Beta and 1.0 Validation | PLANNED | dogfooding not started |
+| P10 | Beta and 1.0 Validation | ACTIVE | SBOM and checksums, Linux-only CI, review gate |
 
 The review gate is outstanding across the board because no independent review
 has been performed. It is deliberately not being self-certified.
@@ -40,6 +40,10 @@ criterion, schedules the tasks in dependency order, runs each one in its own git
 worktree through a registered runner, integrates the result, records gate
 evidence and streams every state change to the UI. Run state is durable and
 survives a crash.
+
+Atlas Flow runs against whatever project it is opened on, not only this one:
+three project categories — a library, a web application and a CLI — are built
+from scratch and executed end to end in the test suite.
 
 Each task is routed to a model by role. The live model registry is probed
 through `cmd --list-models` in the background at startup; a failing task falls
@@ -69,13 +73,19 @@ actually reports, and unmeasured spend is reported as unmeasured.
 
 ## Next action
 
-P10: dogfood Atlas Flow on at least three materially different project
-categories, walk through a fresh install and a recovery, and document the
-Project Atlas compatibility matrix. Nothing before P10 blocks that work.
+Every acceptance criterion across P00–P10 is now either met with evidence or
+recorded in its Goal's history as still blocking. What remains before any Goal
+can be marked DONE:
 
-Still open behind it: AppImage, Windows and macOS bundles (P06/P09), a
-rendered-DOM accessibility audit and a screen-reader walkthrough (P09), and ACP
-session resumption across restarts (P04).
+1. **An independent review.** The `review` gate is required by all eleven Goals
+   and is outstanding on all eleven. It is deliberately not self-certified — the
+   author of the work cannot be its reviewer.
+2. **Release artefacts.** No SBOM and no checksums are produced (P10).
+3. **Non-Linux support.** CI runs on Linux only; AppImage is unverified and
+   Windows and macOS bundles are unconfigured (P06/P09).
+4. **Smaller gaps**, each recorded in its Goal: a rendered-DOM accessibility
+   audit and a screen-reader walkthrough (P09), and ACP session resumption
+   across restarts (P04).
 
-The review gate on every Goal stays open until an independent review runs. It is
-not being self-certified.
+See [Release Gates](docs/04-quality/RELEASE_GATES.md) for the gate-by-gate
+status.

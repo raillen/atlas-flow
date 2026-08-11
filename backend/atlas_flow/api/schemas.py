@@ -90,6 +90,9 @@ class EventView(BaseModel):
     id: str
     timestamp: str
     type: str
+    # Which project produced this. Atlas Flow runs against whatever project it
+    # was opened on, so an event that cannot name its project is unattributable.
+    project_id: str
     run_id: str | None
     payload: dict[str, object]
 
@@ -99,6 +102,7 @@ class EventView(BaseModel):
             id=event.id,
             timestamp=event.timestamp,
             type=str(event.type),
+            project_id=event.project_id,
             run_id=event.run_id,
             payload=event.payload,
         )

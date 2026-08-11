@@ -6,6 +6,7 @@ import asyncio
 from datetime import UTC, datetime
 
 from atlas_flow.execution.models import (
+    UNKNOWN_PROJECT,
     Attempt,
     AttemptState,
     DomainEvent,
@@ -29,8 +30,11 @@ class Harness:
     that only exists in memory is an attempt that never happened.
     """
 
-    def __init__(self, persistence: Persistence) -> None:
+    def __init__(
+        self, persistence: Persistence, project_id: str = UNKNOWN_PROJECT
+    ) -> None:
         self.db = persistence
+        self.project_id = project_id
         self._runners: dict[str, Runner] = {}
         self._active_tasks: dict[str, asyncio.Task[RunnerResult]] = {}
 
@@ -144,10 +148,9 @@ class Harness:
             finished, state, self._attempt_event(finished, event_type)
         )
 
-    @staticmethod
-    def _attempt_event(attempt: Attempt, event_type: EventType) -> DomainEvent:
+    def _attempt_event(self, attempt: Attempt, event_type: EventType) -> DomainEvent:
         return DomainEvent(
-            project_id="atlas-flow",
+            project_id=self.project_id,
             run_id=attempt.run_id,
             type=event_type,
             payload={
@@ -159,10 +162,9 @@ class Harness:
             },
         )
 
-    @staticmethod
-    def _task_event(task: Task, event_type: EventType) -> DomainEvent:
+    def _task_event(self, task: Task, event_type: EventType) -> DomainEvent:
         return DomainEvent(
-            project_id="atlas-flow",
+            project_id=self.project_id,
             run_id=task.run_id,
             type=event_type,
             payload={"task_id": task.id, "previous": str(task.state)},

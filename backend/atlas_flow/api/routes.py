@@ -284,7 +284,7 @@ async def list_discussions(request: Request) -> list[str]:
 @router.post("/discussions", status_code=201)
 async def create_discussion(request: Request) -> dict[str, str]:
     store: DiscussionStore = request.app.state.discussions
-    session = DiscussionSession(project_id="atlas-flow")
+    session = DiscussionSession(project_id=request.app.state.config.project_id)
     await store.save_session(session)
     return {"session_id": session.id}
 

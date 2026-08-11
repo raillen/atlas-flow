@@ -1,6 +1,7 @@
 """FastAPI application factory for the Atlas Flow backend."""
 
 import asyncio
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -35,11 +36,21 @@ DEV_ORIGINS = ["http://localhost:1420", "http://127.0.0.1:1420", "tauri://localh
 
 
 def _find_project_root() -> Path:
-    here = Path(__file__).resolve().parent
-    for parent in here.parents:
-        if (parent / "PROJECT_MANIFEST.yaml").is_file():
-            return parent
-    return Path.cwd()
+    """The project Atlas Flow is operating on — never the one it ships from.
+
+    Resolution starts at the working directory, not at this file: an installed
+    Atlas Flow would otherwise walk up to its own source tree and serve its own
+    Goals to somebody else's project.
+    """
+    override = os.environ.get("ATLAS_FLOW_PROJECT_ROOT")
+    if override:
+        return Path(override).resolve()
+
+    here = Path.cwd().resolve()
+    for candidate in [here, *here.parents]:
+        if (candidate / "PROJECT_MANIFEST.yaml").is_file():
+            return candidate
+    return here
 
 
 @asynccontextmanager
@@ -64,7 +75,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await routing_store.restore(router.scorecard)
     registry = ModelRegistry(router)
 
-    harness = Harness(db)
+    harness = Harness(db, config.project_id)
     harness.register(DummyRunner("dummy"))
     harness.register(CliRunner("cmd"))
 
@@ -85,7 +96,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     app.state.config = config
     app.state.persistence = db
-    app.state.scheduler = Scheduler(db)
+    app.state.scheduler = Scheduler(db, config.project_id)
     app.state.harness = harness
     app.state.gates = GateCoordinator(db)
     app.state.discussions = discussions
@@ -142,8 +153,7 @@ def create_app() -> FastAPI:
 
     @app.get("/api/project")
     def get_project() -> dict[str, Any]:
-        root = _find_project_root()
-        ctx = resolve_project(root)
+        ctx = resolve_project(app.state.project_root)
         return {
             "id": ctx.project.id,
             "types": ctx.project.types,

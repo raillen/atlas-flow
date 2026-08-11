@@ -57,6 +57,12 @@ class EventType(StrEnum):
     STATE_CHANGE = "atlas.state.change"
 
 
+# Used when a component was constructed without being told which project it is
+# serving. It is deliberately not the name of any real project: a wrong id
+# stamped on every event is worse than an obviously missing one.
+UNKNOWN_PROJECT = "unknown-project"
+
+
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat()
 
