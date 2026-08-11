@@ -44,6 +44,37 @@ A Content Security Policy is set in `tauri.conf.json` — `default-src 'self'`,
 with `connect-src` limited to the IPC endpoint and the backend on localhost. It
 was previously `null`, which disables CSP entirely.
 
+## Running the packaged app
+
+The bundles are written to `$CARGO_TARGET_DIR/release/bundle/`. On a checkout
+that lives on a `noexec` mount, `CARGO_TARGET_DIR` points elsewhere, and the
+AppImage cannot be run from the project directory at all — the mount forbids it.
+
+```sh
+ATLAS_FLOW_PROJECT_ROOT=/path/to/project \
+  "$CARGO_TARGET_DIR/release/bundle/appimage/Atlas Flow_0.1.0_amd64.AppImage"
+```
+
+`ATLAS_FLOW_PROJECT_ROOT` is not optional in a packaged build unless the app is
+launched from inside the project: an AppImage runs with its working directory
+inside its own mount, so there is nothing there to search. When no project can
+be determined the Project tab says so and refuses to start a backend, rather
+than starting one somewhere with no Goals.
+
+Two things the bundle does *not* do to the backend it starts:
+
+- **Inherit the bundle's environment.** An AppImage points `PYTHONHOME`,
+  `LD_LIBRARY_PATH` and a dozen GTK variables at itself. A Python backend that
+  inherits them dies on startup complaining about Python paths, which is a
+  message about the wrong problem. Every variable mentioning the bundle is
+  removed from the child, and `PATH` keeps everything except its bundle entries.
+- **Claim success it has not checked.** Spawning succeeds even for a command
+  that dies immediately, so the shell waits, asks whether the process is still
+  alive, and reports the exit status and log path when it is not.
+
+The backend's output goes to `/tmp/atlas-flow-backend.log`, and the Project tab
+shows that path.
+
 ## Building
 
 ```sh

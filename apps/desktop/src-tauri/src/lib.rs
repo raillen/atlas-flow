@@ -9,9 +9,11 @@
 //! keeps that process instead of racing a second one for the port.
 
 use std::env;
+use std::fs::File;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
+use std::time::Duration;
 
 use serde::Serialize;
 use tauri::{Manager, RunEvent, State};
@@ -41,6 +43,16 @@ struct BackendStatus {
     url: String,
     command: Vec<String>,
     project_root: String,
+    log_path: String,
+}
+
+/// Where a backend this shell started writes its output.
+///
+/// Discarding it was a mistake worth naming: a backend that dies on startup —
+/// a broken virtualenv, a port already taken — then leaves nothing to read,
+/// and the window shows a connection error that blames the wrong thing.
+fn backend_log_path() -> PathBuf {
+    env::temp_dir().join("atlas-flow-backend.log")
 }
 
 fn backend_url() -> String {
@@ -65,10 +77,67 @@ fn parse_backend_command(raw: Option<&str>) -> Vec<String> {
     }
 }
 
+/// Where this application was unpacked, when it is running from a bundle.
+///
+/// AppImages export APPDIR and run with their working directory inside their
+/// own mount, so a packaged build that trusts the working directory ends up
+/// searching *itself* for a project.
+fn bundle_dir() -> Option<PathBuf> {
+    env::var("APPDIR")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+}
+
 /// The directory the backend runs in: the project Atlas Flow is operating on.
+///
+/// Empty means no project could be determined, which is a state the caller has
+/// to handle rather than paper over: launching a backend in the wrong
+/// directory produces a run with no Goals and an error that blames the backend.
 fn project_root_path() -> PathBuf {
-    let start = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    resolve_project_root(env::var("ATLAS_FLOW_PROJECT_ROOT").ok().as_deref(), &start)
+    // OWD is the directory an AppImage was launched from, when it sets it at
+    // all; the process working directory is the fallback.
+    let start = env::var("OWD")
+        .map(PathBuf::from)
+        .or_else(|_| env::current_dir())
+        .unwrap_or_else(|_| PathBuf::from("."));
+    let resolved =
+        resolve_project_root(env::var("ATLAS_FLOW_PROJECT_ROOT").ok().as_deref(), &start);
+
+    if let Some(bundle) = bundle_dir()
+        && resolved.starts_with(&bundle)
+    {
+        return PathBuf::new();
+    }
+    resolved
+}
+
+/// Strip the bundle's own runtime out of a child process's environment.
+///
+/// An AppImage points PYTHONHOME, LD_LIBRARY_PATH and a dozen GTK variables at
+/// itself so the bundled application works. A backend launched from inside
+/// inherits all of it and dies on startup complaining about Python paths that
+/// have nothing to do with the real problem. Everything mentioning the bundle
+/// is removed, rather than a hand-kept list of names that would drift.
+fn strip_bundle_environment(command: &mut Command) {
+    let Some(bundle) = bundle_dir() else { return };
+    let bundle = bundle.to_string_lossy().to_string();
+
+    for (name, value) in env::vars() {
+        if !value.contains(&bundle) {
+            continue;
+        }
+        if name == "PATH" {
+            // PATH is needed; only its bundle entries are not.
+            let kept: Vec<&str> = value
+                .split(':')
+                .filter(|entry| !entry.contains(&bundle))
+                .collect();
+            command.env("PATH", kept.join(":"));
+        } else {
+            command.env_remove(name);
+        }
+    }
 }
 
 /// The nearest ancestor of `start` holding a project manifest, unless an
@@ -118,6 +187,7 @@ fn status_of(running: bool) -> BackendStatus {
         url: backend_url(),
         command: backend_command(),
         project_root: project_root_path().to_string_lossy().to_string(),
+        log_path: backend_log_path().to_string_lossy().to_string(),
     }
 }
 
@@ -137,13 +207,47 @@ fn start_backend(backend: State<'_, Backend>) -> Result<BackendStatus, String> {
     let argv = backend_command();
     let (program, args) = argv.split_first().ok_or("empty backend command")?;
 
-    let child = Command::new(program)
+    let log = backend_log_path();
+    let out =
+        File::create(&log).map_err(|error| format!("could not open {}: {error}", log.display()))?;
+    let err = out
+        .try_clone()
+        .map_err(|error| format!("could not open {}: {error}", log.display()))?;
+
+    let root = project_root_path();
+    if root.as_os_str().is_empty() {
+        return Err(
+            "No project selected. Launch Atlas Flow from a project directory, or set \
+             ATLAS_FLOW_PROJECT_ROOT to one."
+                .to_string(),
+        );
+    }
+
+    let mut command = Command::new(program);
+    command
         .args(args)
-        .current_dir(project_root_path())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
+        .current_dir(&root)
+        .stdout(Stdio::from(out))
+        .stderr(Stdio::from(err));
+    strip_bundle_environment(&mut command);
+
+    let mut child = command
         .spawn()
         .map_err(|error| format!("could not start {program}: {error}"))?;
+
+    // Spawning succeeds even for a command that dies immediately, so a status
+    // reported the instant after spawn is not a status at all. Give it a
+    // moment and ask: a backend that exited on startup must be reported as
+    // stopped, with the reason, not as running.
+    std::thread::sleep(Duration::from_millis(400));
+    if let Ok(Some(status)) = child.try_wait() {
+        let tail = std::fs::read_to_string(&log).unwrap_or_default();
+        let reason = tail.lines().rev().take(3).collect::<Vec<_>>().join(" / ");
+        return Err(format!(
+            "{program} exited immediately ({status}). See {}: {reason}",
+            log.display()
+        ));
+    }
 
     *slot = Some(child);
     Ok(status_of(true))
@@ -239,6 +343,21 @@ mod tests {
         fs::write(base.join("PROJECT_MANIFEST.yaml"), "project:\n  id: x\n").unwrap();
 
         assert_eq!(resolve_project_root(None, &nested), base);
+
+        fs::remove_dir_all(&base).unwrap();
+    }
+
+    #[test]
+    fn a_launch_directory_is_searched_rather_than_the_bundle() {
+        // Regression: an AppImage runs with its working directory inside its
+        // own mount, so resolving from current_dir() made the packaged app
+        // search itself and report /tmp/.mount_*/usr as the project root.
+        let base = std::env::temp_dir().join("atlas-owd-search");
+        let launched_from = base.join("apps").join("desktop");
+        fs::create_dir_all(&launched_from).unwrap();
+        fs::write(base.join("PROJECT_MANIFEST.yaml"), "project:\n  id: x\n").unwrap();
+
+        assert_eq!(resolve_project_root(None, &launched_from), base);
 
         fs::remove_dir_all(&base).unwrap();
     }

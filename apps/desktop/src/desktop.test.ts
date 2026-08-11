@@ -29,6 +29,7 @@ describe("desktop bridge", () => {
       url: "http://localhost:8000",
       command: ["uv", "run"],
       project_root: "/srv/atlas",
+      log_path: "/tmp/atlas-flow-backend.log",
     });
 
     const status = await desktop.backendStatus();
@@ -39,6 +40,7 @@ describe("desktop bridge", () => {
       url: "http://localhost:8000",
       command: ["uv", "run"],
       projectRoot: "/srv/atlas",
+      logPath: "/tmp/atlas-flow-backend.log",
     });
   });
 
@@ -59,6 +61,7 @@ describe("describeBackend", () => {
       url: "http://localhost:8000",
       command: ["uv", "run", "uvicorn"],
       projectRoot: "/srv/atlas",
+      logPath: "/tmp/atlas-flow-backend.log",
     });
 
     expect(text).toContain("uv run uvicorn");
@@ -70,6 +73,7 @@ describe("describeBackend", () => {
       url: "http://localhost:8000",
       command: [],
       projectRoot: "/srv/atlas",
+      logPath: "/tmp/atlas-flow-backend.log",
     });
 
     expect(text).toBe("Backend running at http://localhost:8000");

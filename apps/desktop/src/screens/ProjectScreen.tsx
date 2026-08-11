@@ -58,6 +58,7 @@ const BackendPanel: FC = () => {
         {current && (
           <p style={{ ...muted, margin: "0.25rem 0 0" }}>
             Project root: {current.projectRoot}
+            {current.logPath && ` · log: ${current.logPath}`}
           </p>
         )}
         {error && (

@@ -116,3 +116,12 @@ history:
 - '2026-08-11: review gate PASSED — self-review by the implementer, authorised by the owner;
   2 defects found and fixed, 1 checked and not reproduced — docs/07-decisions/reviews/2026-08-11-self-review.md'
 - '2026-08-11: moved to DONE — every required gate has passing evidence.'
+- '2026-08-11: three defects found by running the packaged app rather than inspecting it,
+  all fixed. (1) start_backend reported RUNNING the instant after spawn, so a backend that
+  died on startup was shown as healthy; it now waits, checks, and reports the exit status
+  and log path. (2) Its output went to /dev/null, leaving nothing to diagnose; it goes to
+  /tmp/atlas-flow-backend.log, shown in the UI. (3) The AppImage runs with its working directory
+  inside its own mount and exports PYTHONHOME/LD_LIBRARY_PATH at itself, so the packaged app
+  reported the bundle as the project root and the backend it launched inherited an environment
+  that killed it. The bundle is no longer accepted as a project root, and every variable naming
+  the bundle is stripped from the child.'

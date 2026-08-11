@@ -11,6 +11,8 @@ export interface BackendStatus {
   url: string;
   command: string[];
   projectRoot: string;
+  /** Where a backend this shell started writes its output. */
+  logPath: string;
 }
 
 interface TauriBridge {
@@ -38,6 +40,7 @@ interface RawStatus {
   url: string;
   command: string[];
   project_root: string;
+  log_path: string;
 }
 
 function toStatus(raw: RawStatus | null): BackendStatus | null {
@@ -47,6 +50,7 @@ function toStatus(raw: RawStatus | null): BackendStatus | null {
     url: raw.url,
     command: raw.command,
     projectRoot: raw.project_root,
+    logPath: raw.log_path,
   };
 }
 
