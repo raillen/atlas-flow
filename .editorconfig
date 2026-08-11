@@ -36,11 +36,25 @@ dotnet_naming_symbols.constants.applicable_kinds = field
 dotnet_naming_symbols.constants.required_modifiers = const
 dotnet_naming_style.pascal.capitalization = pascal_case
 
-# --- Style that is enforced, not suggested --------------------------------
+# --- Style: preference, not a build break ---------------------------------
+#
+# The build fails on correctness, never on cosmetics. A missing
+# CancellationToken is a defect; a `var` is a preference, and the two do not
+# belong at the same severity.
+#
+# These are set to `suggestion` deliberately. `EnforceCodeStyleInBuild` plus
+# `TreatWarningsAsErrors` promotes anything at warning level to an error, so
+# leaving the var rules at warning made every one of them stop the build. That
+# was tried and reverted.
+#
+# Style is still enforced, just not here: CI runs `dotnet format
+# --verify-no-changes`, which is checkable and fixes itself.
+
 # `var` only when the type is already on the line. A reader should not have to
 # hover to learn what a variable is.
-csharp_style_var_when_type_is_apparent = true:warning
-csharp_style_var_elsewhere = false:warning
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+dotnet_diagnostic.IDE0008.severity = suggestion
 
 csharp_prefer_braces = true:error
 csharp_style_namespace_declarations = file_scoped:error

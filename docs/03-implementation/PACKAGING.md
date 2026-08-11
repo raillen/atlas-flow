@@ -4,9 +4,9 @@ The desktop client is a single NativeAOT executable built from
 `src/AtlasFlow.Desktop`. There is no sidecar, no interpreter and no runtime for
 the user to install.
 
-**Supported platforms: Linux x86_64 and Windows x86_64.** Windows was a recorded
-non-goal on P06, P09 and P10 under an owner decision of 2026-08-11; ADR-018
-reopens it, and those three Goals inherit the work. macOS remains out of scope.
+**Development platform: Linux x86_64.** Avalonia keeps Windows reachable and
+ADR-018 chose it partly for that, but Windows work is deferred by owner
+decision and Linux is what gets built and tested. macOS remains out of scope.
 
 Nothing here claims a platform it does not build and test. Linux builds,
 publishes and launches; Windows has not been attempted. See
@@ -135,7 +135,7 @@ present on the machine.
 
 ## Not verified
 
-- **Windows. Nothing at all.** No build, no publish, no launch, no MSI.
+- **Windows. Nothing at all.** No build, no publish, no launch, no MSI — and none is scheduled while development is Linux-first.
 - **`deb`, Flatpak and MSI packaging.** No package has been produced.
 - **SBOM, checksums and signature** against a .NET artefact.
 - **Any behaviour.** Zero tests exist. The binary opens a window that does

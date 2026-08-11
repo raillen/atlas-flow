@@ -10,7 +10,7 @@ Measured on 2026-08-11: Arch Linux, x86_64, .NET SDK 10.0.110.
 |-------|---------|--------|
 | Restore | `dotnet restore` | **PASS** — 13 projects, after pinning two transitive advisories |
 | Build | `dotnet build` | **PASS** — 0 warnings, 0 errors, warnings-as-errors and `AnalysisMode=All` |
-| Test hosts | `dotnet test` | Start in all 6 projects. **0 tests exist**, so this is not a passing suite |
+| Tests | `dotnet test` | **29 passing, 0 failing** — all in `AtlasFlow.Protocols.Tests`. The other 5 test projects are still empty |
 | AOT publish, Linux | `dotnet publish -c Release -r linux-x64` | **PASS** — `atlas` 2.9 MB, `atlas-flow` 20 MB |
 | Desktop launch | run the published binary | **PASS** — window opens and stays up; RSS 114 MB with nothing in it |
 | AOT publish, Windows | `dotnet publish -c Release -r win-x64` | NOT RUN |
@@ -19,8 +19,11 @@ Measured on 2026-08-11: Arch Linux, x86_64, .NET SDK 10.0.110.
 | Goal contracts | `atlas goals validate` | NOT RUN — the validator is still Python |
 
 This establishes that the solution layout, the analyzer policy and the NativeAOT
-path hold together. It does not establish that Atlas Flow does anything:
-**zero tests exist**, and the window that opens contains a `TextBlock`.
+path hold together, and that **one module — the ACP client — is ported and
+tested**.
+
+It does not establish that Atlas Flow does anything end to end. The window that
+opens still contains a `TextBlock`, and nothing drives a Goal.
 
 The previous stack's results are **not** carried over into this table. They were
 true statements about a Python backend and a Tauri bundle that this branch
@@ -138,7 +141,7 @@ Product gaps, unchanged by the port and tracked in the Goal files:
 
 Gaps created by the port, all of them open:
 
-- **The whole port.** 10,051 lines of orchestration logic and 6,266 lines of UI are not written. The scaffold compiles nothing because it contains nothing to compile.
+- **Most of the port.** The ACP client is done (975 Python lines in, 1,339 C# lines out, plus 480 lines of tests). The planner, scheduler, execution engine, persistence, routing, verification, MCP, AG-UI and the entire UI are not written.
 - **The automated accessibility audit is gone.** `axe-core` has no native equivalent. Contrast checks port; the rendered-DOM audit does not. See [ACCESSIBILITY.md](docs/02-ui-ux/ACCESSIBILITY.md).
 - **Windows is untested.** ADR-018 reopens it as a target. Nothing has been built or run there.
 - **The Python tooling is still Python.** `validate_goals.py`, `validate_docs.py`, `generate_sbom.py`, `attach_evidence.py` and `generate_icons.py` are wired into CI gates and have no C# replacement.

@@ -10,17 +10,19 @@ Every gate below is **NOT ESTABLISHED** except documentation. That is not a
 regression in the product — it is the correct reading of a branch where the
 runtime changed and no behaviour has been ported.
 
-The toolchain itself is verified: restore, build with warnings-as-errors, and a
-NativeAOT publish that launches all pass on Linux as of 2026-08-11. None of that
-is a gate. A build that compiles zero tests over zero ported logic passes no
-gate, and the temptation to score it as partial credit is exactly what the rule
-at the bottom of this page exists to refuse.
+The toolchain is verified and the first module is ported: restore, build with
+warnings-as-errors, a NativeAOT publish that launches, and **29 passing tests**
+over the ACP client, all on Linux as of 2026-08-11.
+
+That is one module out of the runtime. It moves no gate on its own, and the
+temptation to score a green build as partial credit is exactly what the rule at
+the bottom of this page exists to refuse.
 
 | Gate | Status | What it now requires |
 | --- | --- | --- |
 | Release Goals DONE with evidence | NOT ESTABLISHED | The validator is `scripts/validate_goals.py`, still Python. Its C# replacement has not been written, so no Goal on this branch can produce checkable evidence. |
 | CI green on supported platforms | NOT ESTABLISHED | Two platforms now, not one. `foundation-ci.yml` targets a Python/Node/Rust toolchain that no longer exists and has to be rewritten for `dotnet` on `ubuntu-latest` and `windows-latest`. |
-| Protocol contracts green | NOT ESTABLISHED | ACP against a live fixture agent and AG-UI envelopes must be re-covered in `AtlasFlow.Protocols.Tests`. There is no REST surface to cover any more. |
+| Protocol contracts green | **PARTIAL** | ACP is ported and covered: 17 normalizer cases against the Python suite it came from, plus 12 against a fixture agent running as a real child process. MCP and AG-UI are not ported. There is no REST surface to cover any more. |
 | No critical or high security findings | NOT ESTABLISHED | `dotnet list package --vulnerable --include-transitive` replaces pip-audit, pnpm audit and cargo audit. It must fail the build on any advisory and must treat an unreachable database as a failure, not a pass. |
 | Performance within accepted variance | NOT ESTABLISHED | First figures exist and one already misses its estimate: 20 MB published binary against a 40 MB guess, but 114 MB RSS for an empty window against 80 MB. They are from a scaffold, not the product, and no budget in [Performance Budgets](PERFORMANCE_BUDGETS.md) has been re-derived for Avalonia. See also the note in [UX_FOUNDATION](../02-ui-ux/UX_FOUNDATION.md) about measurements that were pre-registered and then not taken. |
 | Recovery suite | NOT ESTABLISHED | Both interrupt modes, idempotence and state that outlives its process must be re-covered in `AtlasFlow.Integration.Tests`. |

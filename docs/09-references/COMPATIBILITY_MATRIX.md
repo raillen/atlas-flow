@@ -8,7 +8,7 @@ desktop, mas as capacidades dependem do modo detectado.
 | Platform | Support |
 | --- | --- |
 | Linux desktop, x86_64 | Supported target. **Not yet built or tested on this branch.** |
-| Windows, x86_64 | Supported target since [ADR-018](../07-decisions/ADR-018-AVALONIA-DESKTOP.md). Was a non-goal on P06, P09 and P10 under the owner decision of 2026-08-11; those Goals inherit the work. **Nothing has been tested on Windows.** |
+| Windows, x86_64 | Reachable by the toolkit ([ADR-018](../07-decisions/ADR-018-AVALONIA-DESKTOP.md)) but **development is deferred** by owner decision, 2026-08-11. Linux is the development and test platform. **Nothing has been built or tested on Windows.** |
 | macOS | Out of scope (owner decision, 2026-08-11, unchanged) |
 
 ## Project modes

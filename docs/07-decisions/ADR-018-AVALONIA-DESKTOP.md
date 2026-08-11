@@ -4,6 +4,11 @@
 **Supersedes:** [ADR-004](ADR-004-TAURI-REACT.md)
 **Related:** [ADR-017](ADR-017-DOTNET-RUNTIME.md), [ADR-013](ADR-013-WORKSPACE-SHELL.md)
 **Reopens:** Windows support, a recorded non-goal on P06, P09 and P10
+**Amended 2026-08-11:** Windows stays a target of the toolkit choice but is
+**deferred as development work** by owner decision. Linux is the development
+and test platform until further notice. Nothing below is reversed — Avalonia
+was chosen partly *because* it keeps Windows reachable — but no Windows work
+is scheduled, and no claim about Windows may be made until it is.
 
 ## Context
 

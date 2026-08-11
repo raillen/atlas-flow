@@ -60,8 +60,25 @@
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- Test code says `null!` deliberately and asserts on it. -->
-    <NoWarn>$(NoWarn);CS8618;CA1707</NoWarn>
+    <!--
+      CS8618: test code says `null!` deliberately and asserts on it.
+      CA1707: underscores are how a test name stays readable.
+      CA2007: ConfigureAwait is required in the libraries and meaningless
+              here — the test host installs no synchronization context, so
+              every await would carry the same noise for no behaviour.
+    -->
+    <NoWarn>$(NoWarn);CS8618;CA1707;CA2007</NoWarn>
+    <!-- Tests are not a public API surface; XML docs on them are noise. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <!--
+      xunit v2 ships no implicit usings, so every test file would otherwise
+      open with the same `using Xunit;`. Declaring it once here means a new
+      test file starts with the test, not with boilerplate.
+    -->
+    <Using Include="Xunit" />
+  </ItemGroup>
 
 </Project>
