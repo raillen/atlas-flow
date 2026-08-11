@@ -33,6 +33,17 @@ not exist; `409` means it exists but its current state forbids the operation.
 - `GET /api/runs/{run_id}` — run, tasks, attempts and events.
 - `GET /api/runs/{run_id}/events`
 
+### Routing
+- `GET /api/routing` — live registry state (`pending` | `reachable` |
+  `degraded`), the models it reported, the model each role routes to with its
+  explanation, and aggregated per-model statistics from past runs.
+- `GET /api/runs/{run_id}/routing` — the route decision behind every task in the
+  run: role, selected model, candidate list, reason and fallback count. An
+  unknown run id yields an empty list, not a `404`; a run that recorded no
+  decisions and a run that never existed are indistinguishable here.
+
+See [Model Router](../01-architecture/MODEL_ROUTER.md) for what the states mean.
+
 ### Discuss
 - `GET /api/discussions`, `POST /api/discussions`
 - `GET /api/discussions/{session_id}`

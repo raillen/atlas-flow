@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { useState } from "react";
+import type { RoutingView } from "../api";
 import { api } from "../api";
 import { useAsync } from "../hooks/useAsync";
 import {
@@ -11,6 +12,88 @@ import {
   SectionHeading,
   StatusBadge,
 } from "../components/Primitives";
+
+/** Human-readable summary of the live model registry's three states. */
+export function describeRegistry(routing: RoutingView): string {
+  if (routing.state === "pending") return "Asking the live model registry…";
+  if (routing.state === "degraded") {
+    return `Live registry unreachable — routing on the policy roster. ${routing.reason}`;
+  }
+  return `${routing.available.length} model(s) reachable.`;
+}
+
+const RoutingPanel: FC = () => {
+  const routing = useAsync(() => api.routing(), []);
+
+  return (
+    <section>
+      <SectionHeading>Model routing</SectionHeading>
+      <p style={muted}>
+        Which model each role is routed to, and why. High-risk work is reviewed by
+        a model from a different provider whenever one is reachable.
+      </p>
+      <AsyncPanel
+        loading={routing.loading}
+        error={routing.error}
+        onRetry={routing.reload}
+      >
+        {routing.data && (
+          <>
+            <div style={card}>
+              <StatusBadge value={routing.data.state.toUpperCase()} />
+              <span style={{ ...muted, marginLeft: "0.5rem" }}>
+                {describeRegistry(routing.data)}
+              </span>
+            </div>
+
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: "0.4rem 0 0",
+                display: "grid",
+                gap: "0.4rem",
+              }}
+            >
+              {routing.data.roles.map((role) => (
+                <li key={role.role} style={card}>
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                    <strong style={{ minWidth: 140 }}>{role.role}</strong>
+                    <StatusBadge value={role.selected ?? "UNROUTABLE"} />
+                    {role.provider && <span style={muted}>{role.provider}</span>}
+                  </div>
+                  <p style={{ ...muted, margin: "0.25rem 0 0" }}>{role.explanation}</p>
+                </li>
+              ))}
+            </ul>
+
+            {routing.data.stats.length > 0 && (
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: "0.4rem 0 0",
+                  display: "grid",
+                  gap: "0.4rem",
+                }}
+              >
+                {routing.data.stats.map((stat) => (
+                  <li key={stat.modelKey} style={card}>
+                    <strong>{stat.modelKey}</strong>
+                    <span style={{ ...muted, marginLeft: "0.5rem" }}>
+                      {stat.successes}/{stat.uses} succeeded ·{" "}
+                      {Math.round(stat.averageLatencyMs)} ms average
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+      </AsyncPanel>
+    </section>
+  );
+};
 
 export const ReviewScreen: FC = () => {
   const goals = useAsync(() => api.goals(), []);
@@ -117,6 +200,8 @@ export const ReviewScreen: FC = () => {
           )}
         </AsyncPanel>
       )}
+
+      <RoutingPanel />
     </div>
   );
 };

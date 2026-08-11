@@ -8,6 +8,13 @@ from fastapi.testclient import TestClient
 
 from atlas_flow import __version__
 from atlas_flow.api.app import create_app
+from atlas_flow.routing.discovery import DiscoveryResult, ModelRegistry
+from atlas_flow.routing.router import ModelRouter
+
+# What the live registry would have answered. Seeding it keeps every app in
+# this module from spawning `cmd --list-models`; the probe itself is covered
+# by tests/unit/test_discovery.py.
+SEEDED_MODELS = ["deepseek/deepseek-v4-pro", "xiaomi/mimo-v2.5-pro", "gpt-5.6-luna"]
 
 
 @pytest.fixture
@@ -16,8 +23,19 @@ def client(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyP
     """A client whose operational state lives in a throwaway directory."""
     state = tmp_path_factory.mktemp("atlas-state")
     monkeypatch.setenv("ATLAS_FLOW_STATE_DIR", str(state))
-    with TestClient(create_app()) as test_client:
-        yield test_client
+    ModelRegistry.seed(
+        DiscoveryResult(
+            available=list(SEEDED_MODELS),
+            reachable=True,
+            reason="seeded by the test suite",
+            probed_at="2026-01-01T00:00:00+00:00",
+        )
+    )
+    try:
+        with TestClient(create_app()) as test_client:
+            yield test_client
+    finally:
+        ModelRegistry.reset_cache()
 
 
 TERMINAL_RUN_STATES = {"VERIFYING", "REVIEWING", "COMPLETED", "FAILED", "BLOCKED"}
@@ -138,6 +156,53 @@ class TestRuns:
 
     def test_unknown_run_is_404(self, client: TestClient) -> None:
         assert client.get("/api/runs/run-nope").status_code == 404
+
+
+class TestRouting:
+    def test_routing_reports_the_live_registry_and_every_role(
+        self, client: TestClient
+    ) -> None:
+        body = client.get("/api/routing").json()
+
+        assert body["state"] == "reachable"
+        assert body["degraded"] is False
+        assert body["available"] == SEEDED_MODELS
+        roles = {r["role"]: r for r in body["roles"]}
+        assert set(roles) == set(ModelRouter.ROLE_DEFAULTS)
+        # Every route carries its own explanation; the UI never has to guess.
+        assert all(r["explanation"] for r in roles.values())
+        assert roles["reviewer"]["selected"] == "deepseek-v4-pro"
+        assert roles["reviewer"]["provider"] == "deepseek"
+
+    def test_routing_stats_are_empty_until_a_run_observes_something(
+        self, client: TestClient
+    ) -> None:
+        assert client.get("/api/routing").json()["stats"] == []
+
+    def test_a_run_records_why_each_task_got_its_model(
+        self, client: TestClient
+    ) -> None:
+        run_id = client.post(
+            "/api/runs", json={"goal_id": "P01-G01", "runner": "dummy"}
+        ).json()["id"]
+        detail = wait_for_run(client, run_id)
+
+        decisions = client.get(f"/api/runs/{run_id}/routing").json()
+        assert len(decisions) == len(detail["tasks"])
+        assert {d["task_id"] for d in decisions} == {t["id"] for t in detail["tasks"]}
+        assert all(d["selected"] for d in decisions)
+        assert all(d["reason"] for d in decisions)
+
+        stats = {s["model_key"]: s for s in client.get("/api/routing").json()["stats"]}
+        assert sum(s["uses"] for s in stats.values()) == len(detail["tasks"])
+        assert all(s["success_rate"] == 1.0 for s in stats.values())
+
+    def test_run_routing_for_an_unknown_run_is_empty_not_an_error(
+        self, client: TestClient
+    ) -> None:
+        response = client.get("/api/runs/run-nope/routing")
+        assert response.status_code == 200
+        assert response.json() == []
 
 
 class TestDiscussions:

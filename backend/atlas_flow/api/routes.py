@@ -24,6 +24,9 @@ from atlas_flow.api.schemas import (
     GoalVerification,
     GoalView,
     MessageRequest,
+    ModelStatsView,
+    RoleRouteView,
+    RoutingView,
     RunDetail,
     RunView,
     TaskView,
@@ -37,6 +40,9 @@ from atlas_flow.execution.persistence import Persistence
 from atlas_flow.goals.loader import resolve_project
 from atlas_flow.goals.models import Goal
 from atlas_flow.planner.dag import Plan, TaskNode
+from atlas_flow.routing.discovery import ModelRegistry
+from atlas_flow.routing.router import ModelRouter
+from atlas_flow.routing.store import RoutingStore
 from atlas_flow.verification.gates import GateCoordinator, GateKind
 from atlas_flow.verification.goal_completion import check_completion, required_gates
 
@@ -173,7 +179,9 @@ async def create_run(body: CreateRunRequest, request: Request) -> RunView:
         _db(request),
         harness,
         request.app.state.config,
+        router=request.app.state.router,
         worktrees=request.app.state.worktrees,
+        routing_store=request.app.state.routing_store,
     )
     plan = plan_for_goal(goal)
 
@@ -214,6 +222,56 @@ def plan_for_goal(goal: Goal) -> Plan:
             for index, criterion in enumerate(goal.acceptance, start=1)
         ],
     )
+
+
+@router.get("/routing")
+async def get_routing(request: Request) -> RoutingView:
+    """What the router can reach, and what past runs learned about it."""
+    registry: ModelRegistry = request.app.state.registry
+    discovery = registry.current
+    store: RoutingStore = request.app.state.routing_store
+    model_router: ModelRouter = request.app.state.router
+
+    roles = []
+    for role in sorted(ModelRouter.ROLE_DEFAULTS):
+        decision = model_router.route(role)
+        roles.append(
+            RoleRouteView(
+                role=role,
+                selected=decision.selected.key if decision.selected else None,
+                provider=decision.selected.provider if decision.selected else None,
+                explanation=model_router.why_this_model(decision),
+                fallback_attempts=decision.fallback_attempts,
+            )
+        )
+
+    return RoutingView(
+        state=discovery.state,
+        reachable=discovery.reachable,
+        degraded=discovery.degraded,
+        reason=discovery.reason,
+        probed_at=discovery.probed_at,
+        available=discovery.available,
+        roles=roles,
+        stats=[
+            ModelStatsView(
+                model_key=stat.model_key,
+                uses=stat.uses,
+                successes=stat.successes,
+                failures=stat.failures,
+                success_rate=round(stat.success_rate, 3),
+                average_latency_ms=round(stat.average_latency_ms, 1),
+            )
+            for stat in await store.stats()
+        ],
+    )
+
+
+@router.get("/runs/{run_id}/routing")
+async def get_run_routing(run_id: str, request: Request) -> list[dict[str, object]]:
+    """Why each task in this run got the model it got."""
+    store: RoutingStore = request.app.state.routing_store
+    return await store.decisions_for_run(run_id)
 
 
 @router.get("/discussions")

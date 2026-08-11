@@ -1,5 +1,6 @@
 """FastAPI application factory for the Atlas Flow backend."""
 
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -20,6 +21,9 @@ from atlas_flow.execution.scheduler import Scheduler
 from atlas_flow.goals.loader import resolve_project
 from atlas_flow.harness.engine import Harness
 from atlas_flow.harness.runner import DummyRunner
+from atlas_flow.routing.discovery import ModelRegistry
+from atlas_flow.routing.router import ModelRouter
+from atlas_flow.routing.store import RoutingStore
 from atlas_flow.runners.cli import CliRunner
 from atlas_flow.verification.gates import GateCoordinator
 
@@ -47,6 +51,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     discussions = DiscussionStore(db)
     await discussions.initialize()
 
+    routing_store = RoutingStore(db)
+    await routing_store.initialize()
+
+    # Carry forward what previous runs observed, then ask the live registry
+    # which models are reachable — in the background, because that probe costs
+    # a multi-second subprocess round-trip and nothing should wait on it to
+    # serve a request. Until it answers, routing uses the policy roster.
+    router = ModelRouter()
+    await routing_store.restore(router.scorecard)
+    registry = ModelRegistry(router)
+
     harness = Harness(db)
     harness.register(DummyRunner("dummy"))
     harness.register(CliRunner("cmd"))
@@ -57,16 +72,38 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.harness = harness
     app.state.gates = GateCoordinator(db)
     app.state.discussions = discussions
+    app.state.router = router
+    app.state.routing_store = routing_store
+    app.state.registry = registry
     app.state.worktrees = worktree_manager_for(config, root)
     app.state.project_root = root
     # Background run tasks are kept referenced so they are not garbage
     # collected mid-run, which would cancel them silently.
     app.state.background = set()
 
+    probe = registry.start_background_probe()
+    if probe is not None:
+        app.state.background.add(probe)
+        probe.add_done_callback(app.state.background.discard)
+
     try:
         yield
     finally:
+        # Anything still in flight — a run, the registry probe — is cancelled
+        # and awaited before the database closes. Abandoning them leaves tasks
+        # holding a connection that is about to disappear, which surfaces later
+        # as "Event loop is closed" from an unrelated place.
+        await _shutdown_background(app.state.background)
         await db.close()
+
+
+async def _shutdown_background(tasks: set[asyncio.Task[Any]]) -> None:
+    pending = [task for task in tasks if not task.done()]
+    for task in pending:
+        task.cancel()
+    if pending:
+        await asyncio.gather(*pending, return_exceptions=True)
+    tasks.clear()
 
 
 def create_app() -> FastAPI:

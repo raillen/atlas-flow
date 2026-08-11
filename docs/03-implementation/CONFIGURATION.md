@@ -34,8 +34,16 @@ appears in the working repository.
 | `ATLAS_FLOW_AUTONOMY` | `autonomy_mode` |
 | `ATLAS_FLOW_STATE_DIR` | `state_dir` |
 
-## Not yet enforced
+## Budgets
 
-Budget limits (`max_cost_per_run_usd`, `max_tokens_per_run`) are configurable and
-read, but nothing stops a run that exceeds them — there is no model invocation to
-meter yet.
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `max_retries_per_task` | `2` | Retries per task. With the plan size, this derives the run's hard attempt cap. |
+| `max_fallback_attempts` | `2` | How far down a role's candidate list a failing task may fall back. |
+| `max_tokens_per_run` | `1000000` | Token ceiling, enforced against reported usage. `0` disables it. |
+| `max_cost_per_run_usd` | `10.0` | Cost ceiling, enforced against reported usage. `0` disables it. |
+
+The attempt cap is unconditional, since attempts are always countable. Tokens
+and cost are enforced only for usage a runner actually reports; a run whose
+runner reports nothing is recorded as having unmeasured spend rather than being
+assumed free. See [Model Router](../01-architecture/MODEL_ROUTER.md#budgets).

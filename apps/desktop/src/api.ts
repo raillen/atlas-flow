@@ -86,6 +86,44 @@ export interface GoalVerification {
   blocking: string;
 }
 
+export interface RoleRouteView {
+  role: string;
+  selected: string | null;
+  provider: string | null;
+  explanation: string;
+  fallbackAttempts: number;
+}
+
+export interface ModelStatsView {
+  modelKey: string;
+  uses: number;
+  successes: number;
+  failures: number;
+  successRate: number;
+  averageLatencyMs: number;
+}
+
+/** `state` is "pending" until the live registry answers, then reachable/degraded. */
+export interface RoutingView {
+  state: string;
+  reachable: boolean;
+  degraded: boolean;
+  reason: string;
+  probedAt: string;
+  available: string[];
+  roles: RoleRouteView[];
+  stats: ModelStatsView[];
+}
+
+export interface RouteDecisionView {
+  taskId: string;
+  role: string;
+  selected: string | null;
+  candidates: string[];
+  reason: string;
+  fallbackAttempts: number;
+}
+
 export interface DocEntry {
   path: string;
   title: string;
@@ -162,6 +200,9 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ goal_id: goalId, runner }),
     }),
+  routing: () => request<RoutingView>("/api/routing"),
+  runRouting: (id: string) =>
+    request<RouteDecisionView[]>(`/api/runs/${id}/routing`),
   docs: () => request<DocEntry[]>("/api/docs"),
   doc: (path: string) =>
     request<{ path: string; content: string }>(`/api/docs/${path}`),

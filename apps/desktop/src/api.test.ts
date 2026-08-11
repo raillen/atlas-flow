@@ -79,6 +79,48 @@ describe("api client", () => {
     expect(goal.gates).toEqual({ build: "required", documentation: "required" });
   });
 
+  it("reads the routing view, including nested role and stat fields", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        mockResponse({
+          state: "degraded",
+          reachable: false,
+          degraded: true,
+          reason: "Command Code (cmd) is not on PATH",
+          probed_at: "2026-08-10T00:00:00Z",
+          available: [],
+          roles: [
+            {
+              role: "reviewer",
+              selected: "deepseek-v4-pro",
+              provider: "deepseek",
+              explanation: "Role 'reviewer' routed to deepseek-v4-pro",
+              fallback_attempts: 0,
+            },
+          ],
+          stats: [
+            {
+              model_key: "deepseek-v4-pro",
+              uses: 4,
+              successes: 3,
+              failures: 1,
+              success_rate: 0.75,
+              average_latency_ms: 120.5,
+            },
+          ],
+        }),
+      ),
+    );
+
+    const routing = await api.routing();
+    expect(routing.state).toBe("degraded");
+    expect(routing.probedAt).toBe("2026-08-10T00:00:00Z");
+    expect(routing.roles[0].fallbackAttempts).toBe(0);
+    expect(routing.stats[0].modelKey).toBe("deepseek-v4-pro");
+    expect(routing.stats[0].averageLatencyMs).toBe(120.5);
+  });
+
   it("raises ApiError carrying the backend detail", async () => {
     vi.stubGlobal(
       "fetch",

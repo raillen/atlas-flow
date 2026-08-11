@@ -9,23 +9,26 @@ cannot be integrated is not a task that succeeded).
 from __future__ import annotations
 
 import asyncio
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from atlas_flow.config import AtlasFlowConfig
-from atlas_flow.execution.models import Run, RunState, Task, TaskState
+from atlas_flow.execution.budget import BudgetExceeded, BudgetLedger, Usage
+from atlas_flow.execution.models import Attempt, Run, RunState, Task, TaskState
 from atlas_flow.execution.persistence import Persistence
 from atlas_flow.execution.scheduler import Scheduler
 from atlas_flow.harness.engine import Harness
-from atlas_flow.harness.runner import RunnerConfig
-from atlas_flow.planner.dag import DAGError, Plan, TaskNode, validate_dag
+from atlas_flow.harness.runner import RunnerConfig, RunnerResult
+from atlas_flow.planner.dag import DAGError, Plan, RiskLevel, TaskNode, validate_dag
 from atlas_flow.planner.worktree import (
     IntegrationResult,
     Worktree,
     WorktreeManager,
     WorktreePolicy,
 )
-from atlas_flow.routing.router import ModelRouter
+from atlas_flow.routing.router import ModelEntry, ModelRouter, RouteDecision
+from atlas_flow.routing.store import RoutingStore
 from atlas_flow.verification.gates import (
     Evidence,
     GateCoordinator,
@@ -42,7 +45,12 @@ class TaskOutcome:
     objective: str
     succeeded: bool
     model_key: str = ""
+    provider: str = ""
     attempt_id: str = ""
+    fallback_attempts: int = 0
+    budget_stopped: bool = False
+    reviewer_model_key: str = ""
+    review_verdict: str = ""
     worktree: Worktree | None = None
     integration: IntegrationResult | None = None
     error: str = ""
@@ -58,6 +66,7 @@ class GoalRunReport:
     run: Run
     outcomes: list[TaskOutcome] = field(default_factory=list)
     blocked: list[str] = field(default_factory=list)
+    budget: BudgetLedger | None = None
 
     @property
     def succeeded(self) -> bool:
@@ -66,6 +75,10 @@ class GoalRunReport:
     @property
     def conflicts(self) -> list[TaskOutcome]:
         return [o for o in self.outcomes if o.needs_human]
+
+    @property
+    def stopped_by_budget(self) -> bool:
+        return any(o.budget_stopped for o in self.outcomes)
 
 
 class GoalRunner:
@@ -79,6 +92,7 @@ class GoalRunner:
         router: ModelRouter | None = None,
         worktrees: WorktreeManager | None = None,
         gates: GateCoordinator | None = None,
+        routing_store: RoutingStore | None = None,
     ) -> None:
         self.db = persistence
         self.harness = harness
@@ -86,7 +100,9 @@ class GoalRunner:
         self.router = router or ModelRouter()
         self.worktrees = worktrees
         self.gates = gates or GateCoordinator(persistence)
+        self.routing_store = routing_store
         self.scheduler = Scheduler(persistence)
+        self.budget: BudgetLedger | None = None
 
     async def execute(
         self,
@@ -109,6 +125,7 @@ class GoalRunner:
         run = await self.scheduler.start_run(run)
 
         tasks, node_by_task_id = _materialize(plan, run.id)
+        self.budget = BudgetLedger.from_config(self.config, len(tasks))
         run, _ = await self.scheduler.schedule_tasks(run, tasks)
         run = await self.scheduler.advance_run(run, RunState.RUNNING)
 
@@ -139,6 +156,7 @@ class GoalRunner:
         ]
         report.blocked = remaining
 
+        report.budget = self.budget
         await self.scheduler.evaluate_run_completion(run)
         reloaded = await self.db.load_run(run.id)
         if reloaded is not None:
@@ -178,11 +196,12 @@ class GoalRunner:
         runner_name: str,
         integration_target: str,
     ) -> TaskOutcome:
-        decision = self.router.route(_role_for(node), task_risk=str(node.risk))
-        model_key = decision.selected.command_code_id if decision.selected else "default"
-        outcome = TaskOutcome(
-            task_id=task.id, objective=task.objective, succeeded=False, model_key=model_key
-        )
+        role = _role_for(node)
+        decision = self.router.route(role, task_risk=str(node.risk))
+        outcome = TaskOutcome(task_id=task.id, objective=task.objective, succeeded=False)
+
+        if self.routing_store is not None:
+            await self.routing_store.record_decision(decision, task.id, run.id)
 
         task = await self.scheduler.mark_task_ready(task)
 
@@ -191,26 +210,32 @@ class GoalRunner:
             worktree = await self.worktrees.create(run.goal_id, task.id)
             outcome.worktree = worktree
 
-        result, attempt = await self.harness.execute(
-            runner_name,
-            task,
-            _prompt_for(node),
-            RunnerConfig(
-                model=model_key,
-                max_turns=self.config.command_code_max_turns,
-                timeout_seconds=self.config.command_code_timeout_seconds,
-            ),
+        result, attempt = await self._attempt_with_fallback(
+            run, task, node, role, decision, runner_name, outcome
         )
-        outcome.attempt_id = attempt.id
-        self.router.scorecard.observe(decision.selected.key if decision.selected else
-                                      "default", result.success)
 
         task = await self._reload(task)
+
+        if result is None or attempt is None:
+            # The budget stopped this task before it could be tried again.
+            await self._record_gate(run, task, GateKind.BUILD, GateVerdict.FAILED,
+                                    outcome.error)
+            if task.state == TaskState.RUNNING:
+                await self.scheduler.fail_task(task, outcome.error)
+            return outcome
 
         if not result.success:
             outcome.error = result.error or "runner reported failure"
             await self._record_gate(run, task, GateKind.BUILD, GateVerdict.FAILED,
                                     outcome.error)
+            await self.scheduler.fail_task(task, outcome.error)
+            return outcome
+
+        # High-risk work is reviewed before it is merged, not after: a change
+        # that a reviewer rejects must never have reached the target branch.
+        if _is_high_risk(node) and not await self._cross_provider_review(
+            run, task, node, outcome, runner_name, worktree
+        ):
             await self.scheduler.fail_task(task, outcome.error)
             return outcome
 
@@ -231,6 +256,159 @@ class GoalRunner:
         outcome.succeeded = True
         return outcome
 
+    async def _attempt_with_fallback(
+        self,
+        run: Run,
+        task: Task,
+        node: TaskNode,
+        role: str,
+        decision: RouteDecision,
+        runner_name: str,
+        outcome: TaskOutcome,
+    ) -> tuple[RunnerResult | None, Attempt | None]:
+        """Try the routed model, then fall back down the candidate list.
+
+        Fallback is bounded twice over: by `max_fallback_attempts`, and by the
+        number of models that are actually reachable. Retrying the same
+        unreachable model forever is the failure mode this guards against.
+        """
+        candidates = _fallback_candidates(self.router, decision)
+        limit = min(len(candidates), 1 + max(0, self.config.max_fallback_attempts))
+
+        last_result: RunnerResult | None = None
+        last_attempt: Attempt | None = None
+
+        for index, candidate in enumerate(candidates[:limit]):
+            model_id = candidate.command_code_id if candidate else "default"
+            model_key = candidate.key if candidate else "default"
+
+            if self.budget is not None:
+                try:
+                    self.budget.check_can_start_attempt()
+                except BudgetExceeded as exc:
+                    outcome.error = str(exc)
+                    outcome.budget_stopped = True
+                    return last_result, last_attempt
+
+            started = time.monotonic()
+            result, attempt = await self.harness.execute(
+                runner_name,
+                task,
+                _prompt_for(node),
+                RunnerConfig(
+                    model=model_id,
+                    max_turns=self.config.command_code_max_turns,
+                    timeout_seconds=self.config.command_code_timeout_seconds,
+                ),
+            )
+            latency_ms = (time.monotonic() - started) * 1000
+
+            last_result, last_attempt = result, attempt
+            outcome.attempt_id = attempt.id
+            outcome.model_key = model_id
+            outcome.provider = candidate.provider if candidate else ""
+            outcome.fallback_attempts = index
+
+            usage = Usage.from_result(result)
+            if self.budget is not None:
+                self.budget.record(usage)
+
+            self.router.scorecard.observe(model_key, result.success, latency_ms)
+            if self.routing_store is not None:
+                await self.routing_store.record_observation(
+                    model_key, result.success, role=role, latency_ms=latency_ms,
+                    run_id=run.id, task_id=task.id,
+                )
+
+            if result.success:
+                return result, attempt
+
+            outcome.error = result.error or "runner reported failure"
+            task = await self._reload(task)
+            if index + 1 < limit and task.state == TaskState.FAILED:
+                # A failed task is retryable; put it back in flight for the
+                # next candidate rather than leaving it closed.
+                task = await self.scheduler.mark_task_ready(task)
+
+        return last_result, last_attempt
+
+    async def _cross_provider_review(
+        self,
+        run: Run,
+        task: Task,
+        node: TaskNode,
+        outcome: TaskOutcome,
+        runner_name: str,
+        worktree: Worktree | None,
+    ) -> bool:
+        """Have a different provider check high-risk work before it is merged.
+
+        Two models from one provider share their training and their blind
+        spots, so a review only adds information when it comes from somewhere
+        else. When no other provider is reachable the task is not blocked — the
+        policy says cross-provider review "when possible" — but the review gate
+        stays PENDING, so unreviewed work is never recorded as reviewed.
+        """
+        reviewer = self.router.select_high_risk_reviewer(outcome.provider)
+        if reviewer is None:
+            await self._record_gate(
+                run, task, GateKind.REVIEW, GateVerdict.PENDING,
+                f"No reviewer outside provider "
+                f"'{outcome.provider or 'unknown'}' is reachable",
+                kind="review_comment",
+            )
+            return True
+
+        if self.budget is not None:
+            try:
+                self.budget.check_can_start_attempt()
+            except BudgetExceeded as exc:
+                await self._record_gate(
+                    run, task, GateKind.REVIEW, GateVerdict.PENDING, str(exc),
+                    kind="review_comment",
+                )
+                return True
+
+        started = time.monotonic()
+        result, attempt = await self.harness.execute(
+            runner_name,
+            task,
+            _review_prompt(node, worktree),
+            RunnerConfig(
+                model=reviewer.command_code_id,
+                max_turns=self.config.command_code_max_turns,
+                timeout_seconds=self.config.command_code_timeout_seconds,
+            ),
+        )
+        latency_ms = (time.monotonic() - started) * 1000
+
+        if self.budget is not None:
+            self.budget.record(Usage.from_result(result))
+        self.router.scorecard.observe(reviewer.key, result.success, latency_ms)
+        if self.routing_store is not None:
+            await self.routing_store.record_observation(
+                reviewer.key, result.success, role="reviewer", latency_ms=latency_ms,
+                run_id=run.id, task_id=task.id,
+            )
+
+        outcome.reviewer_model_key = reviewer.command_code_id
+        outcome.review_verdict = str(
+            GateVerdict.PASSED if result.success else GateVerdict.FAILED
+        )
+        detail = (
+            f"{reviewer.key} ({reviewer.provider}) reviewed attempt {attempt.id}"
+        )
+        if not result.success:
+            outcome.error = result.error or "cross-provider review rejected the change"
+            detail = f"{detail}: {outcome.error}"
+
+        await self._record_gate(
+            run, task, GateKind.REVIEW,
+            GateVerdict.PASSED if result.success else GateVerdict.FAILED,
+            detail, kind="review_comment",
+        )
+        return result.success
+
     async def _reload(self, task: Task) -> Task:
         for stored in await self.db.load_tasks(task.run_id):
             if stored.id == task.id:
@@ -238,13 +416,19 @@ class GoalRunner:
         return task
 
     async def _record_gate(
-        self, run: Run, task: Task, gate: GateKind, verdict: GateVerdict, detail: str
+        self,
+        run: Run,
+        task: Task,
+        gate: GateKind,
+        verdict: GateVerdict,
+        detail: str,
+        kind: str = "runner_result",
     ) -> None:
         await self.gates.record_evidence(
             Evidence.new(
                 goal_id=run.goal_id,
                 gate=gate,
-                kind="runner_result",
+                kind=kind,
                 verdict=verdict,
                 uri=detail[:500],
                 run_id=run.id,
@@ -283,6 +467,44 @@ def _materialize(plan: Plan, run_id: str) -> tuple[list[Task], dict[str, TaskNod
 
 def _role_for(node: TaskNode) -> str:
     return node.capabilities[0] if node.capabilities else "core-implementer"
+
+
+def _fallback_candidates(
+    router: ModelRouter, decision: RouteDecision
+) -> list[ModelEntry | None]:
+    """The selected model first, then the other reachable candidates.
+
+    A model the registry does not expose is not a fallback; trying it just
+    burns an attempt. When nothing is reachable the list holds a single `None`,
+    which runs the harness on its default model — the runner may still be able
+    to work without the router picking for it.
+    """
+    reachable = [
+        candidate for candidate in decision.candidates if router.is_reachable(candidate)
+    ]
+    if decision.selected is not None:
+        reachable = [decision.selected] + [
+            candidate for candidate in reachable if candidate.key != decision.selected.key
+        ]
+    return list(reachable) if reachable else [None]
+
+
+def _is_high_risk(node: TaskNode) -> bool:
+    return str(node.risk) == str(RiskLevel.HIGH)
+
+
+def _review_prompt(node: TaskNode, worktree: Worktree | None) -> str:
+    lines = [
+        "Review the change made for this task. Reject it if it is incorrect,"
+        " unsafe, or reaches outside its write scope.",
+        f"Objective: {node.objective}",
+    ]
+    if node.write_scope:
+        lines.append(f"Write scope: {', '.join(node.write_scope)}")
+    if worktree is not None:
+        lines.append(f"Worktree: {worktree.path}")
+        lines.append(f"Branch: {worktree.branch}")
+    return "\n".join(lines)
 
 
 def _prompt_for(node: TaskNode) -> str:

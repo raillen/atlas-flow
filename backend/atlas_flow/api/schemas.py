@@ -177,6 +177,34 @@ class CreateRunRequest(BaseModel):
     integration_target: str = "main"
 
 
+class ModelStatsView(BaseModel):
+    model_key: str
+    uses: int
+    successes: int
+    failures: int
+    success_rate: float
+    average_latency_ms: float
+
+
+class RoleRouteView(BaseModel):
+    role: str
+    selected: str | None
+    provider: str | None
+    explanation: str
+    fallback_attempts: int
+
+
+class RoutingView(BaseModel):
+    state: str  # "pending" | "reachable" | "degraded"
+    reachable: bool
+    degraded: bool
+    reason: str
+    probed_at: str
+    available: list[str] = Field(default_factory=list)
+    roles: list[RoleRouteView] = Field(default_factory=list)
+    stats: list[ModelStatsView] = Field(default_factory=list)
+
+
 class MessageRequest(BaseModel):
     content: str
     turn_type: str = "message"

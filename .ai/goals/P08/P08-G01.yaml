@@ -40,3 +40,19 @@ history:
   but no model is invoked. Runtime model discovery is still unimplemented.'
 - '2026-08-10: still blocking — Budget limits are configured but not enforced during a run.'
 - '2026-08-10: still blocking — review gate: no independent review has been performed.'
+- '2026-08-10: closed — Runtime model discovery: ModelRegistry probes `cmd --list-models`
+  in the background at startup and narrows the router to the models the live registry reports;
+  a failed probe degrades to the policy roster instead of failing.'
+- '2026-08-10: closed — Bounded retry/fallback: GoalRunner falls back down the role''s candidate
+  list, bounded by max_fallback_attempts and by the number of reachable models.'
+- '2026-08-10: closed — Cross-provider reviewer selection: high-risk tasks are reviewed by
+  a model from another provider before integration; when none is reachable the review gate
+  records PENDING rather than passing unreviewed work.'
+- '2026-08-10: closed — Budget limits are enforced during a run. The attempt cap is unconditional;
+  token and cost ceilings apply to reported usage, and unmeasured spend is reported as unmeasured
+  rather than assumed to be zero.'
+- '2026-08-10: closed — Usage observations persist in model_observations and reseed the scorecard
+  at startup, so routing memory survives a restart.'
+- '2026-08-10: closed — Why-this-model explanations are exposed at GET /api/routing and GET
+  /api/runs/{id}/routing, and rendered on the Review screen.'
+- '2026-08-10: still blocking — review gate: no independent review has been performed.'

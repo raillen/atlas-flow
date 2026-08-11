@@ -7,18 +7,18 @@ Generated: 2026-08-10
 | Check | Command | Result |
 |-------|---------|--------|
 | Python lint | `uv run --project backend ruff check .` | PASS |
-| Python types | `uv run --project backend mypy` | PASS (strict, 50 files) |
-| Python tests | `uv run --project backend pytest` | PASS — 183 tests |
+| Python types | `uv run --project backend mypy` | PASS (strict, 53 files) |
+| Python tests | `uv run --project backend pytest` | PASS — 226 tests |
 | TypeScript build | `pnpm run typecheck` | PASS |
 | JS lint | `pnpm run lint` | PASS |
-| JS tests | `pnpm run test` | PASS — 18 tests |
+| JS tests | `pnpm run test` | PASS — 22 tests |
 | Docs links | `python scripts/validate_docs.py` | PASS |
 | Goal contracts | `python scripts/validate_goals.py` | PASS — 11 Goals, 0 DONE |
 | Command Code | `scripts/validate_command_code.sh` | PASS — 9 agents, 15 skills |
 
 Run everything with `scripts/validate_all.sh`.
 
-Roughly 7,000 lines of source are covered by roughly 5,600 lines of tests.
+Roughly 8,300 lines of source are covered by roughly 4,000 lines of tests.
 
 ## Test coverage by subsystem
 
@@ -30,10 +30,11 @@ Roughly 7,000 lines of source are covered by roughly 5,600 lines of tests.
 | Atlas Harness | 12 | Attempt persistence, capability negotiation, failure paths |
 | ACP | 17 | Live agent subprocess, permissions, protocol errors |
 | Planner and worktrees | 26 | Real git worktrees, conflict detection, parallel isolation |
-| Goal execution | 5 | Plan to integrated commits, end to end |
+| Goal execution | 15 | Plan to integrated commits, cross-provider review, budget stops |
 | Verification and evidence | 24 | Gate rules, evidence persistence, DONE enforcement |
-| Model routing | 12 | Role routing, fallback, scorecard |
-| API | 27 | Every endpoint against the real project, path traversal, event stream |
+| Model routing | 25 | Role routing, live discovery and degradation, bounded fallback, durable scorecard |
+| Budgets | 11 | Attempt caps, reported vs unmeasured spend |
+| API | 26 | Every endpoint against the real project, path traversal, event stream |
 | Faults and security | 12 | Fault injection, security guard |
 
 ## Defects this pass found and fixed
@@ -52,8 +53,8 @@ Roughly 7,000 lines of source are covered by roughly 5,600 lines of tests.
 
 These are tracked in the Goal files, not hidden:
 
-- **No LLM is ever invoked.** The router selects model identifiers; no client exists. The CLI and ACP runners are the only paths that perform work (P08).
-- **Budget limits are configured but not enforced** during a run (P08).
+- **Models are reached only through Command Code.** There is no provider SDK and there will not be one (ADR-012). If `cmd` is absent, discovery degrades to the policy roster and the CLI and ACP runners are the only paths that perform work.
+- **Adaptive scoring is post-MVP.** The scorecard is fed and persisted, but routing order is still the deterministic policy order; it does not yet reorder candidates by observed success (RFC-001).
 - **The Tauri shell is the unmodified template** — no IPC commands, no packaging pipeline (P06, P09).
 - **MCP forwarding and terminal/file event streaming over ACP** are not implemented (P04).
 - **No independent review has been performed**, so the review gate is outstanding on every Goal (P00–P08).

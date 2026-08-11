@@ -3,7 +3,7 @@
 **Project:** Atlas Flow
 **Framework:** Project Atlas Framework 0.1.0
 **Status:** In development — 0 of 11 Goals DONE
-**Current phase:** P08 — Routing, Budgets and Scorecards (blocked on model invocation)
+**Current phase:** P09 — Hardening
 
 ## How to read the Goal states
 
@@ -26,8 +26,8 @@ passing evidence for every gate it declares required.
 | P05 | Goal Planner and DAG Execution | ACTIVE | review gate |
 | P06 | Desktop Modes | ACTIVE | Tauri IPC and packaging, review gate |
 | P07 | Verification and Evidence | ACTIVE | review gate |
-| P08 | Routing, Budgets and Scorecards | ACTIVE | no LLM client, no budget enforcement |
-| P09 | Hardening | PLANNED | depends on P08 |
+| P08 | Routing, Budgets and Scorecards | ACTIVE | review gate |
+| P09 | Hardening | PLANNED | not started |
 | P10 | Beta and 1.0 Validation | PLANNED | depends on P09 |
 
 The review gate is outstanding across the board because no independent review
@@ -40,6 +40,14 @@ criterion, schedules the tasks in dependency order, runs each one in its own git
 worktree through a registered runner, integrates the result, records gate
 evidence and streams every state change to the UI. Run state is durable and
 survives a crash.
+
+Each task is routed to a model by role. The live model registry is probed
+through `cmd --list-models` in the background at startup; a failing task falls
+back to another reachable model within a bounded budget, high-risk work is
+reviewed by a different provider before it is integrated, and every attempt is
+observed so routing memory survives a restart. Attempt caps are enforced
+unconditionally; token and cost ceilings are enforced against usage a runner
+actually reports, and unmeasured spend is reported as unmeasured.
 
 ## Approved direction
 
@@ -61,6 +69,10 @@ survives a crash.
 
 ## Next action
 
-Close P08 by implementing model invocation: the router selects a model for every
-task and feeds the scorecard, but nothing calls one. Until an agent actually runs,
-the CLI and ACP runners are the only paths that perform work.
+P09 hardening: fault injection across the runner boundary, permission and secret
+handling in the ACP path, accessibility of the desktop screens, and performance
+budgets. P04's MCP forwarding and terminal/file events, and P06's Tauri IPC and
+packaging, remain open and are prerequisites for P10.
+
+The review gate on every Goal stays open until an independent review runs. It is
+not being self-certified.
