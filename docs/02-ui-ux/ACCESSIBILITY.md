@@ -30,6 +30,12 @@ the most common colour-vision deficiencies.
 - Primary navigation implements the WAI-ARIA tabs pattern: arrow keys move
   between tabs, Home and End jump to the ends, and only the active tab is in the
   tab order. `App.test.ts` covers the key model.
+- Focus follows the selection **after** the render, not inside the key handler.
+  Moving it synchronously focused a tab whose `tabIndex` was still `-1` from the
+  previous render, underneath a panel being replaced: the first arrow key worked
+  and every one after it did nothing. Arrow navigation that moves once is worse
+  than none, because it looks supported. jsdom does not reproduce this — only
+  `scripts/e2e_packaged.sh` catches it, which is why that smoke test exists.
 - `:focus-visible` draws a 2px ring in `index.css`. The rule never removes an
   outline without replacing it — keyboard navigation is unusable the moment
   focus becomes invisible.

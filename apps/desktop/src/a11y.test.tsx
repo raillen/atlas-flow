@@ -9,7 +9,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import axe from "axe-core";
 
 import { App } from "./App";
@@ -268,5 +268,42 @@ describe("the audit itself", () => {
     const found = await violations(container);
     expect(found.length).toBeGreaterThan(0);
     expect(found.join(" ")).toContain("image");
+  });
+});
+
+describe("keyboard navigation between tabs", () => {
+  it("keeps focus on the tablist so arrows can be pressed more than once", async () => {
+    // This asserts the contract: after an arrow key, focus is on the newly
+    // selected tab, so the next arrow key has somewhere to go.
+    //
+    // It does NOT reproduce the bug that motivated the fix. In the real
+    // WebKit view, focusing synchronously inside the handler put focus on a
+    // tab whose tabIndex was still -1, under a panel being replaced, and every
+    // arrow key after the first did nothing. jsdom is forgiving enough that
+    // this test passes either way — only the packaged smoke test catches it,
+    // which is the whole reason that smoke test exists.
+    render(<App />);
+    const tabs = await screen.findAllByRole("tab");
+    const selected = tabs.find((tab) => tab.getAttribute("aria-selected") === "true");
+    expect(selected).toBeTruthy();
+    selected!.focus();
+
+    fireEvent.keyDown(selected!, { key: "ArrowRight" });
+    await waitFor(() =>
+      expect(document.activeElement?.getAttribute("aria-selected")).toBe("true"),
+    );
+    const afterOne = document.activeElement;
+
+    fireEvent.keyDown(document.activeElement!, { key: "ArrowRight" });
+    await waitFor(() => expect(document.activeElement).not.toBe(afterOne));
+    expect(document.activeElement?.getAttribute("role")).toBe("tab");
+    expect(document.activeElement?.getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("does not steal focus when nothing asked it to", async () => {
+    render(<App />);
+    await screen.findAllByRole("tab");
+
+    expect(document.activeElement?.tagName).toBe("BODY");
   });
 });

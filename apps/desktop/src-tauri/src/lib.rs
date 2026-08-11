@@ -10,7 +10,7 @@
 
 use std::env;
 use std::fs::File;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use std::time::Duration;
@@ -121,22 +121,79 @@ fn project_root_path() -> PathBuf {
 /// is removed, rather than a hand-kept list of names that would drift.
 fn strip_bundle_environment(command: &mut Command) {
     let Some(bundle) = bundle_dir() else { return };
-    let bundle = bundle.to_string_lossy().to_string();
+    let plan = bundle_environment_plan(env::vars(), &bundle.to_string_lossy());
 
-    for (name, value) in env::vars() {
-        if !value.contains(&bundle) {
+    for name in plan.remove {
+        command.env_remove(name);
+    }
+    if let Some(path) = plan.path {
+        command.env("PATH", path);
+    }
+}
+
+/// What to change about a child's environment, decided without touching one.
+#[derive(Debug, Default, PartialEq)]
+struct EnvironmentPlan {
+    remove: Vec<String>,
+    path: Option<String>,
+}
+
+/// Every variable naming the bundle is dropped; PATH keeps everything else.
+///
+/// Deciding by value rather than by a list of variable names means the rule
+/// does not drift as the bundler adds variables. Keeping it a pure function is
+/// what makes it testable at all: `env::set_var` is process-global and Rust
+/// runs tests in threads, so a test that set the environment would be testing
+/// the other tests too.
+fn bundle_environment_plan<I>(vars: I, bundle: &str) -> EnvironmentPlan
+where
+    I: IntoIterator<Item = (String, String)>,
+{
+    let mut plan = EnvironmentPlan::default();
+    if bundle.is_empty() {
+        return plan;
+    }
+
+    for (name, value) in vars {
+        if !value.contains(bundle) {
             continue;
         }
         if name == "PATH" {
             // PATH is needed; only its bundle entries are not.
             let kept: Vec<&str> = value
                 .split(':')
-                .filter(|entry| !entry.contains(&bundle))
+                .filter(|entry| !entry.contains(bundle))
                 .collect();
-            command.env("PATH", kept.join(":"));
+            plan.path = Some(kept.join(":"));
         } else {
-            command.env_remove(name);
+            plan.remove.push(name);
         }
+    }
+    plan
+}
+
+/// Spawn, then confirm it is still alive before calling it started.
+///
+/// Spawning succeeds for a command that dies immediately, so a status reported
+/// the instant after spawn is not a status. A backend that exited on startup
+/// comes back as an error naming the exit code and the last words of its log,
+/// rather than as a running service the user then watches fail to answer.
+fn spawn_and_confirm(command: &mut Command, log: &Path) -> Result<Child, String> {
+    let mut child = command
+        .spawn()
+        .map_err(|error| format!("could not start the backend: {error}"))?;
+
+    std::thread::sleep(Duration::from_millis(400));
+    match child.try_wait() {
+        Ok(Some(status)) => {
+            let tail = std::fs::read_to_string(log).unwrap_or_default();
+            let reason = tail.lines().rev().take(3).collect::<Vec<_>>().join(" / ");
+            Err(format!(
+                "the backend exited immediately ({status}). See {}: {reason}",
+                log.display()
+            ))
+        }
+        _ => Ok(child),
     }
 }
 
@@ -231,23 +288,7 @@ fn start_backend(backend: State<'_, Backend>) -> Result<BackendStatus, String> {
         .stderr(Stdio::from(err));
     strip_bundle_environment(&mut command);
 
-    let mut child = command
-        .spawn()
-        .map_err(|error| format!("could not start {program}: {error}"))?;
-
-    // Spawning succeeds even for a command that dies immediately, so a status
-    // reported the instant after spawn is not a status at all. Give it a
-    // moment and ask: a backend that exited on startup must be reported as
-    // stopped, with the reason, not as running.
-    std::thread::sleep(Duration::from_millis(400));
-    if let Ok(Some(status)) = child.try_wait() {
-        let tail = std::fs::read_to_string(&log).unwrap_or_default();
-        let reason = tail.lines().rev().take(3).collect::<Vec<_>>().join(" / ");
-        return Err(format!(
-            "{program} exited immediately ({status}). See {}: {reason}",
-            log.display()
-        ));
-    }
+    let child = spawn_and_confirm(&mut command, &log)?;
 
     *slot = Some(child);
     Ok(status_of(true))
@@ -395,5 +436,115 @@ mod tests {
         let mut slot = Some(child);
         assert!(!is_alive(&mut slot));
         assert!(slot.is_none());
+    }
+}
+
+#[cfg(test)]
+mod bundle_tests {
+    use super::*;
+
+    fn vars(pairs: &[(&str, &str)]) -> Vec<(String, String)> {
+        pairs
+            .iter()
+            .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+            .collect()
+    }
+
+    #[test]
+    fn outside_a_bundle_nothing_is_changed() {
+        let plan = bundle_environment_plan(vars(&[("PYTHONHOME", "/usr")]), "");
+
+        assert_eq!(plan, EnvironmentPlan::default());
+    }
+
+    #[test]
+    fn every_variable_naming_the_bundle_is_dropped() {
+        // Regression: an AppImage points PYTHONHOME and LD_LIBRARY_PATH at
+        // itself, and the Python backend it launched inherited them and died
+        // on a Python path error that named nothing real.
+        let plan = bundle_environment_plan(
+            vars(&[
+                ("PYTHONHOME", "/tmp/.mount_x/usr"),
+                ("LD_LIBRARY_PATH", "/tmp/.mount_x/usr/lib"),
+                ("GTK_PATH", "/tmp/.mount_x/usr/lib/gtk-3.0"),
+                ("HOME", "/home/someone"),
+                ("LANG", "en_GB.UTF-8"),
+            ]),
+            "/tmp/.mount_x",
+        );
+
+        assert_eq!(
+            plan.remove,
+            vec!["PYTHONHOME", "LD_LIBRARY_PATH", "GTK_PATH"]
+        );
+        assert!(plan.path.is_none());
+    }
+
+    #[test]
+    fn path_keeps_everything_except_its_bundle_entries() {
+        // Removing PATH outright would leave the child unable to find
+        // anything at all.
+        let plan = bundle_environment_plan(
+            vars(&[("PATH", "/tmp/.mount_x/usr/bin:/usr/local/bin:/usr/bin")]),
+            "/tmp/.mount_x",
+        );
+
+        assert_eq!(plan.path.as_deref(), Some("/usr/local/bin:/usr/bin"));
+        assert!(plan.remove.is_empty());
+    }
+
+    #[test]
+    fn a_variable_that_merely_mentions_a_similar_path_is_left_alone() {
+        let plan = bundle_environment_plan(
+            vars(&[("EDITOR", "/tmp/.mounted-elsewhere/bin/vi")]),
+            "/tmp/.mount_x",
+        );
+
+        assert!(plan.remove.is_empty());
+    }
+
+    #[test]
+    fn a_command_that_dies_immediately_is_not_reported_as_started() {
+        // Regression: start_backend returned RUNNING the instant after spawn,
+        // so a backend that failed on startup was shown as healthy while every
+        // panel reported a connection error, blaming the wrong component.
+        let log = std::env::temp_dir().join("atlas-spawn-probe.log");
+        std::fs::write(&log, "boom: could not import the application\n").unwrap();
+
+        let mut command = Command::new(if cfg!(windows) { "cmd" } else { "false" });
+        if cfg!(windows) {
+            command.args(["/C", "exit 1"]);
+        }
+        command.stdout(Stdio::null()).stderr(Stdio::null());
+
+        let result = spawn_and_confirm(&mut command, &log);
+
+        let message = result.expect_err("a dead process must not look started");
+        assert!(message.contains("exited immediately"), "{message}");
+        // The reason the user needs is the log's last words, not the exit code.
+        assert!(
+            message.contains("could not import the application"),
+            "{message}"
+        );
+
+        std::fs::remove_file(&log).ok();
+    }
+
+    #[test]
+    fn a_command_that_keeps_running_is_reported_as_started() {
+        let log = std::env::temp_dir().join("atlas-spawn-probe-alive.log");
+        let mut command = Command::new(if cfg!(windows) { "timeout" } else { "sleep" });
+        command.arg("5").stdout(Stdio::null()).stderr(Stdio::null());
+
+        let mut child = spawn_and_confirm(&mut command, &log)
+            .expect("a live process must be reported as started");
+
+        let mut slot = Some(child.try_wait().map(|_| child).unwrap());
+        assert!(is_alive(&mut slot));
+
+        if let Some(mut running) = slot {
+            let _ = running.kill();
+            let _ = running.wait();
+        }
     }
 }

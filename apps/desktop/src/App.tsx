@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AtlasLogo } from "@atlas-flow/ui";
 import { DiscussScreen } from "./screens/DiscussScreen";
 import { PlanScreen } from "./screens/PlanScreen";
@@ -79,6 +79,9 @@ export function App() {
   const [tab, setTab] = useState<Tab>("plan");
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // Focus follows the selection only when the keyboard moved it; stealing
+  // focus on mount, or when a click already moved it, is its own bug.
+  const keyboardNavigation = useRef(false);
 
   const onRunStarted = useCallback((runId: string) => {
     setActiveRunId(runId);
@@ -90,8 +93,23 @@ export function App() {
     const next = nextTabIndex(event.key, current, TABS.length);
     if (next === null) return;
     event.preventDefault();
+    keyboardNavigation.current = true;
     setTab(TABS[next]);
-    tabRefs.current[next]?.focus();
+  }, [tab]);
+
+  /**
+   * Move focus after the render, not during the handler.
+   *
+   * Focusing synchronously put focus on a tab whose `tabIndex` was still -1
+   * from the previous render, and the panel swapping underneath took it away
+   * again — so exactly one arrow key worked and every one after it went
+   * nowhere. Arrow navigation that only moves once is worse than none: it
+   * looks supported until somebody relies on it.
+   */
+  useEffect(() => {
+    if (!keyboardNavigation.current) return;
+    keyboardNavigation.current = false;
+    tabRefs.current[TABS.indexOf(tab)]?.focus();
   }, [tab]);
 
   return (

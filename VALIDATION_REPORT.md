@@ -11,14 +11,14 @@ Generated: 2026-08-10
 | Python tests | `uv run --project backend pytest` | PASS — 328 tests |
 | TypeScript build | `pnpm run typecheck` | PASS |
 | JS lint | `pnpm run lint` | PASS |
-| JS tests | `pnpm run test` | PASS — 57 tests, including an axe-core DOM audit |
+| JS tests | `pnpm run test` | PASS — 59 tests, including an axe-core DOM audit |
 | Docs links | `python scripts/validate_docs.py` | PASS |
 | Goal contracts | `python scripts/validate_goals.py` | PASS — 11 Goals, 11 DONE with evidence |
 | Command Code | `scripts/validate_command_code.sh` | PASS — 9 agents, 15 skills |
-| Desktop shell | `cargo fmt`, `clippy -D warnings`, `cargo test` | PASS — 9 tests |
+| Desktop shell | `cargo fmt`, `clippy -D warnings`, `cargo test` | PASS — 16 tests |
 | Dependency audit | `sh scripts/audit_dependencies.sh` | PASS — no vulnerabilities; 17 unmaintained-crate warnings from Tauri's GTK3 chain |
 | Packaging | `sh scripts/package_smoke.sh` | PASS — deb and AppImage, SBOM (840 components), SHA256SUMS, GPG signature verified from a clean keyring |
-| Packaged app | AppImage launched on a real desktop | PASS — ran a Goal to 5 succeeded tasks, 53 models discovered |
+| Packaged app | `sh scripts/e2e_packaged.sh` | PASS — drives the real AppImage: starts a backend, serves the right project |
 | Every gate at once | `sh scripts/bootstrap.sh && sh scripts/run_gates.sh` | PASS — 12 gates |
 
 Run everything with `scripts/validate_all.sh`.
@@ -94,6 +94,15 @@ The owner waived model diversity and undertook a second reading of their own. Th
 
 27. **A failing review satisfied the review gate.** `check_declared_evidence` counted any truthy evidence value as coverage, so a Goal carrying `review: "FAILED — the reviewer rejected this"` was reported completable. Live at the time: all eleven Goals carried `review: "PARTIAL — ..."`, so the validator would have accepted DONE on every one of them. An entry opening with a non-passing verdict is now reported as *failing* rather than as covering its gate.
 28. **Parallel tasks overspent the attempt budget.** The check and the accounting straddled the `await` where the model runs, so every concurrent task passed the same check before any had counted itself. Reproduced: a cap of one bought four attempts. Reservation and accounting are separate now, and a crash between them keeps the slot spent rather than releasing it.
+
+## Findings from using the packaged application (2026-08-11)
+
+Three defects reached a build that twelve gates called green, and a fourth got past the accessibility suite. Each lived where a whole layer is blind, not in a gap more tests of the same shape would close.
+
+29. **A dead backend was reported as RUNNING.** Spawning succeeds for a command that dies immediately, so the shell claimed success it had not checked. It waits and confirms now, and returns the exit status with the last lines of the log.
+30. **The backend's output went to `/dev/null`**, so a failure left nothing to diagnose. It goes to `/tmp/atlas-flow-backend.log`, and the UI shows the path.
+31. **A packaged app cannot trust its own environment.** An AppImage runs with its working directory inside its own mount and points `PYTHONHOME` and `LD_LIBRARY_PATH` at itself, so the shell reported the bundle as the project root and the backend it launched inherited an environment that killed it. The bundle is refused as a project root, and every variable naming it is stripped from the child.
+32. **Arrow-key navigation between tabs moved exactly once.** Focus was set inside the key handler, onto a tab whose `tabIndex` was still `-1` and under a panel being replaced. jsdom does not reproduce it; only driving the real webview does.
 
 ## Known gaps
 
