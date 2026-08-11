@@ -61,16 +61,21 @@ Re-evaluated cross-platform:
 
 ## Decision
 
-**Avalonia 11**, targeting Windows and Linux on x86_64.
+**Avalonia 12**, targeting Windows and Linux on x86_64.
 
 It is the only candidate that satisfies all four constraints at once: no
 webview, no separate runtime, cross-platform, and a real accessibility surface
 on both platforms — UI Automation on Windows, AT-SPI on Linux. These are the
 same interfaces the browser was translating ARIA into.
 
-It is not the lightest. Slint wins on bytes. Avalonia wins on the other three
-axes, and shares a runtime with [ADR-017](ADR-017-DOTNET-RUNTIME.md), which the
-Rust options would have split.
+It is not the lightest, and that was the expected cost. The first measurements
+narrow the gap more than predicted: the published Linux binary is 20 MB, not the
+40 MB estimated here before anything compiled. Resident memory went the other
+way — 114 MB for an empty window against an 80 MB estimate.
+
+Slint still wins on bytes. Avalonia wins on the other three axes, and shares a
+runtime with [ADR-017](ADR-017-DOTNET-RUNTIME.md), which the Rust options would
+have split.
 
 Supporting choices:
 

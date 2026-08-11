@@ -17,7 +17,7 @@ consequence of the language.
 
 ## Desktop
 
-Avalonia 11 targeting Windows and Linux, x86_64. Fluent theme following the
+Avalonia 12 targeting Windows and Linux, x86_64. Fluent theme following the
 operating system's light/dark variant. Compiled XAML bindings by default. MVVM
 via `CommunityToolkit.Mvvm` source generators.
 
@@ -64,10 +64,12 @@ Windows. Nothing to install alongside it. See
 
 Written down because a stack document that lists only advantages is marketing:
 
-- **Bigger binary than the alternatives considered.** A NativeAOT Avalonia
-  build lands near 40 MB against roughly 20 MB for Rust with Slint. It is still
-  the smaller number against a Tauri bundle that additionally required a Python
-  interpreter to be present.
+- **Binary size, now measured rather than guessed.** The NativeAOT Linux build
+  is **20 MB** for the desktop app and **2.9 MB** for the CLI — better than the
+  40 MB this document estimated before anything was compiled, and level with
+  what Rust plus Slint was expected to produce. Resident memory is the number
+  that came out worse: **114 MB for an empty window**, against an 80 MB
+  estimate. Both figures are Linux only.
 - **No `axe-core` equivalent.** The React build had 343 lines of automated
   accessibility assertions over rendered DOM. Avalonia exposes UI Automation and
   AT-SPI, which is a real accessibility surface, but the automated audit that

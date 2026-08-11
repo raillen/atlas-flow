@@ -98,9 +98,12 @@ Duas correções ao texto original, para quem for auditar depois:
   Linux era a única plataforma. Windows voltou ao escopo e derrubou o GTK4;
   Avalonia ganhou por ser a única opção nativa com acessibilidade real nas duas
   plataformas.
-- **Os orçamentos continuam devendo.** `PERFORMANCE_BUDGETS.md` precisa de
-  números do binário Avalonia, e nenhum existe — nada nesta branch foi
-  compilado.
+- **Os primeiros números existem, e um deles é pior que o estimado.** Medido em
+  2026-08-11 no Linux: binário publicado de 20 MB (estimativa era 40 MB) e
+  **114 MB de RSS para uma janela vazia** (estimativa era 80 MB). São de um
+  esqueleto sem orquestrador, não do produto, e não substituem os orçamentos do
+  `PERFORMANCE_BUDGETS.md` — mas já contradizem uma das duas estimativas, e é
+  melhor que isso esteja escrito.
 
 ## Fora desta fase
 

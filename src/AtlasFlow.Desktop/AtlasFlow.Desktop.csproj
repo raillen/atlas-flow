@@ -33,10 +33,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
-    <PackageReference Include="Avalonia.Diagnostics" />
-  </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="../AtlasFlow.Application/AtlasFlow.Application.csproj" />
   </ItemGroup>

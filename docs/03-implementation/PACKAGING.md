@@ -8,8 +8,9 @@ the user to install.
 non-goal on P06, P09 and P10 under an owner decision of 2026-08-11; ADR-018
 reopens it, and those three Goals inherit the work. macOS remains out of scope.
 
-Nothing here claims a platform it does not build and test. At the time of
-writing that is **every platform** — see [Verified](#verified).
+Nothing here claims a platform it does not build and test. Linux builds,
+publishes and launches; Windows has not been attempted. See
+[Verified](#verified).
 
 ## What the shell used to own, and no longer does
 
@@ -108,32 +109,41 @@ drift apart:
 
 ## Verified
 
-**Nothing.** No .NET SDK was available on the machine this branch was written
-on. The solution has not been restored, compiled, published or packaged, and the
-package versions in `Directory.Packages.props` are unconfirmed guesses.
+Measured on 2026-08-11: Arch Linux, x86_64, .NET SDK 10.0.110.
 
-The previous stack's verification results are deliberately not carried over.
-They were true statements about a Tauri bundle that this branch deletes, and
-reproducing them here under new headings would be a false claim about software
-that has never been built.
+| Step | Result |
+| --- | --- |
+| `dotnet restore` | 13 projects, clean — after pinning two transitive advisories |
+| `dotnet build` | 0 warnings, 0 errors, with warnings-as-errors and `AnalysisMode=All` |
+| `dotnet test` | Hosts start in all 6 test projects. **0 tests exist.** |
+| AOT publish, `linux-x64` | Succeeds for both `AtlasFlow.Cli` and `AtlasFlow.Desktop` |
+| `atlas` binary | **2.9 MB**, runs, prints help |
+| `atlas-flow` binary | **20 MB** (the 86 MB publish directory is debug symbols, which do not ship) |
+| Desktop launch | Opens a window titled "Atlas Flow" and stays up. RSS **114 MB** |
 
-To be established before any release claim:
+The first restore failed with eleven `NU1903` errors — high-severity advisories
+in `SQLitePCLRaw.lib.e_sqlite3` and `Tmds.DBus.Protocol`, both transitive. That
+is the dependency policy working rather than failing: an advisory is an error,
+so the build stopped. Both are pinned forward in `Directory.Packages.props`,
+each pin annotated with its advisory and the condition for removing it.
 
-- [ ] `dotnet restore` resolves every package
-- [ ] `dotnet build` clean, with warnings as errors
-- [ ] `dotnet test` green
-- [ ] Release AOT publish succeeds on `linux-x64`
-- [ ] Release AOT publish succeeds on `win-x64`
-- [ ] The published binary starts and opens a window on both platforms
-- [ ] `deb` contains the executable, desktop entry and icons
-- [ ] Flatpak manifest builds
-- [ ] MSI installs and uninstalls cleanly
-- [ ] SBOM generated from `packages.lock.json`
-- [ ] Signing exercised end to end
+Read the RSS number carefully. It is an **empty window** — a `TextBlock` in a
+`Window`, with no orchestrator attached. It is not a measurement of the product,
+and it is above the 80 MB this document previously estimated. The comparison it
+does support: the previous stack needed roughly 250 MB and a Python interpreter
+present on the machine.
+
+## Not verified
+
+- **Windows. Nothing at all.** No build, no publish, no launch, no MSI.
+- **`deb`, Flatpak and MSI packaging.** No package has been produced.
+- **SBOM, checksums and signature** against a .NET artefact.
+- **Any behaviour.** Zero tests exist. The binary opens a window that does
+  nothing, which is what a scaffold is.
 
 ## Not yet done
 
-- **Everything in the checklist above.**
+- **Everything under [Not verified](#not-verified).**
 - **A published signing key.** The mechanism works; no project key exists or is
   distributed, so released artefacts are still effectively unsigned.
 - **A LICENSE file.** The repository has no license text, so no package can

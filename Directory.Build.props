@@ -38,6 +38,20 @@
     -->
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <!--
+      DEPENDENCIES.md states that the lockfile is committed and that CI restores
+      in locked mode. This is the setting that makes that true; without it the
+      policy was a sentence rather than a mechanism.
+
+      Changing a version in Directory.Packages.props now needs a restore with
+      the force-evaluate flag to rewrite the locks.
+
+      Note for anyone editing the comments in this file: an XML comment cannot
+      contain a double hyphen, so CLI flags are written without their dashes.
+      Getting that wrong makes MSBuild drop this entire file, and the symptom is
+      an unrelated one: every project reports an empty TargetFramework.
+    -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Missing XML comment on a public member: not worth failing a build over. -->
     <NoWarn>$(NoWarn);CS1591</NoWarn>

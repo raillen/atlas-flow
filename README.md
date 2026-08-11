@@ -109,10 +109,12 @@ sh scripts/validate_all.sh
 
 ## Current state
 
-**The C# port is a scaffold.** The solution layout, the analyzer and nullable
-policy, and the documentation are in place. No orchestration logic has been
-ported yet, and nothing in this branch has been compiled — the machine it was
-written on had no .NET SDK.
+**The C# port is a scaffold that builds.** Verified on Linux, 2026-08-11:
+`dotnet restore` and `dotnet build` are clean with warnings-as-errors, the
+NativeAOT publish succeeds, and the published 20 MB binary opens a window.
+
+That is the toolchain, not the product. **Zero tests exist**, no orchestration
+logic has been ported, and nothing has been attempted on Windows.
 
 What the Python implementation in `reference/` does today, and what the port
 must reach: the Discuss → Goal → DAG → isolated execution → evidence path runs

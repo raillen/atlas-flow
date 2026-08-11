@@ -5,9 +5,10 @@
     .csproj references a package without a version. Two projects on two versions
     of the same package is a class of bug this file makes unrepresentable.
 
-    VERSIONS ARE UNVERIFIED. They were written without a .NET SDK on the machine
-    and have never been restored. Run `dotnet restore` and correct whatever does
-    not resolve before trusting this file.
+    Versions verified against the NuGet index on 2026-08-11 and confirmed by a
+    successful restore. The first restore attempt failed on two transitive
+    advisories rather than on anything declared here; see the pinning block at
+    the bottom.
   -->
 
   <PropertyGroup>
@@ -16,34 +17,66 @@
   </PropertyGroup>
 
   <ItemGroup Label="Avalonia">
-    <PackageVersion Include="Avalonia" Version="11.3.0" />
-    <PackageVersion Include="Avalonia.Desktop" Version="11.3.0" />
-    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.3.0" />
-    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.3.0" />
-    <PackageVersion Include="Avalonia.Diagnostics" Version="11.3.0" />
-    <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.3.0" />
+    <!--
+      Avalonia 12. The scaffold was first written against 11.3, which resolves
+      but is a major version behind. Moving now costs nothing because no view
+      exists yet; moving after the UI is ported would cost a migration.
+
+      Avalonia.Diagnostics is deliberately absent: it has no 12.x release at all
+      (it stops at 11.3.20), so DevTools moved or was renamed in 12. Rather than
+      pin a guess, the reference is dropped. Look up the Avalonia 12 DevTools
+      story deliberately before adding one back.
+    -->
+    <PackageVersion Include="Avalonia" Version="12.1.1" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.1" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.1" />
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.1" />
   </ItemGroup>
 
   <ItemGroup Label="Presentation">
-    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
   </ItemGroup>
 
   <ItemGroup Label="Runtime">
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.0" />
-    <PackageVersion Include="System.CommandLine" Version="2.0.0" />
-    <PackageVersion Include="YamlDotNet" Version="16.3.0" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.11" />
+    <PackageVersion Include="System.CommandLine" Version="2.0.11" />
+    <PackageVersion Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.1" />
-    <PackageVersion Include="NSubstitute" Version="5.3.0" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="NSubstitute" Version="6.2.0" />
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+  </ItemGroup>
+
+  <ItemGroup Label="Transitive pins for security advisories">
+    <!--
+      These are not referenced by any project. They are pulled in transitively,
+      and transitive pinning (enabled above) is what lets a version be forced
+      from here.
+
+      The first restore of this repository failed with eleven NU1903 errors, all
+      from these two packages. That is the dependency policy working as written
+      rather than a problem with it: an advisory is an error, not a warning, so
+      the build stops instead of shipping.
+
+      Each pin is a liability, not a fix. It forces a version the parent package
+      did not choose. Delete a pin as soon as the parent's own dependency moves
+      past it: a pin that outlives its advisory silently holds a package back.
+    -->
+
+    <!-- GHSA-2m69-gcr7-jv3q, high. Pulled in by Microsoft.Data.Sqlite. -->
+    <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.12" />
+
+    <!-- GHSA-xrw6-gwf8-vvr9, high. Pulled in by Avalonia's Linux/X11 backend. -->
+    <PackageVersion Include="Tmds.DBus.Protocol" Version="0.94.2" />
   </ItemGroup>
 
 </Project>

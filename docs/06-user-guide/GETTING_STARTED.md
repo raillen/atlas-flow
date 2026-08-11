@@ -83,8 +83,11 @@ Consulte `docs/09-references/COMPATIBILITY_MATRIX.md` para os requisitos complet
 
 ## Estado desta branch
 
-O porte para C# é um esqueleto. A estrutura da solução e a documentação estão
-prontas; a lógica de orquestração ainda não foi portada, e nada aqui foi
-compilado. Os comandos acima descrevem o destino, não o que roda hoje.
+O porte para C# é um esqueleto que compila. Verificado no Linux em 2026-08-11:
+`dotnet restore` e `dotnet build` limpos, publish NativeAOT funcionando, e o
+binário de 20 MB abre uma janela.
+
+Os comandos acima rodam. O que eles fazem ainda é nada: a lógica de orquestração
+não foi portada e não existe nenhum teste. No Windows nada foi tentado.
 
 A implementação Python de onde o porte é lido está em `reference/`.

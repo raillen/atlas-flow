@@ -2,23 +2,25 @@
 
 Generated: 2026-08-11 — **C# port branch**
 
-## Nothing on this branch has been validated
+## The toolchain works. The product does not exist yet.
 
-No .NET SDK was available on the machine this branch was written on. The
-solution has not been restored, compiled, tested, published or packaged, and the
-package versions in `Directory.Packages.props` are unconfirmed.
+Measured on 2026-08-11: Arch Linux, x86_64, .NET SDK 10.0.110.
 
 | Check | Command | Result |
 |-------|---------|--------|
-| Restore | `dotnet restore --locked-mode` | NOT RUN |
-| Build | `dotnet build -c Release` | NOT RUN |
-| Tests | `dotnet test` | NOT RUN |
-| Format | `dotnet format --verify-no-changes` | NOT RUN |
-| Vulnerable packages | `dotnet list package --vulnerable --include-transitive` | NOT RUN |
-| AOT publish, Linux | `dotnet publish -c Release -r linux-x64` | NOT RUN |
+| Restore | `dotnet restore` | **PASS** — 13 projects, after pinning two transitive advisories |
+| Build | `dotnet build` | **PASS** — 0 warnings, 0 errors, warnings-as-errors and `AnalysisMode=All` |
+| Test hosts | `dotnet test` | Start in all 6 projects. **0 tests exist**, so this is not a passing suite |
+| AOT publish, Linux | `dotnet publish -c Release -r linux-x64` | **PASS** — `atlas` 2.9 MB, `atlas-flow` 20 MB |
+| Desktop launch | run the published binary | **PASS** — window opens and stays up; RSS 114 MB with nothing in it |
 | AOT publish, Windows | `dotnet publish -c Release -r win-x64` | NOT RUN |
+| Vulnerable packages | enforced at restore | 11 `NU1903` errors found on the first attempt, pinned forward |
 | Docs links | `atlas docs validate` | NOT RUN — the validator is still Python |
 | Goal contracts | `atlas goals validate` | NOT RUN — the validator is still Python |
+
+This establishes that the solution layout, the analyzer policy and the NativeAOT
+path hold together. It does not establish that Atlas Flow does anything:
+**zero tests exist**, and the window that opens contains a `TextBlock`.
 
 The previous stack's results are **not** carried over into this table. They were
 true statements about a Python backend and a Tauri bundle that this branch
