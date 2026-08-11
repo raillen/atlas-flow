@@ -77,6 +77,23 @@ is the outcome: terminal output is folded into the attempt's transcript under a
 `--- terminal ---` marker, and the files the agent says it changed are recorded
 as attempt evidence so a reviewer can check the claim against the worktree.
 
+## Session resumption
+
+An agent session holds everything the agent has read and concluded. Losing it
+to a restart means the next attempt re-derives what it already knew, and the
+user pays for that twice — so the session id is stored per task and runner
+(`backend/atlas_flow/acp/store.py`) and `session/load` is attempted before
+`session/new`.
+
+Three ways resumption legitimately does not happen, none of them a failure:
+nothing was stored, the agent does not advertise `loadSession`, or the agent no
+longer recognizes the id. All three mean "open a new session"; a stale id is
+forgotten so the next attempt does not retry it. Every attempt records
+`session: resumed | new` as evidence, so a resumed attempt is distinguishable
+from one that started cold.
+
+Only the identifier is stored. The conversation itself stays in the agent.
+
 ## Registering an agent
 
 No ACP runner is registered unless `acp_agent_command` is configured (or
@@ -85,4 +102,4 @@ at, and a runner that cannot start is worse than one that is absent.
 
 ## Not yet implemented
 
-Session resumption across process restarts, and HTTP/SSE MCP transports.
+HTTP/SSE MCP transports.

@@ -12,6 +12,8 @@ import pytest_asyncio
 from atlas_flow.acp.client import AcpClient, PermissionRequest, deny_all
 from atlas_flow.acp.events import NormalizedUpdate, UpdateKind
 from atlas_flow.acp.protocol import AcpError, AcpRemoteError
+from atlas_flow.acp.store import AcpSessionStore
+from atlas_flow.execution.persistence import Persistence
 from atlas_flow.harness.engine import Harness
 from atlas_flow.harness.runner import RunnerCapability, RunnerConfig
 from atlas_flow.mcp.registry import McpRegistry
@@ -345,3 +347,89 @@ class TestTerminalAndFileEvents:
         kinds = [str(u.get("sessionUpdate")) for u in result.updates]
         assert "something_new_this_client_never_heard_of" in kinds
         assert len(result.events) == len(result.updates) - 1
+
+
+@pytest_asyncio.fixture
+async def sessions() -> AsyncIterator[AcpSessionStore]:
+    db = Persistence(":memory:")
+    await db.initialize()
+    store = AcpSessionStore(db)
+    await store.initialize()
+    try:
+        yield store
+    finally:
+        await db.close()
+
+
+@pytest.mark.asyncio
+class TestSessionResumption:
+    """A restart should pick up the agent session, not pay for it twice."""
+
+    async def test_a_second_run_resumes_the_session_the_first_one_opened(
+        self, sessions: AcpSessionStore
+    ) -> None:
+        os.environ["ACP_FIXTURE_MODE"] = "resume"
+        config = RunnerConfig(model="any")
+
+        first = AcpRunner(agent_command(), name="acp", sessions=sessions)
+        opened = await first.run("task-9", "go", config)
+        assert opened.output == "new session"
+        assert opened.evidence["session"] == "new"
+
+        stored = await sessions.recall("task-9", "acp")
+        assert stored is not None and stored.session_id.startswith("fixture-session-")
+
+        # A new process: new runner, new agent subprocess, same store.
+        second = AcpRunner(agent_command(), name="acp", sessions=sessions)
+        resumed = await second.run("task-9", "continue", config)
+
+        assert resumed.output == "resumed"
+        assert resumed.evidence["session"] == "resumed"
+
+    async def test_without_a_store_every_run_starts_cold(self) -> None:
+        os.environ["ACP_FIXTURE_MODE"] = "resume"
+        runner = AcpRunner(agent_command(), name="acp")
+
+        result = await runner.run("task-9", "go", RunnerConfig(model="any"))
+
+        assert result.evidence["session"] == "new"
+
+    async def test_an_agent_that_forgot_the_session_gets_a_fresh_one(
+        self, sessions: AcpSessionStore
+    ) -> None:
+        """A stale id is a reason to open a session, never a reason to fail."""
+        await sessions.remember("task-9", "acp", "gone-forever", ".")
+        os.environ["ACP_FIXTURE_MODE"] = "forgot"
+
+        runner = AcpRunner(agent_command(), name="acp", sessions=sessions)
+        result = await runner.run("task-9", "go", RunnerConfig(model="any"))
+
+        assert result.success
+        assert result.evidence["session"] == "new"
+        # The id that failed is forgotten, so the next attempt does not retry it.
+        stored = await sessions.recall("task-9", "acp")
+        assert stored is not None and stored.session_id != "gone-forever"
+
+    async def test_an_agent_without_load_support_simply_starts_a_new_session(
+        self, sessions: AcpSessionStore
+    ) -> None:
+        await sessions.remember("task-9", "acp", "fixture-session-1", ".")
+        os.environ["ACP_FIXTURE_MODE"] = "no_session"
+
+        runner = AcpRunner(agent_command(), name="acp", sessions=sessions)
+        result = await runner.run("task-9", "go", RunnerConfig(model="any"))
+
+        assert result.success
+        assert result.evidence["session"] == "new"
+
+    async def test_sessions_are_scoped_to_the_task_and_the_runner(
+        self, sessions: AcpSessionStore
+    ) -> None:
+        await sessions.remember("task-a", "acp", "s-1", ".")
+        await sessions.remember("task-b", "acp", "s-2", ".")
+        await sessions.remember("task-a", "other", "s-3", ".")
+
+        assert (await sessions.recall("task-a", "acp")).session_id == "s-1"
+        assert (await sessions.recall("task-b", "acp")).session_id == "s-2"
+        assert (await sessions.recall("task-a", "other")).session_id == "s-3"
+        assert await sessions.recall("task-c", "acp") is None

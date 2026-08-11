@@ -23,7 +23,11 @@ gates:
   tests: required
   review: required
   documentation: required
-evidence: []
+evidence:
+- review: 'FAILED — auditoria independente em 2026-08-11 (revisor não-Opus 5): CI Linux-only
+    (.github/workflows/foundation-ci.yml:16), ausência de assinatura de artefatos, validação
+    local bloqueada por dependências/execução do ambiente; P05 permanece ACTIVE até gates
+    reproduzíveis passarem.'
 history:
 - '2026-08-10: reclassified DONE -> ACTIVE after an implementation audit found acceptance
   criteria that are not met.'
@@ -39,3 +43,14 @@ history:
 - '2026-08-10: closed — GoalRunner executes a plan end to end respecting dependencies and
   non-overlapping write scopes.'
 - '2026-08-10: still blocking — review gate: no independent review has been performed.'
+- '2026-08-11: review finding closed — gates are reproducible from a clean checkout. scripts/bootstrap.sh
+  builds an environment that works even when the checkout is on a noexec mount (which is what
+  made the reviewer''s run fail), and scripts/run_gates.sh runs every gate through one command.'
+- '2026-08-11: review finding closed — CI is no longer Linux-only: Python, JavaScript and
+  the desktop shell run on ubuntu, macOS and Windows.'
+- '2026-08-11: review finding closed — dependency auditing added to CI (pip-audit, pnpm audit,
+  cargo audit). It immediately found PYSEC-2026-1845 in pytest 8.4.2; pytest is now 9.x.'
+- '2026-08-11: still blocking — release artefacts are unsigned. Signing needs a key and a
+  mechanism the project owner has to choose.'
+- '2026-08-11: still blocking — the review gate is FAILED. Closing these findings does not
+  reopen it; that takes another independent review.'

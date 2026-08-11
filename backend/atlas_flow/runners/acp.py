@@ -7,6 +7,7 @@ from collections.abc import Awaitable, Callable
 from atlas_flow.acp.client import AcpClient, PermissionPolicy, PermissionRequest
 from atlas_flow.acp.events import NormalizedUpdate
 from atlas_flow.acp.protocol import AcpError
+from atlas_flow.acp.store import AcpSessionStore
 from atlas_flow.harness.runner import (
     Runner,
     RunnerCapability,
@@ -38,6 +39,7 @@ class AcpRunner(Runner):
         permission_policy: PermissionPolicy | None = None,
         mcp: McpRegistry | None = None,
         on_event: TaskEventListener | None = None,
+        sessions: AcpSessionStore | None = None,
     ) -> None:
         super().__init__(
             name,
@@ -55,6 +57,7 @@ class AcpRunner(Runner):
         self.permission_policy = permission_policy
         self.mcp = mcp or McpRegistry(enabled=False)
         self.on_event = on_event
+        self.sessions = sessions
         self._clients: dict[str, AcpClient] = {}
         if RunnerCapability.TOOL_ACCESS not in self.capabilities and self.mcp.servers:
             self.capabilities.add(RunnerCapability.TOOL_ACCESS)
@@ -70,15 +73,19 @@ class AcpRunner(Runner):
         )
         self._clients[task_id] = client
 
+        resumed = False
         try:
             await client.start(self.command, cwd=self.cwd)
             await client.initialize()
             self._reconcile_capabilities(client)
-            # Which servers this role may reach is decided here, not by the
-            # agent: an agent can only use a tool the client handed it.
-            await client.new_session(
-                self.cwd or ".", self.mcp.acp_servers(config.role)
-            )
+            resumed = await self._resume(client, task_id)
+            if not resumed:
+                # Which servers this role may reach is decided here, not by the
+                # agent: an agent can only use a tool the client handed it.
+                await client.new_session(
+                    self.cwd or ".", self.mcp.acp_servers(config.role)
+                )
+                await self._remember(client, task_id)
 
             result = await client.prompt(prompt, timeout=config.timeout_seconds)
         except AcpError as exc:
@@ -103,10 +110,44 @@ class AcpRunner(Runner):
             evidence={
                 "stop_reason": result.stop_reason,
                 "mcp": self.mcp.explain(config.role),
+                # Whether the agent picked up where it left off, so a reviewer
+                # can tell a resumed attempt from one that started cold.
+                "session": "resumed" if resumed else "new",
                 # What the agent says it changed, so a reviewer can check the
                 # claim against the worktree rather than taking it on trust.
                 "files_changed": ", ".join(result.files_changed),
             },
+        )
+
+    async def _resume(self, client: AcpClient, task_id: str) -> bool:
+        """Pick up the session this task already had, if there still is one.
+
+        Three ways this legitimately does not happen: nothing was stored, the
+        agent does not implement `session/load`, or the agent no longer knows
+        the id. None of them is a failure — they all mean "open a new one" —
+        but a stale id is forgotten so the next attempt does not retry it.
+        """
+        if self.sessions is None:
+            return False
+        stored = await self.sessions.recall(task_id, self.name)
+        if stored is None:
+            return False
+
+        try:
+            if await client.load_session(stored.session_id, stored.cwd or self.cwd or "."):
+                await self.sessions.touch(task_id, self.name)
+                return True
+        except AcpError:
+            pass
+
+        await self.sessions.forget(task_id, self.name)
+        return False
+
+    async def _remember(self, client: AcpClient, task_id: str) -> None:
+        if self.sessions is None or client.session_id is None:
+            return
+        await self.sessions.remember(
+            task_id, self.name, client.session_id, self.cwd or "."
         )
 
     def _reconcile_capabilities(self, client: AcpClient) -> None:

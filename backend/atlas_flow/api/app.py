@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from atlas_flow import __version__
+from atlas_flow.acp.store import AcpSessionStore
 from atlas_flow.api.routes import router as api_router
 from atlas_flow.api.websocket import broadcast_agent_event, broadcast_domain_event
 from atlas_flow.api.websocket import router as ws_router
@@ -83,6 +84,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # sensible default agent to guess at, and a runner that cannot start is
     # worse than one that is absent.
     mcp = McpRegistry.load(config)
+    acp_sessions = AcpSessionStore(db)
+    await acp_sessions.initialize()
     if config.acp_agent_command:
         harness.register(
             AcpRunner(
@@ -91,6 +94,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 cwd=str(root),
                 mcp=mcp,
                 on_event=broadcast_agent_event,
+                # A restart resumes the agent session instead of paying for
+                # everything it had already read and concluded a second time.
+                sessions=acp_sessions,
             )
         )
 
@@ -104,6 +110,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.routing_store = routing_store
     app.state.registry = registry
     app.state.mcp = mcp
+    app.state.acp_sessions = acp_sessions
     app.state.worktrees = worktree_manager_for(config, root)
     app.state.project_root = root
     # Background run tasks are kept referenced so they are not garbage

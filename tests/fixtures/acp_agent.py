@@ -13,6 +13,8 @@ several kinds of agent:
         "old"         claim a protocol version this client cannot speak
         "echo_mcp"    answer with the MCP servers it was given at session/new
         "tooling"     narrate a shell command and a file edit before answering
+        "resume"      report whether the session was loaded or freshly created
+        "forgot"      refuse session/load, as an agent that lost the session would
 """
 
 import json
@@ -118,8 +120,25 @@ def emit_tooling(session_id: str) -> None:
         notify("session/update", {"sessionId": session_id, "update": update})
 
 
-def handle_prompt(request_id: int, params: dict, mcp_servers: list) -> None:
+def handle_prompt(request_id: int, params: dict, mcp_servers: list, resumed: bool) -> None:
     session_id = params.get("sessionId", "")
+
+    if MODE in ("resume", "forgot"):
+        notify(
+            "session/update",
+            {
+                "sessionId": session_id,
+                "update": {
+                    "sessionUpdate": "agent_message_chunk",
+                    "content": {
+                        "type": "text",
+                        "text": "resumed" if resumed else "new session",
+                    },
+                },
+            },
+        )
+        reply(request_id, {"stopReason": "end_turn"})
+        return
 
     if MODE == "echo_mcp":
         notify(
@@ -168,6 +187,7 @@ def handle_prompt(request_id: int, params: dict, mcp_servers: list) -> None:
 def main() -> None:
     session_counter = 0
     mcp_servers: list = []
+    resumed = False
 
     while True:
         message = read()
@@ -185,10 +205,16 @@ def main() -> None:
         elif method == "session/load" and request_id is not None:
             if MODE == "no_session":
                 fail(request_id, -32601, "loadSession not supported")
+            elif MODE == "forgot":
+                # An agent that restarted no longer knows the id it handed out.
+                fail(request_id, -32602, "unknown session")
             else:
+                resumed = True
                 reply(request_id, {})
         elif method == "session/prompt" and request_id is not None:
-            handle_prompt(request_id, message.get("params") or {}, mcp_servers)
+            handle_prompt(
+                request_id, message.get("params") or {}, mcp_servers, resumed
+            )
         elif method == "session/cancel":
             continue
         elif request_id is not None:

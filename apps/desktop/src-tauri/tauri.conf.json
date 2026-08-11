@@ -29,7 +29,14 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["deb", "appimage"],
+    "targets": [
+      "deb",
+      "appimage",
+      "nsis",
+      "msi",
+      "app",
+      "dmg"
+    ],
     "category": "DeveloperTool",
     "shortDescription": "Goal-driven orchestration runtime for coding agents",
     "longDescription": "Atlas Flow turns a Project Atlas Goal into planned, isolated, verified work: it decomposes a Goal into tasks, runs each in its own git worktree through a coding agent, and records the evidence every gate requires.",
@@ -37,12 +44,23 @@
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
-      "icons/icon.png"
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.ico",
+      "icons/icon.icns"
     ],
     "linux": {
       "deb": {
         "depends": []
       }
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "perMachine"
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "10.15"
     }
   }
 }

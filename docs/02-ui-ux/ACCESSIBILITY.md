@@ -52,12 +52,24 @@ Live regions: the Build screen marks its event log and agent activity list
 `aria-live="polite"` while a run is active, and `"off"` once it is not, so a
 finished run does not keep announcing itself.
 
+## Rendered-DOM audit
+
+`a11y.test.tsx` renders the shell and every screen in jsdom and runs axe-core
+over the result, failing on any serious or critical violation. Contrast is
+excluded there because the token tests cover it properly; jsdom cannot resolve
+computed colours anyway, and a check that silently passes is worse than none.
+
+It also asserts what axe cannot: that exactly one tab is in the tab order, that
+the tab panel is labelled by its tab, that a live region exists while a run is
+active, and that every button has an accessible name.
+
+One test audits the audit — it renders a known violation and expects it to be
+found. Without that, a misconfigured axe would make every other check pass by
+looking at nothing.
+
 ## Not yet done
 
-- **No rendered-DOM audit.** The checks above are on tokens and pure functions;
-  there is no jsdom or axe-core pass over the actual component tree, so ARIA
-  relationships and focus order in the rendered output are verified by reading,
-  not by test.
-- **No screen-reader walkthrough** has been performed.
+- **No screen-reader walkthrough** has been performed. Automated rules catch
+  structure, not whether the result is comprehensible when read aloud.
 - **The Plan DAG has no textual alternative yet** beyond the task list it is
   derived from.

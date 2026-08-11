@@ -48,8 +48,16 @@ fn backend_url() -> String {
 }
 
 fn backend_command() -> Vec<String> {
-    match env::var("ATLAS_FLOW_BACKEND_CMD") {
-        Ok(raw) if !raw.trim().is_empty() => raw.split_whitespace().map(str::to_string).collect(),
+    parse_backend_command(env::var("ATLAS_FLOW_BACKEND_CMD").ok().as_deref())
+}
+
+/// The environment reading is separated from the decision so the decision can
+/// be tested: `env::set_var` is process-global, and Rust runs tests in threads.
+fn parse_backend_command(raw: Option<&str>) -> Vec<String> {
+    match raw {
+        Some(value) if !value.trim().is_empty() => {
+            value.split_whitespace().map(str::to_string).collect()
+        }
         _ => DEFAULT_BACKEND_COMMAND
             .iter()
             .map(|s| s.to_string())
@@ -59,17 +67,27 @@ fn backend_command() -> Vec<String> {
 
 /// The directory the backend runs in: the project Atlas Flow is operating on.
 fn project_root_path() -> PathBuf {
-    if let Ok(root) = env::var("ATLAS_FLOW_PROJECT_ROOT") {
+    let start = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    resolve_project_root(env::var("ATLAS_FLOW_PROJECT_ROOT").ok().as_deref(), &start)
+}
+
+/// The nearest ancestor of `start` holding a project manifest, unless an
+/// explicit override says otherwise. Never this crate's own source tree: an
+/// installed shell must not serve its own project to somebody else's.
+fn resolve_project_root(override_root: Option<&str>, start: &std::path::Path) -> PathBuf {
+    if let Some(root) = override_root
+        && !root.trim().is_empty()
+    {
         return PathBuf::from(root);
     }
-    let mut current = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let mut current = start.to_path_buf();
     loop {
         if current.join("PROJECT_MANIFEST.yaml").is_file() {
             return current;
         }
         match current.parent() {
             Some(parent) => current = parent.to_path_buf(),
-            None => return env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
+            None => return start.to_path_buf(),
         }
     }
 }
@@ -174,4 +192,89 @@ pub fn run() {
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn an_unset_command_falls_back_to_the_default() {
+        assert_eq!(parse_backend_command(None), DEFAULT_BACKEND_COMMAND);
+    }
+
+    #[test]
+    fn a_blank_command_is_treated_as_unset() {
+        // An empty variable is somebody clearing it, not asking to run "".
+        assert_eq!(parse_backend_command(Some("   ")), DEFAULT_BACKEND_COMMAND);
+    }
+
+    #[test]
+    fn a_configured_command_is_split_into_argv() {
+        assert_eq!(
+            parse_backend_command(Some("python -m uvicorn app:make --port 9000")),
+            vec!["python", "-m", "uvicorn", "app:make", "--port", "9000"]
+        );
+    }
+
+    #[test]
+    fn the_override_wins_over_any_search() {
+        let root = resolve_project_root(Some("/srv/atlas"), std::path::Path::new("/tmp"));
+        assert_eq!(root, PathBuf::from("/srv/atlas"));
+    }
+
+    #[test]
+    fn a_blank_override_is_ignored() {
+        let temp = std::env::temp_dir().join("atlas-blank-override");
+        fs::create_dir_all(&temp).unwrap();
+        assert_eq!(resolve_project_root(Some(""), &temp), temp);
+    }
+
+    #[test]
+    fn the_nearest_ancestor_with_a_manifest_wins() {
+        let base = std::env::temp_dir().join("atlas-root-search");
+        let nested = base.join("packages").join("api");
+        fs::create_dir_all(&nested).unwrap();
+        fs::write(base.join("PROJECT_MANIFEST.yaml"), "project:\n  id: x\n").unwrap();
+
+        assert_eq!(resolve_project_root(None, &nested), base);
+
+        fs::remove_dir_all(&base).unwrap();
+    }
+
+    #[test]
+    fn a_directory_with_no_manifest_anywhere_above_stays_put() {
+        let temp = std::env::temp_dir().join("atlas-no-manifest");
+        fs::create_dir_all(&temp).unwrap();
+        // Walking to / and finding nothing must not return "/" as the project.
+        let resolved = resolve_project_root(None, &temp);
+        assert!(resolved == temp || resolved.join("PROJECT_MANIFEST.yaml").is_file());
+    }
+
+    #[test]
+    fn an_empty_slot_is_never_reported_as_running() {
+        let mut slot: Option<Child> = None;
+        assert!(!is_alive(&mut slot));
+    }
+
+    #[test]
+    fn a_process_that_exited_is_forgotten_rather_than_reported_running() {
+        // Otherwise "stop" has nothing to stop and "start" refuses to help.
+        let child = Command::new(if cfg!(windows) { "cmd" } else { "true" })
+            .args(if cfg!(windows) {
+                vec!["/C", "exit"]
+            } else {
+                vec![]
+            })
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn();
+        let Ok(mut child) = child else { return };
+        let _ = child.wait();
+
+        let mut slot = Some(child);
+        assert!(!is_alive(&mut slot));
+        assert!(slot.is_none());
+    }
 }

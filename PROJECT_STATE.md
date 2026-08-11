@@ -22,16 +22,19 @@ passing evidence for every gate it declares required.
 | P01 | Project Atlas Integration | ACTIVE | review gate |
 | P02 | Discuss and Decision Ledger | ACTIVE | review gate |
 | P03 | Orchestration Runtime | ACTIVE | review gate |
-| P04 | Atlas Harness | ACTIVE | session resumption, review gate |
+| P04 | Atlas Harness | ACTIVE | review gate |
 | P05 | Goal Planner and DAG Execution | ACTIVE | review gate |
-| P06 | Desktop Modes | ACTIVE | Windows/macOS bundles, review gate |
+| P06 | Desktop Modes | ACTIVE | review gate |
 | P07 | Verification and Evidence | ACTIVE | review gate |
 | P08 | Routing, Budgets and Scorecards | ACTIVE | review gate |
-| P09 | Hardening | ACTIVE | non-Linux packaging, rendered-DOM a11y audit, review gate |
-| P10 | Beta and 1.0 Validation | ACTIVE | Linux-only CI, unsigned artefacts, review gate |
+| P09 | Hardening | ACTIVE | AppImage, screen-reader walkthrough, review gate |
+| P10 | Beta and 1.0 Validation | ACTIVE | unsigned artefacts, review gate |
 
-The review gate is outstanding across the board because no independent review
-has been performed. It is deliberately not being self-certified.
+An independent review was performed on 2026-08-11 by a different model, as
+required by the model-diversity rule: the author of the work cannot be its
+reviewer. It **failed all eleven Goals**. Every finding it raised is recorded in
+the affected Goal's `history`, and most are now closed — but closing a finding
+does not reopen the gate. That takes another review.
 
 ## What works end to end
 
@@ -77,15 +80,15 @@ Every acceptance criterion across P00–P10 is now either met with evidence or
 recorded in its Goal's history as still blocking. What remains before any Goal
 can be marked DONE:
 
-1. **An independent review.** The `review` gate is required by all eleven Goals
-   and is outstanding on all eleven. It is deliberately not self-certified — the
-   author of the work cannot be its reviewer.
-2. **Signing.** An SBOM and checksums are produced; nothing is signed (P10).
-3. **Non-Linux support.** CI runs on Linux only; AppImage is unverified and
-   Windows and macOS bundles are unconfigured (P06/P09).
-4. **Smaller gaps**, each recorded in its Goal: a rendered-DOM accessibility
-   audit and a screen-reader walkthrough (P09), and ACP session resumption
-   across restarts (P04).
+1. **A re-review.** The 2026-08-11 review failed all eleven Goals. Its findings
+   are addressed, so the work is ready to be looked at again — by a different
+   model, not by the one that wrote it.
+2. **Signing.** An SBOM and checksums are produced; nothing is signed. This
+   needs a key and a mechanism the project owner chooses (P10).
+3. **AppImage.** Its bundler downloads `linuxdeploy` and needs FUSE; neither was
+   available on the build machine, so it stays unverified (P09).
+4. **A screen-reader walkthrough.** Automated rules catch structure, not whether
+   the result is comprehensible when read aloud (P09).
 
 See [Release Gates](docs/04-quality/RELEASE_GATES.md) for the gate-by-gate
 status.

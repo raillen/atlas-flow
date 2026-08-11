@@ -11,9 +11,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  python-lint-typecheck-test:
-    name: Python / lint typecheck test
-    runs-on: ubuntu-latest
+  python:
+    name: Python / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v5
 
@@ -23,6 +27,15 @@ jobs:
 
       - name: Sync
         run: uv sync --project backend --locked
+
+      # Task isolation uses real git worktrees, and several tests commit inside
+      # them. A runner with no identity configured fails those with a message
+      # about who you are, not about what broke.
+      - name: Configure git identity
+        run: |
+          git config --global user.email "ci@atlas-flow.invalid"
+          git config --global user.name "Atlas Flow CI"
+          git config --global init.defaultBranch main
 
       # All tool configuration lives in the root pyproject.toml, so every step
       # runs from the repository root. `--project` selects the backend
@@ -37,9 +50,13 @@ jobs:
       - name: Pytest
         run: uv run --project backend pytest
 
-  js-lint-typecheck-test:
-    name: JS / lint typecheck test
-    runs-on: ubuntu-latest
+  javascript:
+    name: JavaScript / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v5
 
@@ -64,8 +81,15 @@ jobs:
         run: pnpm run test
 
   desktop-shell:
-    name: Desktop shell / fmt clippy check
-    runs-on: ubuntu-latest
+    name: Desktop shell / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        working-directory: apps/desktop/src-tauri
     steps:
       - uses: actions/checkout@v5
 
@@ -73,13 +97,15 @@ jobs:
         with:
           components: rustfmt, clippy
 
-      # Tauri links against the system webview; without these the crate cannot
-      # be compiled at all, which is how it went unbuilt for a whole phase.
+      # Tauri links against the system webview. Without these the crate cannot
+      # be compiled at all, which is how it went a whole phase unbuilt.
       - name: System dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
             libayatana-appindicator3-dev librsvg2-dev
+        working-directory: .
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -88,14 +114,59 @@ jobs:
       # The frontend build output is a compile-time input to the crate.
       - name: Frontend placeholder
         run: mkdir -p apps/desktop/dist && touch apps/desktop/dist/index.html
+        shell: bash
+        working-directory: .
 
       - name: Rustfmt
         run: cargo fmt --check
-        working-directory: apps/desktop/src-tauri
 
       - name: Clippy
         run: cargo clippy --all-targets -- -D warnings
-        working-directory: apps/desktop/src-tauri
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Test
+        run: cargo test
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # Each ecosystem is audited against its own advisory database. Run as
+      # ephemeral tools so the audit itself never becomes a dependency of the
+      # thing it is auditing.
+      - name: Python advisories
+        run: |
+          uv export --project backend --no-hashes --no-emit-project \
+            --format requirements-txt > /tmp/requirements.txt
+          uvx pip-audit --strict --no-deps -r /tmp/requirements.txt
+        shell: bash
+
+      - name: Node advisories
+        run: pnpm audit --audit-level=high
+
+      - name: Rust advisories
+        uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          working-directory: apps/desktop/src-tauri
 
   project-atlas-validation:
     name: Project Atlas validation
@@ -120,3 +191,49 @@ jobs:
 
       - name: Validate Command Code discoverability
         run: sh scripts/validate_command_code.sh
+
+  packaging:
+    name: Packaging smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: System dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build and verify the bundle
+        run: sh scripts/package_smoke.sh
+        env:
+          ATLAS_PYTHON: python3
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-bundle
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/deb/*.deb
+            apps/desktop/src-tauri/target/release/bundle/deb/sbom.cyclonedx.json
+            apps/desktop/src-tauri/target/release/bundle/deb/SHA256SUMS
