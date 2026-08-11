@@ -32,6 +32,11 @@ not exist; `409` means it exists but its current state forbids the operation.
   execution continues in the background and is followed through the event stream.
 - `GET /api/runs/{run_id}` — run, tasks, attempts and events.
 - `GET /api/runs/{run_id}/events`
+- `POST /api/runs/{run_id}/cancel` — ask a run to stop. `202` once the request is
+  recorded; `409` when the run is past the point where the state machine allows
+  cancellation, which is asked of the machine rather than of a list kept beside
+  it. Cooperative: the runner winds down between tasks so no state change is
+  interrupted, but the attempt already talking to a model is cancelled outright.
 
 ### Routing
 - `GET /api/routing` — live registry state (`pending` | `reachable` |
@@ -67,5 +72,5 @@ it lands, so the desktop follows a run rather than polling it.
 
 ## Not yet implemented
 
-Versioning under `/api/v1`, pause/resume/cancel of a running Goal, Goal amendment
+Versioning under `/api/v1`, pause and resume of a running Goal, Goal amendment
 transitions, and Settings endpoints for runners, budgets, permissions and MCP.

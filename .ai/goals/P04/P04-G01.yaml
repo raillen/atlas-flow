@@ -94,3 +94,5 @@ history:
 - '2026-08-11: review gate PASSED — self-review by the implementer, authorised by the owner;
   2 defects found and fixed, 1 checked and not reproduced — docs/07-decisions/reviews/2026-08-11-self-review.md'
 - '2026-08-11: moved to DONE — every required gate has passing evidence.'
+- '2026-08-11: fixed — Harness._active_tasks was declared and never filled, so every cancel_task
+  call quietly returned False and no attempt could ever be stopped.'

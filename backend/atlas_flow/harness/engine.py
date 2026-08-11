@@ -105,9 +105,15 @@ class Harness:
                 self._task_event(task, EventType.STATE_CHANGE),
             )
 
+        # Run through a task rather than awaiting the runner directly, so
+        # cancel_task has something to cancel. `_active_tasks` was declared and
+        # never filled, which made every cancel request quietly return False.
+        running = asyncio.create_task(runner.run(task.id, prompt, config))
+        self._active_tasks[task.id] = running
         try:
-            result = await runner.run(task.id, prompt, config)
+            result = await running
         except asyncio.CancelledError:
+            await runner.cancel(task.id)
             await self._close_attempt(
                 attempt, AttemptState.CANCELLED, EventType.ATTEMPT_FAILED
             )
@@ -120,6 +126,8 @@ class Harness:
                 error=str(exc),
             )
             return RunnerResult(task_id=task.id, success=False, error=str(exc)), attempt
+        finally:
+            self._active_tasks.pop(task.id, None)
 
         if result.success:
             attempt = await self._close_attempt(
@@ -171,11 +179,15 @@ class Harness:
         )
 
     async def cancel_task(self, task_id: str) -> bool:
+        """Stop an attempt that is in flight. False when there is none."""
         future = self._active_tasks.get(task_id)
-        if future and not future.done():
-            future.cancel()
-            return True
-        return False
+        if future is None or future.done():
+            return False
+        future.cancel()
+        return True
+
+    def active_tasks(self) -> list[str]:
+        return [task_id for task_id, f in self._active_tasks.items() if not f.done()]
 
 
 def _now_iso() -> str:

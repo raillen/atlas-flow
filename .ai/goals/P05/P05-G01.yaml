@@ -79,3 +79,7 @@ history:
 - '2026-08-11: review gate PASSED — self-review by the implementer, authorised by the owner;
   2 defects found and fixed, 1 checked and not reproduced — docs/07-decisions/reviews/2026-08-11-self-review.md'
 - '2026-08-11: moved to DONE — every required gate has passing evidence.'
+- '2026-08-11: closed — a run can be cancelled. POST /api/runs/{id}/cancel records the request,
+  the runner winds down between tasks so no transaction is interrupted, and the attempt in
+  flight is cancelled outright. A task that never started is recorded CANCELLED rather than
+  FAILED.'

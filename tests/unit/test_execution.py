@@ -249,3 +249,34 @@ class TestCrashRecovery:
 
     async def test_recover_unknown_run_returns_none(self, db: Persistence) -> None:
         assert await recover_run(db, "run-does-not-exist") is None
+
+
+class TestCancellationReachability:
+    """Cancellation must reach every state that is not already finished."""
+
+    def test_every_live_task_state_can_be_cancelled(self) -> None:
+        # Regression: PLANNED had no path to CANCELLED, so stopping a run
+        # before its tasks started meant marking them READY first — a lie the
+        # state machine forced on the caller.
+        finished = {TaskState.SUCCEEDED, TaskState.CANCELLED, TaskState.SUPERSEDED}
+        for state in TaskState:
+            if state in finished:
+                continue
+            assert can_transition(state, TaskState.CANCELLED, "task"), state
+
+    def test_a_blocked_task_can_become_ready_again(self) -> None:
+        """BLOCKED was a dead end: nothing could ever leave it."""
+        assert can_transition(TaskState.BLOCKED, TaskState.READY, "task")
+
+    def test_a_run_can_be_cancelled_from_every_state_before_verification(self) -> None:
+        for state in (
+            RunState.CREATED,
+            RunState.PLANNING,
+            RunState.READY,
+            RunState.RUNNING,
+        ):
+            assert can_transition(state, RunState.CANCELLED, "run"), state
+
+    def test_a_finished_task_cannot_be_cancelled(self) -> None:
+        assert not can_transition(TaskState.SUCCEEDED, TaskState.CANCELLED, "task")
+        assert not can_transition(TaskState.CANCELLED, TaskState.CANCELLED, "task")

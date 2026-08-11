@@ -17,6 +17,7 @@ from atlas_flow.api.websocket import broadcast_agent_event, broadcast_domain_eve
 from atlas_flow.api.websocket import router as ws_router
 from atlas_flow.config import AtlasFlowConfig
 from atlas_flow.discuss.store import DiscussionStore
+from atlas_flow.execution.cancellation import CancellationRegistry
 from atlas_flow.execution.goal_runner import worktree_manager_for
 from atlas_flow.execution.persistence import Persistence
 from atlas_flow.execution.scheduler import Scheduler
@@ -29,6 +30,7 @@ from atlas_flow.routing.router import ModelRouter
 from atlas_flow.routing.store import RoutingStore
 from atlas_flow.runners.acp import AcpRunner
 from atlas_flow.runners.cli import CliRunner
+from atlas_flow.verification.commands import GateCommands
 from atlas_flow.verification.gates import GateCoordinator
 
 # The desktop client is served by Vite in development; the backend accepts it
@@ -110,6 +112,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.routing_store = routing_store
     app.state.registry = registry
     app.state.mcp = mcp
+    app.state.cancellation = CancellationRegistry()
+    app.state.gate_commands = GateCommands.load(root)
     app.state.acp_sessions = acp_sessions
     app.state.worktrees = worktree_manager_for(config, root)
     app.state.project_root = root

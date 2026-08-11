@@ -35,7 +35,9 @@ from atlas_flow.discuss.finalize import FinalizationPipeline
 from atlas_flow.discuss.ledger import DecisionLedger
 from atlas_flow.discuss.models import DecisionCandidate, DiscussionSession, Message
 from atlas_flow.discuss.store import DiscussionStore
+from atlas_flow.execution.cancellation import CancellationRegistry
 from atlas_flow.execution.goal_runner import GoalRunner
+from atlas_flow.execution.models import RunState, can_transition
 from atlas_flow.execution.persistence import Persistence
 from atlas_flow.goals.loader import resolve_project
 from atlas_flow.goals.models import Goal
@@ -48,6 +50,8 @@ from atlas_flow.verification.gates import GateCoordinator, GateKind
 from atlas_flow.verification.goal_completion import check_completion, required_gates
 
 router = APIRouter(prefix="/api")
+
+
 
 DOC_SECTIONS = {
     "00-product": "Product",
@@ -153,6 +157,41 @@ async def get_run(run_id: str, request: Request) -> RunDetail:
     )
 
 
+@router.post("/runs/{run_id}/cancel", status_code=202)
+async def cancel_run(run_id: str, request: Request) -> RunView:
+    """Ask a run to stop, and stop the attempt it has in flight.
+
+    Cooperative: the request is recorded and the runner winds down between
+    tasks, so no state change is interrupted between the row and the event that
+    explains it. What is not cooperative is the attempt already talking to a
+    model — that is cancelled outright, because waiting for it is the thing the
+    caller asked to stop.
+    """
+    db = _db(request)
+    run = await db.load_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail=f"Unknown run: {run_id}")
+
+    # Asked of the state machine rather than a list kept alongside it: a run
+    # past RUNNING has no path to CANCELLED, and accepting a request that
+    # cannot be carried out is worse than refusing it.
+    if not can_transition(run.state, RunState.CANCELLED, "run"):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Run {run_id} is {run.state} and cannot be cancelled",
+        )
+
+    cancellation: CancellationRegistry = request.app.state.cancellation
+    cancellation.request(run_id)
+
+    harness = request.app.state.harness
+    for task in await db.load_tasks(run_id):
+        await harness.cancel_task(task.id)
+
+    tasks = await db.load_tasks(run_id)
+    return RunView.of(run, task_count=len(tasks))
+
+
 @router.get("/runs/{run_id}/events")
 async def get_run_events(run_id: str, request: Request) -> list[EventView]:
     return [EventView.of(e) for e in await _db(request).load_events(run_id)]
@@ -183,6 +222,8 @@ async def create_run(body: CreateRunRequest, request: Request) -> RunView:
         router=request.app.state.router,
         worktrees=request.app.state.worktrees,
         routing_store=request.app.state.routing_store,
+        cancellation=request.app.state.cancellation,
+        gate_commands=request.app.state.gate_commands,
     )
     plan = plan_for_goal(goal)
 

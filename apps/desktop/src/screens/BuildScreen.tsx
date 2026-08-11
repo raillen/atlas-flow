@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { api, type RunDetail } from "../api";
 import { useAsync, usePolling } from "../hooks/useAsync";
 import { useAgentStream } from "../hooks/useAgentStream";
@@ -16,15 +16,30 @@ import { surface, text } from "../theme";
 
 const ACTIVE_RUN_STATES = new Set(["CREATED", "PLANNING", "READY", "RUNNING"]);
 
+/** What the Cancel button says about a run it cannot stop. */
+export function cancelState(runState: string | undefined): {
+  enabled: boolean;
+  label: string;
+} {
+  if (runState === undefined) return { enabled: false, label: "Cancel" };
+  if (runState === "CANCELLED") return { enabled: false, label: "Cancelled" };
+  if (!ACTIVE_RUN_STATES.has(runState)) {
+    return { enabled: false, label: "Cancel" };
+  }
+  return { enabled: true, label: "Cancel" };
+}
+
 export const BuildScreen: FC<{ runId: string | null }> = ({ runId }) => {
   const detail = useAsync(
     async () => (runId ? await api.run(runId) : null),
     [runId],
   );
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   // A run in flight is followed by polling; once it reaches a terminal state
   // there is nothing left to refresh, so the timer stops.
   const isActive = detail.data ? ACTIVE_RUN_STATES.has(detail.data.run.state) : false;
+  const cancel = cancelState(detail.data?.run.state);
   usePolling(detail.reload, Boolean(runId) && isActive, 800);
 
   if (!runId) {
@@ -40,13 +55,39 @@ export const BuildScreen: FC<{ runId: string | null }> = ({ runId }) => {
     <div style={screen}>
       <SectionHeading
         actions={
-          <button type="button" style={buttonStyle} onClick={detail.reload}>
-            Refresh
-          </button>
+          <div style={{ display: "flex", gap: "0.4rem" }}>
+            <button
+              type="button"
+              style={buttonStyle}
+              disabled={!cancel.enabled}
+              onClick={() => {
+                setCancelError(null);
+                api
+                  .cancelRun(runId)
+                  .then(() => detail.reload())
+                  .catch((cause: unknown) =>
+                    setCancelError(
+                      cause instanceof Error ? cause.message : String(cause),
+                    ),
+                  );
+              }}
+            >
+              {cancel.label}
+            </button>
+            <button type="button" style={buttonStyle} onClick={detail.reload}>
+              Refresh
+            </button>
+          </div>
         }
       >
         Build
       </SectionHeading>
+
+      {cancelError && (
+        <p style={{ ...muted, color: text.danger }} role="alert">
+          {cancelError}
+        </p>
+      )}
 
       <AsyncPanel loading={detail.loading && !detail.data} error={detail.error} onRetry={detail.reload}>
         {detail.data && <RunBody detail={detail.data} live={isActive} />}

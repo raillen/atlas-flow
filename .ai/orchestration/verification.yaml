@@ -1,0 +1,21 @@
+# How this project checks its own gates.
+#
+# A Goal declares which gates it requires; these are the commands Atlas Flow
+# runs to produce evidence for them, once every task in a run has succeeded.
+#
+# Rules enforced by backend/atlas_flow/verification/commands.py:
+#   - Commands run as argv from the project root, never through a shell.
+#   - A gate with no command here records nothing and stays PENDING: "nobody
+#     checked" must stay distinguishable from "checked and failed".
+#   - Output is redacted and truncated before it becomes evidence.
+#
+# `build` is produced by the runner succeeding and `review` by the
+# cross-provider reviewer, so neither is declared here.
+#
+# Deliberately not `scripts/run_gates.sh`: Atlas Flow running a Goal in its own
+# repository would then run the suite that runs Atlas Flow. A verification
+# command must not contain the thing being verified.
+
+gates:
+  tests: "python -m pytest tests/unit -q"
+  documentation: "python scripts/validate_docs.py"

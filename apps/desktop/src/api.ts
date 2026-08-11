@@ -201,6 +201,8 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ goal_id: goalId, runner }),
     }),
+  cancelRun: (id: string) =>
+    request<RunView>(`/api/runs/${id}/cancel`, { method: "POST" }),
   routing: () => request<RoutingView>("/api/routing"),
   runRouting: (id: string) =>
     request<RouteDecisionView[]>(`/api/runs/${id}/routing`),

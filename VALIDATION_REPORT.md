@@ -8,10 +8,10 @@ Generated: 2026-08-10
 |-------|---------|--------|
 | Python lint | `uv run --project backend ruff check .` | PASS |
 | Python types | `uv run --project backend mypy` | PASS (strict, 56 files) |
-| Python tests | `uv run --project backend pytest` | PASS — 328 tests |
+| Python tests | `uv run --project backend pytest` | PASS — 356 tests |
 | TypeScript build | `pnpm run typecheck` | PASS |
 | JS lint | `pnpm run lint` | PASS |
-| JS tests | `pnpm run test` | PASS — 59 tests, including an axe-core DOM audit |
+| JS tests | `pnpm run test` | PASS — 63 tests, including an axe-core DOM audit |
 | Docs links | `python scripts/validate_docs.py` | PASS |
 | Goal contracts | `python scripts/validate_goals.py` | PASS — 11 Goals, 11 DONE with evidence |
 | Command Code | `scripts/validate_command_code.sh` | PASS — 9 agents, 15 skills |
@@ -103,6 +103,13 @@ Three defects reached a build that twelve gates called green, and a fourth got p
 30. **The backend's output went to `/dev/null`**, so a failure left nothing to diagnose. It goes to `/tmp/atlas-flow-backend.log`, and the UI shows the path.
 31. **A packaged app cannot trust its own environment.** An AppImage runs with its working directory inside its own mount and points `PYTHONHOME` and `LD_LIBRARY_PATH` at itself, so the shell reported the bundle as the project root and the backend it launched inherited an environment that killed it. The bundle is refused as a project root, and every variable naming it is stripped from the child.
 32. **Arrow-key navigation between tabs moved exactly once.** Focus was set inside the key handler, onto a tab whose `tabIndex` was still `-1` and under a panel being replaced. jsdom does not reproduce it; only driving the real webview does.
+
+## Findings from closing the remaining gaps (2026-08-11)
+
+33. **A run could not be cancelled.** `RunState.CANCELLED`, `Harness.cancel_task` and `AcpRunner.cancel` all existed and nothing called any of them. There was no endpoint and no button: a Goal spending budget could only be stopped by killing the process.
+34. **`Harness._active_tasks` was declared and never filled**, so every `cancel_task` returned `False` — the mechanism that made cancellation impossible even once something did call it.
+35. **The task state machine could not express cancellation.** `PLANNED` had no path to `CANCELLED`, so stopping a run before its tasks started required marking them `READY` first — a lie the machine forced on the caller — and `BLOCKED` was a dead end nothing could leave.
+36. **Only the `build` gate ever got evidence during a run.** Nothing produced `tests` or `documentation`, so a Goal that Atlas Flow planned and executed could never become completable on its own; a human had to attach the rest. Planning and execution worked and verification did not close.
 
 ## Known gaps
 

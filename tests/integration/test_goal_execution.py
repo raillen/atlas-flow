@@ -1,22 +1,29 @@
 """End-to-end Goal execution: plan -> worktrees -> runner -> gates."""
 
+import asyncio
+import sys
 from collections.abc import AsyncIterator
 from pathlib import Path
 
 import pytest
 import pytest_asyncio
+import yaml
 
 from atlas_flow.config import AtlasFlowConfig
+from atlas_flow.execution.cancellation import CancellationRegistry
 from atlas_flow.execution.goal_runner import GoalRunner
 from atlas_flow.execution.models import RunState, TaskState
 from atlas_flow.execution.persistence import Persistence
+from atlas_flow.goals.models import Goal, GoalGates
 from atlas_flow.harness.engine import Harness
 from atlas_flow.harness.runner import Runner, RunnerConfig, RunnerResult
 from atlas_flow.planner.dag import DAGError, Plan, RiskLevel, TaskNode
 from atlas_flow.planner.worktree import WorktreeManager, run_git
 from atlas_flow.routing.router import ModelRouter
 from atlas_flow.routing.store import RoutingStore
+from atlas_flow.verification.commands import GateCommands
 from atlas_flow.verification.gates import GateKind, GateVerdict
+from atlas_flow.verification.goal_completion import check_completion
 
 
 class WritingRunner(Runner):
@@ -528,3 +535,275 @@ class _TrackingWorktreeManager(WorktreeManager):
         worktree = await super().create(goal_id, task_id, start_point)
         self.sink[task_id] = worktree.path
         return worktree
+
+
+class SlowRunner(Runner):
+    """Runner that blocks until released, so a run can be cancelled mid-flight."""
+
+    def __init__(self, started: asyncio.Event, name: str = "slow") -> None:
+        from atlas_flow.harness.runner import RunnerCapability
+
+        super().__init__(name, list(RunnerCapability))
+        self.started = started
+        self.cancelled: list[str] = []
+
+    async def run(self, task_id: str, prompt: str, config: RunnerConfig) -> RunnerResult:
+        self.started.set()
+        await asyncio.sleep(30)
+        return RunnerResult(task_id=task_id, success=True, output="never reached")
+
+    async def cancel(self, task_id: str) -> bool:
+        self.cancelled.append(task_id)
+        return True
+
+
+@pytest.mark.asyncio
+class TestCancellation:
+    """Stopping a run is a decision the product has to be able to carry out."""
+
+    async def test_a_cancelled_run_stops_and_says_it_was_cancelled(
+        self, repo: Path, db: Persistence
+    ) -> None:
+        started = asyncio.Event()
+        runner = SlowRunner(started)
+        harness = Harness(db)
+        harness.register(runner)
+
+        cancellation = CancellationRegistry()
+        goal_runner = GoalRunner(
+            db, harness, _config(repo), cancellation=cancellation
+        )
+        plan = Plan(
+            goal_id="P03-G01",
+            tasks=[
+                TaskNode(id="a", objective="First"),
+                TaskNode(id="b", objective="Second", dependencies=["a"]),
+            ],
+        )
+
+        execution = asyncio.create_task(goal_runner.execute(plan, "rev-1", "slow"))
+        await asyncio.wait_for(started.wait(), timeout=5)
+
+        run_id = (await db.list_runs())[0].id
+        cancellation.request(run_id, "stopped by the operator")
+        for task in await db.load_tasks(run_id):
+            await harness.cancel_task(task.id)
+
+        report = await asyncio.wait_for(execution, timeout=15)
+
+        assert report.run.state == RunState.CANCELLED
+        assert report.cancelled
+        # The runner was told, not just abandoned.
+        assert runner.cancelled
+
+        states = {task.state for task in await db.load_tasks(run_id)}
+        assert TaskState.RUNNING not in states
+        assert TaskState.CANCELLED in states
+
+    async def test_a_task_that_never_started_is_cancelled_not_failed(
+        self, repo: Path, db: Persistence
+    ) -> None:
+        """It did not fail. Recording it as a failure misreports the run."""
+        started = asyncio.Event()
+        harness = Harness(db)
+        harness.register(SlowRunner(started))
+
+        cancellation = CancellationRegistry()
+        goal_runner = GoalRunner(
+            db, harness, _config(repo), cancellation=cancellation
+        )
+        plan = Plan(
+            goal_id="P03-G01",
+            tasks=[
+                TaskNode(id="a", objective="First"),
+                TaskNode(id="b", objective="Second", dependencies=["a"]),
+            ],
+        )
+
+        execution = asyncio.create_task(goal_runner.execute(plan, "rev-1", "slow"))
+        await asyncio.wait_for(started.wait(), timeout=5)
+        run_id = (await db.list_runs())[0].id
+        cancellation.request(run_id, "stopped")
+        for task in await db.load_tasks(run_id):
+            await harness.cancel_task(task.id)
+        await asyncio.wait_for(execution, timeout=15)
+
+        tasks = {task.objective: task.state for task in await db.load_tasks(run_id)}
+        assert tasks["Second"] == TaskState.CANCELLED
+        assert TaskState.FAILED not in tasks.values()
+
+    async def test_cancelling_clears_the_request_so_a_retry_is_not_stillborn(
+        self, repo: Path, db: Persistence
+    ) -> None:
+        started = asyncio.Event()
+        harness = Harness(db)
+        harness.register(SlowRunner(started))
+        cancellation = CancellationRegistry()
+        goal_runner = GoalRunner(
+            db, harness, _config(repo), cancellation=cancellation
+        )
+        plan = Plan(goal_id="P03-G01", tasks=[TaskNode(id="a", objective="First")])
+
+        execution = asyncio.create_task(goal_runner.execute(plan, "rev-1", "slow"))
+        await asyncio.wait_for(started.wait(), timeout=5)
+        run_id = (await db.list_runs())[0].id
+        cancellation.request(run_id, "stopped")
+        for task in await db.load_tasks(run_id):
+            await harness.cancel_task(task.id)
+        await asyncio.wait_for(execution, timeout=15)
+
+        assert cancellation.pending == []
+
+    async def test_an_uncancelled_run_is_unaffected_by_the_registry(
+        self, repo: Path, db: Persistence
+    ) -> None:
+        harness = Harness(db)
+        harness.register(WritingRunner({}, "writer"))
+        goal_runner = GoalRunner(
+            db, harness, _config(repo), cancellation=CancellationRegistry()
+        )
+        plan = Plan(goal_id="P03-G01", tasks=[TaskNode(id="a", objective="Work")])
+
+        report = await goal_runner.execute(plan, "rev-1", "writer")
+
+        assert report.succeeded
+        assert not report.cancelled
+
+
+@pytest.mark.asyncio
+class TestDeclaredGates:
+    """The loop has to close: plan, execute, verify, without a human in the middle."""
+
+    def _commands(self, repo: Path, **gates: str) -> GateCommands:
+        (repo / ".ai" / "orchestration").mkdir(parents=True, exist_ok=True)
+        (repo / ".ai" / "orchestration" / "verification.yaml").write_text(
+            yaml.safe_dump({"gates": gates}), encoding="utf-8"
+        )
+        return GateCommands.load(repo)
+
+    def _script(self, repo: Path, name: str, body: str) -> str:
+        (repo / name).write_text(body, encoding="utf-8")
+        return f"{sys.executable} {repo / name}"
+
+    async def test_a_run_produces_evidence_for_every_declared_gate(
+        self, repo: Path, db: Persistence
+    ) -> None:
+        harness = Harness(db)
+        harness.register(WritingRunner({}, "writer"))
+        commands = self._commands(
+            repo,
+            tests=self._script(repo, "t.py", "print('7 passed')"),
+            documentation=self._script(repo, "d.py", "print('links ok')"),
+        )
+        goal_runner = GoalRunner(
+            db, harness, _config(repo), gate_commands=commands
+        )
+        plan = Plan(goal_id="P07-G01", tasks=[TaskNode(id="a", objective="Work")])
+
+        report = await goal_runner.execute(plan, "rev-1", "writer")
+
+        assert report.succeeded
+        assert {outcome.gate for outcome in report.gates} == {
+            GateKind.TESTS, GateKind.DOCUMENTATION
+        }
+        assert all(outcome.passed for outcome in report.gates)
+
+        evidence = await db.load_evidence("P07-G01")
+        gates = {item.gate: item.verdict for item in evidence}
+        assert gates[GateKind.BUILD] == GateVerdict.PASSED
+        assert gates[GateKind.TESTS] == GateVerdict.PASSED
+        assert gates[GateKind.DOCUMENTATION] == GateVerdict.PASSED
+
+    async def test_a_failing_check_records_failing_evidence(
+        self, repo: Path, db: Persistence
+    ) -> None:
+        harness = Harness(db)
+        harness.register(WritingRunner({}, "writer"))
+        commands = self._commands(
+            repo,
+            tests=self._script(repo, "t.py", "import sys\nprint('2 failed')\nsys.exit(1)\n"),
+        )
+        goal_runner = GoalRunner(
+            db, harness, _config(repo), gate_commands=commands
+        )
+        plan = Plan(goal_id="P07-G01", tasks=[TaskNode(id="a", objective="Work")])
+
+        report = await goal_runner.execute(plan, "rev-1", "writer")
+
+        failing = [outcome for outcome in report.gates if not outcome.passed]
+        assert [outcome.gate for outcome in failing] == [GateKind.TESTS]
+        evidence = await db.load_evidence("P07-G01")
+        tests = next(item for item in evidence if item.gate == GateKind.TESTS)
+        assert tests.verdict == GateVerdict.FAILED
+        assert "2 failed" in tests.uri
+
+    async def test_gates_are_not_run_when_the_work_failed(
+        self, repo: Path, db: Persistence
+    ) -> None:
+        """Verifying half-finished work reports on something nobody asked about."""
+        harness = Harness(db)
+        harness.register(BrokenRunner("broken"))
+        marker = repo / "ran.txt"
+        commands = self._commands(
+            repo,
+            tests=self._script(
+                repo, "t.py", f"open({str(marker)!r}, 'w').write('ran')\n"
+            ),
+        )
+        goal_runner = GoalRunner(
+            db, harness, _config(repo), gate_commands=commands
+        )
+        plan = Plan(goal_id="P07-G01", tasks=[TaskNode(id="a", objective="Work")])
+
+        report = await goal_runner.execute(plan, "rev-1", "broken")
+
+        assert not report.succeeded
+        assert report.gates == []
+        assert not marker.exists()
+
+    async def test_a_project_that_declares_nothing_leaves_its_gates_pending(
+        self, repo: Path, db: Persistence
+    ) -> None:
+        """"Nobody checked" must stay distinguishable from "checked and failed"."""
+        harness = Harness(db)
+        harness.register(WritingRunner({}, "writer"))
+        goal_runner = GoalRunner(db, harness, _config(repo))
+        plan = Plan(goal_id="P07-G01", tasks=[TaskNode(id="a", objective="Work")])
+
+        report = await goal_runner.execute(plan, "rev-1", "writer")
+
+        assert report.succeeded
+        assert report.gates == []
+        gates = {item.gate for item in await db.load_evidence("P07-G01")}
+        assert gates == {GateKind.BUILD}
+
+    async def test_the_goal_becomes_completable_without_a_human(
+        self, repo: Path, db: Persistence
+    ) -> None:
+        """The whole point: plan, execute, verify, close — on its own."""
+        harness = Harness(db)
+        harness.register(WritingRunner({}, "writer"))
+        commands = self._commands(
+            repo,
+            tests=self._script(repo, "t.py", "print('ok')"),
+            documentation=self._script(repo, "d.py", "print('ok')"),
+            review=self._script(repo, "r.py", "print('reviewed')"),
+        )
+        goal_runner = GoalRunner(
+            db, harness, _config(repo), gate_commands=commands
+        )
+        plan = Plan(goal_id="P07-G01", tasks=[TaskNode(id="a", objective="Work")])
+
+        await goal_runner.execute(plan, "rev-1", "writer")
+
+        goal = Goal(
+            id="P07-G01", phase="P07", title="Verification", state="ACTIVE",
+            objective="Close the loop", acceptance=["It closes"],
+            gates=GoalGates(
+                build="required", tests="required",
+                review="required", documentation="required",
+            ),
+        )
+        check = check_completion(goal, await db.load_evidence("P07-G01"))
+
+        assert check.completable, check.describe()

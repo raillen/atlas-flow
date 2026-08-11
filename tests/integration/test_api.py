@@ -10,6 +10,7 @@ from atlas_flow import __version__
 from atlas_flow.api.app import create_app
 from atlas_flow.routing.discovery import DiscoveryResult, ModelRegistry
 from atlas_flow.routing.router import ModelRouter
+from atlas_flow.verification.commands import GateCommands
 
 # What the live registry would have answered. Seeding it keeps every app in
 # this module from spawning `cmd --list-models`; the probe itself is covered
@@ -33,6 +34,10 @@ def client(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyP
     )
     try:
         with TestClient(create_app()) as test_client:
+            # These tests start real runs against this repository. Executing
+            # its declared gate commands would run the suite from inside the
+            # suite; the commands have their own tests.
+            test_client.app.state.gate_commands = GateCommands()
             yield test_client
     finally:
         ModelRegistry.reset_cache()
@@ -156,6 +161,24 @@ class TestRuns:
 
     def test_unknown_run_is_404(self, client: TestClient) -> None:
         assert client.get("/api/runs/run-nope").status_code == 404
+
+
+class TestCancellingARun:
+    def test_cancelling_an_unknown_run_is_404(self, client: TestClient) -> None:
+        assert client.post("/api/runs/run-nope/cancel").status_code == 404
+
+    def test_cancelling_a_finished_run_is_409(self, client: TestClient) -> None:
+        """It already stopped. Reporting success would be a lie about what happened."""
+        run_id = client.post(
+            "/api/runs", json={"goal_id": "P01-G01", "runner": "dummy"}
+        ).json()["id"]
+        wait_for_run(client, run_id)
+
+        response = client.post(f"/api/runs/{run_id}/cancel")
+
+        assert response.status_code == 409
+        assert "cannot be cancelled" in response.json()["detail"]
+        assert "VERIFYING" in response.json()["detail"]
 
 
 class TestRouting:

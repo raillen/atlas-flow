@@ -15,6 +15,7 @@ from pathlib import Path
 
 from atlas_flow.config import AtlasFlowConfig
 from atlas_flow.execution.budget import BudgetExceeded, BudgetLedger, Usage
+from atlas_flow.execution.cancellation import CancellationRegistry
 from atlas_flow.execution.models import Attempt, Run, RunState, Task, TaskState
 from atlas_flow.execution.persistence import Persistence
 from atlas_flow.execution.scheduler import Scheduler
@@ -29,6 +30,12 @@ from atlas_flow.planner.worktree import (
 )
 from atlas_flow.routing.router import ModelEntry, ModelRouter, RouteDecision
 from atlas_flow.routing.store import RoutingStore
+from atlas_flow.verification.commands import (
+    GateCommands,
+    GateOutcome,
+    evidence_for,
+    run_gate_command,
+)
 from atlas_flow.verification.gates import (
     Evidence,
     GateCoordinator,
@@ -47,6 +54,7 @@ class TaskOutcome:
     attempt_id: str = ""
     fallback_attempts: int = 0
     budget_stopped: bool = False
+    cancelled: bool = False
     reviewer_model_key: str = ""
     review_verdict: str = ""
     worktree: Worktree | None = None
@@ -65,6 +73,7 @@ class GoalRunReport:
     outcomes: list[TaskOutcome] = field(default_factory=list)
     blocked: list[str] = field(default_factory=list)
     budget: BudgetLedger | None = None
+    gates: list[GateOutcome] = field(default_factory=list)
 
     @property
     def succeeded(self) -> bool:
@@ -77,6 +86,10 @@ class GoalRunReport:
     @property
     def stopped_by_budget(self) -> bool:
         return any(o.budget_stopped for o in self.outcomes)
+
+    @property
+    def cancelled(self) -> bool:
+        return self.run.state == RunState.CANCELLED
 
 
 class GoalRunner:
@@ -91,6 +104,8 @@ class GoalRunner:
         worktrees: WorktreeManager | None = None,
         gates: GateCoordinator | None = None,
         routing_store: RoutingStore | None = None,
+        cancellation: CancellationRegistry | None = None,
+        gate_commands: GateCommands | None = None,
     ) -> None:
         self.db = persistence
         self.harness = harness
@@ -99,6 +114,8 @@ class GoalRunner:
         self.worktrees = worktrees
         self.gates = gates or GateCoordinator(persistence)
         self.routing_store = routing_store
+        self.cancellation = cancellation
+        self.gate_commands = gate_commands or GateCommands()
         self.scheduler = Scheduler(persistence, config.project_id)
         self.budget: BudgetLedger | None = None
 
@@ -130,6 +147,9 @@ class GoalRunner:
         report = GoalRunReport(run=run)
 
         while True:
+            if self._cancelled(run.id):
+                break
+
             ready = await self.scheduler.ready_tasks(run.id)
             if not ready:
                 break
@@ -147,6 +167,17 @@ class GoalRunner:
             if any(not outcome.succeeded for outcome in report.outcomes):
                 break
 
+        if self._cancelled(run.id):
+            reason = self.cancellation.reason(run.id) if self.cancellation else "cancelled"
+            await self.scheduler.cancel_run(run, reason)
+            if self.cancellation is not None:
+                self.cancellation.clear(run.id)
+            report.budget = self.budget
+            reloaded = await self.db.load_run(run.id)
+            if reloaded is not None:
+                report.run = reloaded
+            return report
+
         remaining = [
             task.id
             for task in await self.db.load_tasks(run.id)
@@ -155,6 +186,8 @@ class GoalRunner:
         report.blocked = remaining
 
         report.budget = self.budget
+        if report.succeeded and not report.blocked:
+            report.gates = await self._verify_declared_gates(run)
         await self.scheduler.evaluate_run_completion(run)
         reloaded = await self.db.load_run(run.id)
         if reloaded is not None:
@@ -186,6 +219,29 @@ class GoalRunner:
                 batches.append([task])
         return batches
 
+    async def _verify_declared_gates(self, run: Run) -> list[GateOutcome]:
+        """Run the checks the project declares, once the work is done.
+
+        Only after every task succeeded: verifying half-finished work reports
+        on something nobody asked about. A gate with no declared command is
+        left alone, so "nobody checked" stays distinguishable from "checked
+        and failed".
+        """
+        outcomes: list[GateOutcome] = []
+        for gate in self.gate_commands.declared():
+            command = self.gate_commands.for_gate(gate)
+            if command is None:
+                continue
+            outcome = await run_gate_command(gate, command, self.config.project_root)
+            outcomes.append(outcome)
+            await self.gates.record_evidence(
+                evidence_for(outcome, run.goal_id, run.id)
+            )
+        return outcomes
+
+    def _cancelled(self, run_id: str) -> bool:
+        return self.cancellation is not None and self.cancellation.is_requested(run_id)
+
     async def _run_task(
         self,
         run: Run,
@@ -197,6 +253,13 @@ class GoalRunner:
         role = _role_for(node)
         decision = self.router.route(role, task_risk=str(node.risk))
         outcome = TaskOutcome(task_id=task.id, objective=task.objective, succeeded=False)
+
+        if self._cancelled(run.id):
+            # Asked to stop before this one began: it did not fail, it never
+            # ran, and the record should say so.
+            outcome.cancelled = True
+            outcome.error = "cancelled before the task started"
+            return outcome
 
         if self.routing_store is not None:
             await self.routing_store.record_decision(decision, task.id, run.id)
@@ -213,6 +276,11 @@ class GoalRunner:
         )
 
         task = await self._reload(task)
+
+        if outcome.cancelled:
+            if task.state in (TaskState.RUNNING, TaskState.READY, TaskState.PLANNED):
+                await self.scheduler.cancel_task(task, outcome.error or "cancelled")
+            return outcome
 
         if result is None or attempt is None:
             # The budget stopped this task before it could be tried again.
@@ -292,17 +360,30 @@ class GoalRunner:
                     return last_result, last_attempt
 
             started = time.monotonic()
-            result, attempt = await self.harness.execute(
-                runner_name,
-                task,
-                _prompt_for(node),
-                RunnerConfig(
-                    model=model_id,
-                    max_turns=self.config.command_code_max_turns,
-                    timeout_seconds=self.config.command_code_timeout_seconds,
-                    role=role,
-                ),
-            )
+            try:
+                result, attempt = await self.harness.execute(
+                    runner_name,
+                    task,
+                    _prompt_for(node),
+                    RunnerConfig(
+                        model=model_id,
+                        max_turns=self.config.command_code_max_turns,
+                        timeout_seconds=self.config.command_code_timeout_seconds,
+                        role=role,
+                    ),
+                )
+            except asyncio.CancelledError:
+                # The attempt was cancelled, not this coroutine: awaiting a
+                # cancelled inner task raises here even though nobody asked the
+                # run to die. Swallowing it lets the run wind down tidily; if
+                # the run itself is being cancelled, the raise stands.
+                if not self._cancelled(run.id):
+                    raise
+                outcome.cancelled = True
+                outcome.error = self.cancellation.reason(run.id) if self.cancellation else (
+                    "cancelled"
+                )
+                return last_result, last_attempt
             latency_ms = (time.monotonic() - started) * 1000
 
             last_result, last_attempt = result, attempt

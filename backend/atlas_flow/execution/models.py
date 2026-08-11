@@ -131,7 +131,7 @@ class RouteDecision(BaseModel):
 
 VALID_TRANSITIONS: dict[str, dict[str, set[str]]] = {
     "run": {
-        RunState.CREATED: {RunState.PLANNING},
+        RunState.CREATED: {RunState.PLANNING, RunState.CANCELLED},
         RunState.PLANNING: {RunState.READY, RunState.FAILED, RunState.CANCELLED},
         RunState.READY: {RunState.RUNNING, RunState.CANCELLED},
         RunState.RUNNING: {
@@ -141,8 +141,14 @@ VALID_TRANSITIONS: dict[str, dict[str, set[str]]] = {
         RunState.VERIFYING: {RunState.REVIEWING, RunState.FAILED},
         RunState.REVIEWING: {RunState.COMPLETED, RunState.FAILED},
     },
+    # Cancellation has to reach every state that is not already finished.
+    # PLANNED could not be cancelled and BLOCKED could not move at all, so a
+    # run stopped before its tasks started had to mark them READY first — a
+    # lie the state machine forced — and a task that became unblocked was
+    # stuck forever.
     "task": {
-        TaskState.PLANNED: {TaskState.READY, TaskState.BLOCKED},
+        TaskState.PLANNED: {TaskState.READY, TaskState.BLOCKED, TaskState.CANCELLED},
+        TaskState.BLOCKED: {TaskState.READY, TaskState.CANCELLED},
         TaskState.READY: {TaskState.RUNNING, TaskState.CANCELLED},
         TaskState.RUNNING: {TaskState.SUCCEEDED, TaskState.FAILED, TaskState.CANCELLED},
         TaskState.SUCCEEDED: {TaskState.SUPERSEDED},

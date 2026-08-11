@@ -110,12 +110,53 @@ class Scheduler:
                         project_id=self.project_id),
         )
 
+    async def cancel_task(self, task: Task, reason: str) -> Task:
+        """Close a task nobody is going to finish."""
+        return await self.db.record_task_transition(
+            task,
+            TaskState.CANCELLED,
+            _task_event(task, EventType.TASK_FAILED, {"reason": reason},
+                        project_id=self.project_id),
+        )
+
+    async def cancel_run(self, run: Run, reason: str) -> Run:
+        """Close a run and everything in it that is still open.
+
+        Tasks that were never started are cancelled rather than failed: a task
+        that nobody ran did not fail, and recording it as a failure would make
+        the run look like it went wrong when it was stopped on purpose.
+        """
+        open_states = (
+            TaskState.PLANNED,
+            TaskState.BLOCKED,
+            TaskState.READY,
+            TaskState.RUNNING,
+        )
+        for task in await self.db.load_tasks(run.id):
+            if task.state in open_states:
+                await self.cancel_task(task, reason)
+
+        reloaded = await self.db.load_run(run.id) or run
+        if reloaded.state in (RunState.PLANNING, RunState.READY, RunState.RUNNING):
+            return await self.db.record_run_transition(
+                reloaded,
+                RunState.CANCELLED,
+                _run_event(reloaded, EventType.RUN_FAILED, RunState.CANCELLED,
+                           {"reason": reason}),
+            )
+        return reloaded
+
     async def evaluate_run_completion(self, run: Run) -> bool:
         tasks = await self.db.load_tasks(run.id)
         if not tasks:
             return False
         if any(task.state == TaskState.FAILED for task in tasks):
             await self.advance_run(run, RunState.FAILED)
+            return False
+        if any(task.state == TaskState.CANCELLED for task in tasks):
+            # Stopping on purpose is not the same as failing, and a run whose
+            # work was cancelled must not be reported as verifiable.
+            await self.advance_run(run, RunState.CANCELLED)
             return False
         terminal = (TaskState.SUCCEEDED, TaskState.CANCELLED, TaskState.SUPERSEDED)
         if all(task.state in terminal for task in tasks):
