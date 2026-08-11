@@ -12,7 +12,7 @@
     "dev": "pnpm --filter @atlas-flow/desktop dev",
     "lint": "eslint .",
     "tauri": "pnpm --filter @atlas-flow/desktop tauri",
-    "test": "vitest run",
+    "test": "node node_modules/vitest/vitest.mjs run",
     "typecheck": "tsc -b --force packages/domain-types packages/ag-ui-client packages/ui apps/desktop"
   },
   "devDependencies": {

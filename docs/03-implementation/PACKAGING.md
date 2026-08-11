@@ -64,24 +64,40 @@ and the record of what is inside it never drift apart:
   `scripts/generate_sbom.py` from `backend/uv.lock`, `pnpm-lock.yaml` and
   `Cargo.lock`. Reading lockfiles rather than an installed environment keeps the
   SBOM a description of the release rather than of the machine that built it.
-- `SHA256SUMS` — over the package and the SBOM.
+- `SHA256SUMS` — over the `.deb`, the AppImage and the SBOM.
+- `SHA256SUMS.asc` — a detached GPG signature, when `ATLAS_SIGNING_KEY` names a
+  key. The signature covers the digest list rather than each artefact: that is
+  what a verifier checks, and it cannot be sidestepped by swapping a file the
+  list already names. The script verifies its own signature before reporting
+  success. With no key configured it prints `unsigned` and carries on — an
+  unsigned release that claims to be signed is worse than one that admits it.
+
+## AppImage
+
+`linuxdeploy` is itself an AppImage, and mounting one needs FUSE, which build
+machines and CI runners frequently lack. `APPIMAGE_EXTRACT_AND_RUN=1` makes it
+extract instead; the packaging script exports it, which is the whole reason
+this bundle went from unbuildable to verified. The check is that the AppImage
+*unpacks into a tree containing the executable* — a file with the right
+extension proves nothing.
 
 ## Verified
 
 - `deb`: built and smoke-tested. Contains `/usr/bin/atlas-flow-desktop`, the
   desktop entry, and 32/128/512px icons.
-- SBOM: 791 components — 34 pypi, 306 npm, 451 cargo.
+- `AppImage`: built and unpacked; carries the executable.
+- SBOM: 840 components — 34 pypi, 355 npm, 451 cargo.
+- Signing: exercised end to end with a throwaway key, signature verified.
 
 ## Not yet done
 
-- **AppImage.** Configured but not verified — the bundler downloads
-  `linuxdeploy` at build time, which needs network access the build machine did
-  not have.
-- **Windows and macOS bundles.** No `.ico`/`.icns` icons, and neither target has
-  been built or smoke-tested. Only Linux is configured.
+- **Windows and macOS bundles.** Targets and icons are configured and the crate
+  builds and tests on both in CI, but no installer has been produced or
+  smoke-tested there.
 - **Shipping the Python backend inside the bundle.** The packaged app expects a
   backend it can start from the project directory; it does not carry its own
   interpreter. This is the main open question for 1.0.
-- **Signing.** Checksums and an SBOM are produced; nothing is signed.
+- **A published signing key.** The mechanism works; no project key exists or is
+  distributed, so released artefacts are still effectively unsigned.
 - **A LICENSE file.** `Cargo.toml` declares MIT but the repository has no
   license text, so the bundle carries none.

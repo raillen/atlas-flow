@@ -91,13 +91,69 @@ def load_fallbacks(root: Path) -> FallbackConfig:
     return FallbackConfig.model_validate(raw)
 
 
-def resolve_project(root: Path) -> ProjectAtlasContext:
+# Parsed contexts, keyed by project root, each with the file signature it was
+# parsed from. Git stays the authority; this only avoids re-parsing files that
+# have not changed since the last read.
+_CACHE: dict[Path, tuple[tuple[tuple[str, int], ...], ProjectAtlasContext]] = {}
+
+
+def manifest_paths(root: Path) -> list[Path]:
+    """Every file that feeds a resolved context."""
+    fixed = [
+        root / ".ai/context/project-profile.yaml",
+        root / ".ai/agents/manifest.yaml",
+        root / ".ai/skills/manifest.yaml",
+        root / ".ai/recipes/manifest.yaml",
+        root / ".ai/orchestration/model-policy.yaml",
+        root / ".ai/orchestration/autonomy-policy.yaml",
+        root / ".ai/orchestration/orchestrator.yaml",
+        root / ".ai/orchestration/fallbacks.yaml",
+    ]
+    goals = sorted((root / ".ai/goals").rglob("*.yaml")) if (root / ".ai/goals").is_dir() else []
+    return fixed + goals
+
+
+def _signature(root: Path) -> tuple[tuple[str, int], ...]:
+    """What the project looked like on disk, cheaply.
+
+    A stat per file rather than a parse per file: an edit changes the mtime, a
+    new or deleted Goal changes the set, and either invalidates the cache. The
+    desktop polls these endpoints, so re-parsing every Goal on every request is
+    the difference between 6ms and 250ms under load.
+    """
+    signature = []
+    for path in manifest_paths(root):
+        try:
+            signature.append((str(path), path.stat().st_mtime_ns))
+        except OSError:
+            signature.append((str(path), -1))
+    return tuple(signature)
+
+
+def resolve_project(root: Path, use_cache: bool = True) -> ProjectAtlasContext:
     """Load and validate all Project Atlas manifests.
 
     Raises AtlasLoadError with actionable message on incompatible/invalid
     manifests. No forked Goal semantics are introduced — this reads canonical
     Project Atlas format exactly.
     """
+    if use_cache:
+        signature = _signature(root)
+        cached = _CACHE.get(root)
+        if cached is not None and cached[0] == signature:
+            return cached[1]
+        context = _resolve(root)
+        _CACHE[root] = (signature, context)
+        return context
+    return _resolve(root)
+
+
+def forget_cached_projects() -> None:
+    """Drop every cached context. For tests and for an explicit reload."""
+    _CACHE.clear()
+
+
+def _resolve(root: Path) -> ProjectAtlasContext:
     return ProjectAtlasContext(
         root=root,
         project=load_project_profile(root),

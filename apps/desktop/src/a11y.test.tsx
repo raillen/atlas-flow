@@ -245,6 +245,16 @@ describe("rendered accessibility", () => {
 });
 
 describe("the audit itself", () => {
+  it("runs against React's development build", () => {
+    // The production build does not export `act`, so an ambient
+    // NODE_ENV=production fails every test here with a message that says
+    // nothing about the cause. vitest.config.ts pins it; this notices if that
+    // pin is ever removed.
+    // `import.meta.env` is Vite's view of the same thing, and needs no Node
+    // type definitions in a browser-targeted project.
+    expect(import.meta.env.MODE).toBe("test");
+  });
+
   it("detects a violation when there is one", async () => {
     // Without this, a silent misconfiguration of axe would make every check
     // above pass by finding nothing at all.

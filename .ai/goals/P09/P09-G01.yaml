@@ -23,9 +23,8 @@ gates:
   review: required
   documentation: required
 evidence:
-- review: 'FAILED — auditoria independente em 2026-08-11 (revisor não-Opus 5): CI Linux-only,
-    AppImage não verificado, sem auditoria DOM/screen reader, sem cargo build/test no CI e
-    sem auditoria de dependências (.github/workflows/foundation-ci.yml; tests/e2e/.gitkeep);
+- review: 'PARTIAL — revalidação independente em 2026-08-11: 10 testes DOM/a11y passaram e
+    packaging .deb passou; não houve screen-reader walkthrough e AppImage permanece não verificado;
     P09 permanece ACTIVE.'
 history:
 - '2026-08-10: reclassified DONE -> PLANNED after an implementation audit found acceptance
@@ -82,3 +81,28 @@ history:
 - '2026-08-11: still blocking — AppImage is still unverified: its bundler downloads linuxdeploy
   at build time and needs FUSE, neither of which the build machine had.'
 - '2026-08-11: still blocking — no screen-reader walkthrough.'
+- '2026-08-11: re-review finding closed — artefact signing implemented: a detached GPG signature
+  over SHA256SUMS (which now covers the .deb, the AppImage and the SBOM), verified by the
+  packaging script itself. Exercised end to end with a throwaway key. A project key still
+  has to exist.'
+- '2026-08-11: re-review finding closed — the dependency audit is reproducible locally: scripts/audit_dependencies.sh
+  runs pip-audit, pnpm audit and cargo audit, and is what CI runs. Being unable to reach a
+  database is reported as a failure, not skipped.'
+- '2026-08-11: still blocking — hosted macOS and Windows results. The CI matrix exists but
+  has not reported yet; that needs a push.'
+- '2026-08-11: still blocking — review gate. Two rounds so far (FAILED, then PARTIAL); it
+  takes another independent review to move.'
+- '2026-08-11: re-review finding closed — the AppImage is built and verified.'
+- '2026-08-11: fixed — the accessibility suite failed with ''React.act is not a function''
+  on any machine with NODE_ENV=production in its environment, because React resolves a different
+  build per NODE_ENV. Pinned in vitest.config.ts rather than in a shell prefix, which would
+  have fixed POSIX and broken the Windows CI job.'
+- '2026-08-11: fixed — GET /api/goals re-parsed every Goal on every request: ~47ms idle and
+  253ms on a loaded machine, over its 150ms budget. The loader caches a resolved context per
+  project root, invalidated on the file signature, so an edit is still seen immediately. Now
+  ~5ms.'
+- '2026-08-11: known and unfixable here — cargo audit reports 17 unmaintained-crate warnings
+  for the gtk-rs GTK3 bindings Tauri 2 pulls in transitively. Reported rather than swallowed;
+  they move when Tauri moves.'
+- '2026-08-11: still blocking — no screen-reader walkthrough. It needs a person and a screen
+  reader.'

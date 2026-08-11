@@ -149,24 +149,13 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      # Each ecosystem is audited against its own advisory database. Run as
-      # ephemeral tools so the audit itself never becomes a dependency of the
-      # thing it is auditing.
-      - name: Python advisories
-        run: |
-          uv export --project backend --no-hashes --no-emit-project \
-            --format requirements-txt > /tmp/requirements.txt
-          uvx pip-audit --strict --no-deps -r /tmp/requirements.txt
-        shell: bash
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
 
-      - name: Node advisories
-        run: pnpm audit --audit-level=high
-
-      - name: Rust advisories
-        uses: rustsec/audit-check@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          working-directory: apps/desktop/src-tauri
+      # The same script a developer runs locally, so a reviewer can reproduce
+      # the result instead of taking CI's word for it.
+      - name: Audit every ecosystem
+        run: sh scripts/audit_dependencies.sh
 
   project-atlas-validation:
     name: Project Atlas validation
@@ -225,15 +214,24 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Signing is skipped, loudly, when no key is configured. A release
+      # workflow sets ATLAS_SIGNING_KEY; a pull request does not have it.
+      - name: Import the signing key
+        if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
+        run: echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+
       - name: Build and verify the bundle
         run: sh scripts/package_smoke.sh
         env:
           ATLAS_PYTHON: python3
+          ATLAS_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY_ID }}
 
       - uses: actions/upload-artifact@v4
         with:
           name: linux-bundle
           path: |
             apps/desktop/src-tauri/target/release/bundle/deb/*.deb
+            apps/desktop/src-tauri/target/release/bundle/appimage/*.AppImage
             apps/desktop/src-tauri/target/release/bundle/deb/sbom.cyclonedx.json
             apps/desktop/src-tauri/target/release/bundle/deb/SHA256SUMS
+            apps/desktop/src-tauri/target/release/bundle/deb/SHA256SUMS.asc

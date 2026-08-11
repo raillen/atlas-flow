@@ -39,10 +39,41 @@ one place to test.
    escapes its own output; applying either would have corrupted prompts and
    double-escaped transcripts while looking like protection.
 
+## Dependency auditing
+
+`sh scripts/audit_dependencies.sh` checks all three ecosystems against their own
+advisory databases — pip-audit, `pnpm audit`, `cargo audit` — and is what CI
+runs, so a reviewer can reproduce the result instead of taking CI's word for it.
+
+Being unable to reach a database is reported as a **failure**, not skipped:
+"I could not check" and "there is nothing to find" are different answers, and
+only one of them is evidence.
+
+Adding it found **PYSEC-2026-1845** in pytest 8.4.2 on the first run; the
+project is on pytest 9.x.
+
+Current result: no vulnerabilities in any ecosystem, and **17 unmaintained-crate
+warnings** from Rust — the gtk-rs GTK3 bindings that Tauri 2 pulls in
+transitively. `cargo audit` exits zero for those, so the script counts and
+reports them rather than letting a zero exit code imply there was nothing to
+say. Nothing can be done about them from this repository; they move when Tauri
+moves.
+
+## Release integrity
+
+`SHA256SUMS` covers the `.deb`, the AppImage and the SBOM, and is signed with a
+detached GPG signature when `ATLAS_SIGNING_KEY` names a key. The signature is
+over the digest list rather than each artefact — that is what a verifier
+checks, and it cannot be sidestepped by swapping a file the list already names.
+The packaging script verifies its own signature before reporting success, and
+prints `unsigned` when no key is configured rather than staying quiet about it.
+
 ## Not yet covered
 
-- No dependency audit or SBOM in CI.
 - No fuzzing of the ACP wire format beyond the malformed cases in the fixture
   agent.
+- No project signing key exists, so released artefacts are effectively
+  unsigned even though the mechanism works.
+- No independent security review, as opposed to the code review.
 - The AG-UI WebSocket is unauthenticated. The backend binds localhost, so the
   boundary is the machine: any local process can subscribe to run events.

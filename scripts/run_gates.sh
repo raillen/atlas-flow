@@ -82,6 +82,14 @@ fi
 
 run "Docs and Goals" env ATLAS_PYTHON="$ATLAS_PYTHON" sh "$ROOT/scripts/validate_all.sh"
 
+# Last, because it is the only gate that needs the network: a failure here
+# should not hide the ones that would have failed anyway.
+if [ "${ATLAS_SKIP_AUDIT:-}" = "1" ]; then
+    printf '\nSkipping the dependency audit (ATLAS_SKIP_AUDIT=1)\n' >&2
+else
+    run "Dependency audit" sh "$ROOT/scripts/audit_dependencies.sh"
+fi
+
 if [ -z "$FAILED" ]; then
     printf '\nAll gates PASSED.\n'
     exit 0

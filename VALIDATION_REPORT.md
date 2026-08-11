@@ -8,17 +8,17 @@ Generated: 2026-08-10
 |-------|---------|--------|
 | Python lint | `uv run --project backend ruff check .` | PASS |
 | Python types | `uv run --project backend mypy` | PASS (strict, 56 files) |
-| Python tests | `uv run --project backend pytest` | PASS — 311 tests |
+| Python tests | `uv run --project backend pytest` | PASS — 317 tests |
 | TypeScript build | `pnpm run typecheck` | PASS |
 | JS lint | `pnpm run lint` | PASS |
-| JS tests | `pnpm run test` | PASS — 56 tests, including an axe-core DOM audit |
+| JS tests | `pnpm run test` | PASS — 57 tests, including an axe-core DOM audit |
 | Docs links | `python scripts/validate_docs.py` | PASS |
 | Goal contracts | `python scripts/validate_goals.py` | PASS — 11 Goals, 0 DONE |
 | Command Code | `scripts/validate_command_code.sh` | PASS — 9 agents, 15 skills |
 | Desktop shell | `cargo fmt`, `clippy -D warnings`, `cargo test` | PASS — 9 tests |
-| Dependency audit | `pip-audit`, `pnpm audit` | PASS — one advisory found and fixed |
+| Dependency audit | `sh scripts/audit_dependencies.sh` | PASS — no vulnerabilities; 17 unmaintained-crate warnings from Tauri's GTK3 chain |
 | Every gate at once | `sh scripts/bootstrap.sh && sh scripts/run_gates.sh` | PASS |
-| Packaging | `sh scripts/package_smoke.sh` | PASS — deb bundle, CycloneDX SBOM (791 components), SHA256SUMS |
+| Packaging | `sh scripts/package_smoke.sh` | PASS — deb and AppImage, CycloneDX SBOM (840 components), SHA256SUMS, GPG signature |
 
 Run everything with `scripts/validate_all.sh`.
 
@@ -79,16 +79,25 @@ A different model reviewed the work and **failed all eleven Goals**. What it fou
 22. **ACP did not resume a session after a restart.** It does now, with a stale id treated as a reason to open a new session rather than to fail.
 23. **`tests/e2e` contained only a `.gitkeep`** — a directory pretending to be a test suite. It is gone, replaced by an axe-core audit that runs.
 
+## Findings from the second review (2026-08-11)
+
+The re-review moved all eleven Goals from FAILED to PARTIAL, and found three more things:
+
+24. **The accessibility suite failed with `React.act is not a function`** on any machine with `NODE_ENV=production` in its environment: React resolves a different build per `NODE_ENV`, and the production build does not export `act`. Pinned in `vitest.config.ts` — a `VAR=value` shell prefix would have fixed POSIX and broken the Windows CI job that had just been added.
+25. **The AppImage was unbuildable, not merely unverified.** `linuxdeploy` is itself an AppImage and mounting one needs FUSE. `APPIMAGE_EXTRACT_AND_RUN=1` removes that requirement; the bundle now builds, and the smoke test unpacks it and checks the executable is inside rather than trusting the file name.
+26. **`GET /api/goals` re-parsed every Goal on every request** — ~47 ms idle, **253 ms on a loaded machine**, over its own 150 ms budget. Found by running the suite while the machine was busy, which is the only way a budget measured on an idle machine means anything. The loader now caches per project root and invalidates on the file signature: ~5 ms, and an edit is still seen immediately.
+
 ## Known gaps
 
 These are tracked in the Goal files, not hidden:
 
 - **Models are reached only through Command Code.** There is no provider SDK and there will not be one (ADR-012). If `cmd` is absent, discovery degrades to the policy roster and the CLI and ACP runners are the only paths that perform work.
 - **Adaptive scoring is post-MVP.** The scorecard is fed and persisted, but routing order is still the deterministic policy order; it does not yet reorder candidates by observed success (RFC-001).
-- **Only the Linux `deb` bundle is verified.** Windows and macOS targets are configured but unbuilt; AppImage needs FUSE and a build-time download the machine did not have (P06, P09).
+- **Windows and macOS installers are unbuilt.** The targets and icons are configured and the crate builds and tests on both in CI, but no installer has been produced there (P06, P09).
 - **No screen-reader walkthrough.** Automated rules catch structure, not whether the result is comprehensible when read aloud (P09).
-- **Release artefacts are unsigned.** This needs a key and a mechanism the project owner chooses (P10).
-- **The review gate is FAILED on every Goal.** The 2026-08-11 review failed all eleven; its findings are addressed, but closing a finding does not reopen the gate — that takes another review (P00–P10).
+- **No project signing key exists.** The signing mechanism works and verifies itself, but with no key the artefacts are effectively unsigned (P10).
+- **17 unmaintained-crate warnings** from the gtk-rs GTK3 bindings Tauri 2 depends on. Reported by the audit rather than swallowed; nothing can be done from this repository.
+- **The review gate is PARTIAL on every Goal.** Two reviews on 2026-08-11: FAILED, then PARTIAL. Both rounds of findings are closed except the ones above, but closing a finding does not move the gate — that takes another review (P00–P10).
 
 ## How to run
 

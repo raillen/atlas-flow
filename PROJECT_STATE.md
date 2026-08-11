@@ -27,14 +27,17 @@ passing evidence for every gate it declares required.
 | P06 | Desktop Modes | ACTIVE | review gate |
 | P07 | Verification and Evidence | ACTIVE | review gate |
 | P08 | Routing, Budgets and Scorecards | ACTIVE | review gate |
-| P09 | Hardening | ACTIVE | AppImage, screen-reader walkthrough, review gate |
-| P10 | Beta and 1.0 Validation | ACTIVE | unsigned artefacts, review gate |
+| P09 | Hardening | ACTIVE | screen-reader walkthrough, review gate |
+| P10 | Beta and 1.0 Validation | ACTIVE | no signing key, review gate |
 
-An independent review was performed on 2026-08-11 by a different model, as
+Two independent reviews were performed on 2026-08-11 by a different model, as
 required by the model-diversity rule: the author of the work cannot be its
-reviewer. It **failed all eleven Goals**. Every finding it raised is recorded in
-the affected Goal's `history`, and most are now closed — but closing a finding
-does not reopen the gate. That takes another review.
+reviewer. The first failed all eleven Goals; the second moved them to PARTIAL.
+
+Both rounds of findings are now closed except three, each recorded in the
+affected Goal's history: no hosted macOS/Windows CI result yet, no project
+signing key, and no screen-reader walkthrough. Closing findings does not move
+the gate — that takes another review.
 
 ## What works end to end
 
@@ -80,15 +83,15 @@ Every acceptance criterion across P00–P10 is now either met with evidence or
 recorded in its Goal's history as still blocking. What remains before any Goal
 can be marked DONE:
 
-1. **A re-review.** The 2026-08-11 review failed all eleven Goals. Its findings
-   are addressed, so the work is ready to be looked at again — by a different
-   model, not by the one that wrote it.
-2. **Signing.** An SBOM and checksums are produced; nothing is signed. This
-   needs a key and a mechanism the project owner chooses (P10).
-3. **AppImage.** Its bundler downloads `linuxdeploy` and needs FUSE; neither was
-   available on the build machine, so it stays unverified (P09).
-4. **A screen-reader walkthrough.** Automated rules catch structure, not whether
-   the result is comprehensible when read aloud (P09).
+1. **A project signing key.** The mechanism works and verifies itself; no key
+   exists to sign with, so released artefacts are still effectively unsigned (P10).
+2. **A hosted CI result for macOS and Windows.** The matrix exists; it reports
+   on the next push (P09, P10).
+3. **A screen-reader walkthrough.** The axe/DOM suite now passes 11 tests, but
+   no screen-reader walkthrough was evidenced (P09).
+4. **Another independent review.** Every local gate passes and both rounds of
+   findings are closed except the three above, so the work is ready to be
+   looked at again — by a different model, not by the one that wrote it.
 
 See [Release Gates](docs/04-quality/RELEASE_GATES.md) for the gate-by-gate
 status.
