@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { useCallback } from "react";
 import { api, type RunDetail } from "../api";
 import { useAsync, usePolling } from "../hooks/useAsync";
+import { useAgentStream } from "../hooks/useAgentStream";
 import {
   AsyncPanel,
   buttonStyle,
@@ -49,7 +50,61 @@ export const BuildScreen: FC<{ runId: string | null }> = ({ runId }) => {
       <AsyncPanel loading={detail.loading && !detail.data} error={detail.error} onRetry={detail.reload}>
         {detail.data && <RunBody detail={detail.data} live={isActive} />}
       </AsyncPanel>
+
+      <AgentActivityPanel runId={runId} live={isActive} />
     </div>
+  );
+};
+
+const ACTIVITY_LABELS: Record<string, string> = {
+  "atlas.agent.message": "says",
+  "atlas.agent.thought": "thinks",
+  "atlas.terminal.output": "ran",
+  "atlas.file.changed": "changed",
+  "atlas.tool.call": "tool",
+  "atlas.plan.updated": "plan",
+};
+
+const AgentActivityPanel: FC<{ runId: string; live: boolean }> = ({ runId, live }) => {
+  const { activity, connected } = useAgentStream(runId, live);
+
+  return (
+    <section>
+      <SectionHeading>Agent activity</SectionHeading>
+      <p style={muted}>
+        {live
+          ? connected
+            ? "Streaming live. Narration is not stored — the event log above is the durable record."
+            : "Connecting to the event stream…"
+          : "The run is not active."}
+      </p>
+      {activity.length > 0 && (
+        <ol
+          style={{
+            listStyle: "none",
+            padding: "0.5rem",
+            margin: 0,
+            maxHeight: 220,
+            overflowY: "auto",
+            border: "1px solid #e2e8f0",
+            borderRadius: 8,
+            fontFamily: "ui-monospace, monospace",
+            fontSize: "0.75rem",
+          }}
+          aria-live="polite"
+        >
+          {activity.map((entry) => (
+            <li key={entry.key} style={{ padding: "0.15rem 0", color: "#475569" }}>
+              <span style={{ color: "#94a3b8" }}>
+                {ACTIVITY_LABELS[entry.type] ?? entry.type}
+              </span>{" "}
+              {entry.tool && <strong>{entry.tool} </strong>}
+              {entry.paths.length > 0 ? entry.paths.join(", ") : entry.text}
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
   );
 };
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shlex
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -42,6 +43,9 @@ class AtlasFlowConfig:
     # Runners
     command_code_timeout_seconds: int = 600
     command_code_max_turns: int = 50
+    # The ACP agent to launch, as an argv list. Empty means no ACP runner is
+    # registered — there is no sensible default agent to guess at.
+    acp_agent_command: list[str] = field(default_factory=list)
 
     # MCP
     mcp_enabled: bool = False
@@ -49,7 +53,10 @@ class AtlasFlowConfig:
 
     # Logging
     log_level: str = "INFO"
-    redact_secrets: bool = True
+    # Redaction of agent output is unconditional; these patterns are added to
+    # the built-in ones. It is not a switch, because a run that may leak a
+    # token is not a configuration preference.
+    redaction_patterns: list[str] = field(default_factory=list)
 
     # Retention
     artifact_retention_days: int = 30
@@ -159,3 +166,7 @@ class AtlasFlowConfig:
             value = os.environ.get(env_var)
             if value is not None:
                 setattr(self, attr, converter(value))
+
+        agent = os.environ.get("ATLAS_FLOW_ACP_AGENT")
+        if agent is not None:
+            self.acp_agent_command = shlex.split(agent)

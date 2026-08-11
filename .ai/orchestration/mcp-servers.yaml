@@ -1,0 +1,29 @@
+# MCP servers Atlas Flow may forward to an ACP agent.
+#
+# Forwarding is off unless `mcp_enabled` is true in configuration: MCP reaches
+# external systems, so it is opt-in rather than opt-out.
+#
+# Rules enforced by backend/atlas_flow/mcp/registry.py:
+#   - Only servers declared here are ever forwarded.
+#   - `roles` restricts a server to the roles that need it; omit it for all.
+#   - `read_only: true` marks a server planning roles may use. Planning roles
+#     (goal-planner, chief-architect, repo-explorer) receive nothing else.
+#   - Environment values are references, never literals. A `value:` key is
+#     refused so a secret cannot be committed here by accident.
+#
+# Example:
+#
+#   servers:
+#     - name: docs
+#       command: mcp-docs
+#       args: ["--stdio"]
+#       read_only: true
+#     - name: github
+#       command: mcp-github
+#       roles: [core-implementer, tester]
+#       env:
+#         - name: GITHUB_TOKEN
+#           from_env: ATLAS_GITHUB_TOKEN
+
+enabled: false
+servers: []

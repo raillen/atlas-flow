@@ -39,3 +39,15 @@ history:
 - '2026-08-10: still blocking — MCP forwarding through ACP is not implemented.'
 - '2026-08-10: still blocking — Terminal and file-event streaming are not implemented.'
 - '2026-08-10: still blocking — review gate: no independent review has been performed.'
+- '2026-08-10: closed — MCP forwarding: an explicit registry decides which servers each role
+  may reach and forwards them in session/new. Planning roles get read-only servers only, literal
+  secrets in the config are refused, and what was granted or skipped is recorded as attempt
+  evidence.'
+- '2026-08-10: closed — Terminal and file events: session/update notifications are normalized
+  into a closed vocabulary (message, thought, terminal, file, tool, plan), broadcast over
+  AG-UI and rendered on the Build screen. Terminal output lands in the transcript and changed
+  files in evidence; unrecognized updates are dropped rather than forwarded untyped.'
+- '2026-08-10: closed — Agent-produced text is redacted at the runner boundary, so a token
+  an agent echoes never reaches a transcript, an event or a client.'
+- '2026-08-10: still blocking — Session resumption across process restarts is not implemented.'
+- '2026-08-10: still blocking — review gate: no independent review has been performed.'

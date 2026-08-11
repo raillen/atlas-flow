@@ -1,11 +1,24 @@
 /** AG-UI client primitives (docs/01-architecture/AG_UI_INTEGRATION.md, EVENT_MODEL.md). */
 
+/**
+ * Every namespace the backend actually emits. Durable run history uses the
+ * first group; the second is agent narration, which is broadcast live and
+ * never persisted (see backend/atlas_flow/api/websocket.py).
+ */
 export const ATLAS_EVENT_NAMESPACES = [
-  "atlas.goal",
+  "atlas.run",
   "atlas.task",
-  "atlas.runner",
-  "atlas.evidence",
-  "atlas.routing",
+  "atlas.attempt",
+  "atlas.gate",
+  "atlas.state",
+  "atlas.agent",
+  "atlas.terminal",
+  "atlas.file",
+  "atlas.tool",
+  "atlas.plan",
+  "atlas.discuss",
+  "atlas.decision",
+  "atlas.error",
 ] as const;
 
 export type AtlasEventNamespace = (typeof ATLAS_EVENT_NAMESPACES)[number];

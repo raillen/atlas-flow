@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
+from atlas_flow.acp.events import NormalizedUpdate, UpdateKind, normalize_update
 from atlas_flow.acp.protocol import AcpConnection, AcpError, JsonRpcParams
 
 PROTOCOL_VERSION = 1
@@ -42,6 +43,7 @@ class PermissionRequest:
 
 PermissionPolicy = Callable[[PermissionRequest], Awaitable[bool]]
 UpdateListener = Callable[[str, dict[str, Any]], Awaitable[None]]
+EventListener = Callable[[NormalizedUpdate], Awaitable[None]]
 
 
 async def deny_all(request: PermissionRequest) -> bool:
@@ -77,12 +79,28 @@ class PromptResult:
     stop_reason: str = ""
     text: str = ""
     updates: list[dict[str, Any]] = field(default_factory=list)
+    events: list[NormalizedUpdate] = field(default_factory=list)
     permissions_requested: list[PermissionRequest] = field(default_factory=list)
     permissions_denied: list[str] = field(default_factory=list)
 
     @property
     def completed(self) -> bool:
         return self.stop_reason in ("end_turn", "completed")
+
+    @property
+    def terminal_output(self) -> str:
+        return "".join(
+            event.text for event in self.events if event.kind == UpdateKind.TERMINAL
+        )
+
+    @property
+    def files_changed(self) -> list[str]:
+        """Every path the agent reported touching, in the order it touched them."""
+        paths: list[str] = []
+        for event in self.events:
+            if event.kind == UpdateKind.FILE:
+                paths.extend(event.paths)
+        return list(dict.fromkeys(paths))
 
 
 class AcpClient:
@@ -92,6 +110,7 @@ class AcpClient:
         self,
         permission_policy: PermissionPolicy | None = None,
         on_update: UpdateListener | None = None,
+        on_event: EventListener | None = None,
     ) -> None:
         self.connection = AcpConnection()
         self.connection.request_handlers["session/request_permission"] = (
@@ -101,10 +120,12 @@ class AcpClient:
 
         self.permission_policy = permission_policy or deny_all
         self.on_update = on_update
+        self.on_event = on_event
         self.capabilities = AgentCapabilities()
         self.session_id: str | None = None
 
         self._updates: list[dict[str, Any]] = []
+        self._events: list[NormalizedUpdate] = []
         self._permissions: list[PermissionRequest] = []
         self._denied: list[str] = []
 
@@ -165,6 +186,7 @@ class AcpClient:
             raise AcpError("prompt called before a session was created")
 
         self._updates = []
+        self._events = []
         self._permissions = []
         self._denied = []
 
@@ -185,6 +207,7 @@ class AcpClient:
             stop_reason=stop_reason,
             text=self._collected_text(),
             updates=list(self._updates),
+            events=list(self._events),
             permissions_requested=list(self._permissions),
             permissions_denied=list(self._denied),
         )
@@ -209,10 +232,22 @@ class AcpClient:
         if method != "session/update":
             return
         update = params.get("update")
-        if isinstance(update, dict):
-            self._updates.append(update)
-            if self.on_update is not None:
-                await self.on_update(str(update.get("sessionUpdate", "")), update)
+        if not isinstance(update, dict):
+            return
+
+        self._updates.append(update)
+        if self.on_update is not None:
+            await self.on_update(str(update.get("sessionUpdate", "")), update)
+
+        # An update the normalizer does not recognize is kept in `updates` but
+        # not published: forwarding an untyped blob would put the wire
+        # vocabulary of one agent into every consumer downstream.
+        event = normalize_update(update)
+        if event is None:
+            return
+        self._events.append(event)
+        if self.on_event is not None:
+            await self.on_event(event)
 
     async def _on_permission_request(self, params: JsonRpcParams) -> dict[str, Any]:
         tool_call = params.get("toolCall")

@@ -7,11 +7,11 @@ Generated: 2026-08-10
 | Check | Command | Result |
 |-------|---------|--------|
 | Python lint | `uv run --project backend ruff check .` | PASS |
-| Python types | `uv run --project backend mypy` | PASS (strict, 53 files) |
-| Python tests | `uv run --project backend pytest` | PASS — 226 tests |
+| Python types | `uv run --project backend mypy` | PASS (strict, 56 files) |
+| Python tests | `uv run --project backend pytest` | PASS — 269 tests |
 | TypeScript build | `pnpm run typecheck` | PASS |
 | JS lint | `pnpm run lint` | PASS |
-| JS tests | `pnpm run test` | PASS — 22 tests |
+| JS tests | `pnpm run test` | PASS — 28 tests |
 | Docs links | `python scripts/validate_docs.py` | PASS |
 | Goal contracts | `python scripts/validate_goals.py` | PASS — 11 Goals, 0 DONE |
 | Command Code | `scripts/validate_command_code.sh` | PASS — 9 agents, 15 skills |
@@ -28,14 +28,16 @@ Roughly 8,300 lines of source are covered by roughly 4,000 lines of tests.
 | Discuss and Decision Ledger | 24 | Lifecycle, persistence across restart, ADR generation |
 | Execution runtime | 20 | Transactional transitions, durable state, crash recovery |
 | Atlas Harness | 12 | Attempt persistence, capability negotiation, failure paths |
-| ACP | 17 | Live agent subprocess, permissions, protocol errors |
+| ACP | 24 | Live agent subprocess, permissions, protocol errors, MCP forwarding, terminal/file events |
 | Planner and worktrees | 26 | Real git worktrees, conflict detection, parallel isolation |
 | Goal execution | 15 | Plan to integrated commits, cross-provider review, budget stops |
 | Verification and evidence | 24 | Gate rules, evidence persistence, DONE enforcement |
 | Model routing | 25 | Role routing, live discovery and degradation, bounded fallback, durable scorecard |
 | Budgets | 11 | Attempt caps, reported vs unmeasured spend |
 | API | 26 | Every endpoint against the real project, path traversal, event stream |
-| Faults and security | 12 | Fault injection, security guard |
+| MCP registry | 16 | Role allowlists, read-only planning roles, refused literal secrets |
+| ACP event normalization | 16 | Terminal, file, plan and tool updates; redaction at the boundary |
+| Faults and security | 16 | Fault injection, security guard, redaction |
 
 ## Defects this pass found and fixed
 
@@ -48,6 +50,8 @@ Roughly 8,300 lines of source are covered by roughly 4,000 lines of tests.
 7. **`advance_run` emitted `previous` and `next` as the same value**, making the event log unable to explain a transition.
 8. **Concurrent integration raced on `HEAD`.** Two parallel tasks merging into the same branch killed one with `cannot lock ref`; integration is now serialized.
 9. **Leaked aiosqlite connections** in tests surfaced as `Event loop is closed` warnings from unrelated tests.
+10. **`SecurityGuard.redact_secrets` was never called.** Redaction existed as a function and nothing invoked it, so agent output reached transcripts, attempt errors and the event stream unfiltered. It is now applied at the runner boundary, and custom patterns add to the built-in set rather than replacing it.
+11. **The AG-UI namespace list did not match the backend.** It allowed `atlas.goal`/`atlas.evidence`, which are never emitted, and rejected `atlas.run`, `atlas.attempt`, `atlas.gate` and `atlas.state`, which are.
 
 ## Known gaps
 
@@ -56,7 +60,7 @@ These are tracked in the Goal files, not hidden:
 - **Models are reached only through Command Code.** There is no provider SDK and there will not be one (ADR-012). If `cmd` is absent, discovery degrades to the policy roster and the CLI and ACP runners are the only paths that perform work.
 - **Adaptive scoring is post-MVP.** The scorecard is fed and persisted, but routing order is still the deterministic policy order; it does not yet reorder candidates by observed success (RFC-001).
 - **The Tauri shell is the unmodified template** — no IPC commands, no packaging pipeline (P06, P09).
-- **MCP forwarding and terminal/file event streaming over ACP** are not implemented (P04).
+- **ACP session resumption across process restarts** is not implemented; a restart starts a fresh session (P04).
 - **No independent review has been performed**, so the review gate is outstanding on every Goal (P00–P08).
 - **No dogfooding on other project categories** (P10).
 

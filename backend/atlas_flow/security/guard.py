@@ -7,6 +7,16 @@ from pathlib import Path
 SHELL_DANGEROUS = re.compile(r'[;&|`$(){}\[\]<>*?!\n\r\t]')
 PATH_TRAVERSAL = re.compile(r'(?:^|/)\.\.(?:/|$)')
 
+# Applied to every piece of agent-produced text that leaves the runner, so a
+# token an agent echoed never reaches a log, a transcript or a client.
+SECRET_PATTERNS = [
+    r'(?:sk|api[_-]?key|token|secret|password)\s*[:=]\s*[^\s]+',
+    r'Bearer\s+[A-Za-z0-9\-._~+/]+=*',
+    r'\bgh[pousr]_[A-Za-z0-9]{16,}',
+    r'\bsk-[A-Za-z0-9]{16,}',
+    r'-----BEGIN [A-Z ]*PRIVATE KEY-----',
+]
+
 
 class SecurityError(Exception):
     """Raised when a security boundary is violated."""
@@ -49,12 +59,14 @@ class SecurityGuard:
 
     @staticmethod
     def redact_secrets(text: str, patterns: list[str] | None = None) -> str:
-        """Remove known secret patterns from text before logging/storing."""
-        default_patterns = [
-            r'(?:sk|api[_-]?key|token|secret|password)\s*[:=]\s*[^\s]+',
-            r'Bearer\s+[A-Za-z0-9\-._~+/]+=*',
-        ]
-        for pat in (patterns or default_patterns):
+        """Remove known secret patterns from text before logging/storing.
+
+        Extra patterns are added to the defaults rather than replacing them: a
+        project that wants to catch one more shape of secret should not have to
+        restate the ones already covered, and silently losing the defaults is
+        exactly the mistake that turns a redaction list into a leak.
+        """
+        for pat in SECRET_PATTERNS + list(patterns or []):
             text = re.sub(pat, '[REDACTED]', text, flags=re.IGNORECASE)
         return text
 

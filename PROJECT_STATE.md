@@ -22,7 +22,7 @@ passing evidence for every gate it declares required.
 | P01 | Project Atlas Integration | ACTIVE | review gate |
 | P02 | Discuss and Decision Ledger | ACTIVE | review gate |
 | P03 | Orchestration Runtime | ACTIVE | review gate |
-| P04 | Atlas Harness | ACTIVE | MCP forwarding, terminal/file events, review gate |
+| P04 | Atlas Harness | ACTIVE | session resumption, review gate |
 | P05 | Goal Planner and DAG Execution | ACTIVE | review gate |
 | P06 | Desktop Modes | ACTIVE | Tauri IPC and packaging, review gate |
 | P07 | Verification and Evidence | ACTIVE | review gate |

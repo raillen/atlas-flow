@@ -78,6 +78,32 @@ class TestSecurityGuard:
         assert "mypass" not in redacted
         assert "REDACTED" in redacted
 
+    def test_bare_credentials_are_redacted_without_a_label(self) -> None:
+        """A token pasted into output rarely arrives with "token:" in front."""
+        text = "cloning with ghp_0123456789abcdefghij and sk-ABCDEFGHIJKLMNOPQR"
+        redacted = SecurityGuard.redact_secrets(text)
+
+        assert "ghp_0123456789abcdefghij" not in redacted
+        assert "sk-ABCDEFGHIJKLMNOPQR" not in redacted
+
+    def test_a_private_key_header_is_redacted(self) -> None:
+        redacted = SecurityGuard.redact_secrets("-----BEGIN RSA PRIVATE KEY-----")
+        assert "PRIVATE KEY" not in redacted
+
+    def test_custom_patterns_add_to_the_defaults_rather_than_replacing_them(
+        self,
+    ) -> None:
+        """Replacing them is how a redaction list quietly becomes a leak."""
+        redacted = SecurityGuard.redact_secrets(
+            "internal-id-4242 and token: abc123", patterns=[r"internal-id-\d+"]
+        )
+
+        assert "internal-id-4242" not in redacted
+        assert "abc123" not in redacted
+
+    def test_ordinary_text_survives_redaction(self) -> None:
+        assert SecurityGuard.redact_secrets("2 passed in 4.6s") == "2 passed in 4.6s"
+
     def test_git_destructive_blocked(self) -> None:
         with pytest.raises(SecurityError, match="Destructive"):
             SecurityGuard.validate_git_command(["git", "push", "origin", "main"])

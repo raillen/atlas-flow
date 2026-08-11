@@ -11,6 +11,8 @@ several kinds of agent:
         "error"       reply to session/prompt with a JSON-RPC error
         "noisy"       print a non-JSON line before answering
         "old"         claim a protocol version this client cannot speak
+        "echo_mcp"    answer with the MCP servers it was given at session/new
+        "tooling"     narrate a shell command and a file edit before answering
 """
 
 import json
@@ -87,8 +89,54 @@ def request_permission(session_id: str) -> dict:
             return message.get("result") or {}
 
 
-def handle_prompt(request_id: int, params: dict) -> None:
+def emit_tooling(session_id: str) -> None:
+    """Narrate a shell command, a file edit and an untyped update."""
+    for update in (
+        {
+            "sessionUpdate": "tool_call",
+            "toolCallId": "call-1",
+            "title": "pytest -q",
+            "kind": "execute",
+            "status": "completed",
+            "content": [
+                {"type": "terminal", "content": {"type": "text", "text": "2 passed\n"}}
+            ],
+        },
+        {
+            "sessionUpdate": "tool_call",
+            "toolCallId": "call-2",
+            "title": "write auth.py",
+            "kind": "edit",
+            "status": "completed",
+            "locations": [{"path": "backend/auth.py"}],
+            "content": [
+                {"type": "diff", "path": "backend/auth.py", "oldText": "", "newText": "x"}
+            ],
+        },
+        {"sessionUpdate": "something_new_this_client_never_heard_of"},
+    ):
+        notify("session/update", {"sessionId": session_id, "update": update})
+
+
+def handle_prompt(request_id: int, params: dict, mcp_servers: list) -> None:
     session_id = params.get("sessionId", "")
+
+    if MODE == "echo_mcp":
+        notify(
+            "session/update",
+            {
+                "sessionId": session_id,
+                "update": {
+                    "sessionUpdate": "agent_message_chunk",
+                    "content": {"type": "text", "text": json.dumps(mcp_servers)},
+                },
+            },
+        )
+        reply(request_id, {"stopReason": "end_turn"})
+        return
+
+    if MODE == "tooling":
+        emit_tooling(session_id)
 
     if MODE == "error":
         fail(request_id, -32000, "agent refused the prompt")
@@ -119,6 +167,7 @@ def handle_prompt(request_id: int, params: dict) -> None:
 
 def main() -> None:
     session_counter = 0
+    mcp_servers: list = []
 
     while True:
         message = read()
@@ -131,6 +180,7 @@ def main() -> None:
             handle_initialize(request_id)
         elif method == "session/new" and request_id is not None:
             session_counter += 1
+            mcp_servers = (message.get("params") or {}).get("mcpServers") or []
             reply(request_id, {"sessionId": f"fixture-session-{session_counter}"})
         elif method == "session/load" and request_id is not None:
             if MODE == "no_session":
@@ -138,7 +188,7 @@ def main() -> None:
             else:
                 reply(request_id, {})
         elif method == "session/prompt" and request_id is not None:
-            handle_prompt(request_id, message.get("params") or {})
+            handle_prompt(request_id, message.get("params") or {}, mcp_servers)
         elif method == "session/cancel":
             continue
         elif request_id is not None:

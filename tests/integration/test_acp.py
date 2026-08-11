@@ -1,5 +1,6 @@
 """P04 ACP client against a real agent process."""
 
+import json
 import os
 import sys
 from collections.abc import AsyncIterator
@@ -9,9 +10,11 @@ import pytest
 import pytest_asyncio
 
 from atlas_flow.acp.client import AcpClient, PermissionRequest, deny_all
+from atlas_flow.acp.events import NormalizedUpdate, UpdateKind
 from atlas_flow.acp.protocol import AcpError, AcpRemoteError
 from atlas_flow.harness.engine import Harness
 from atlas_flow.harness.runner import RunnerCapability, RunnerConfig
+from atlas_flow.mcp.registry import McpRegistry
 from atlas_flow.runners.acp import AcpRunner, allow_read_only
 
 AGENT = Path(__file__).resolve().parents[1] / "fixtures" / "acp_agent.py"
@@ -215,3 +218,130 @@ class TestAcpRunner:
 
         assert not result.success
         assert "not found" in result.error
+
+
+@pytest.mark.asyncio
+class TestMcpForwarding:
+    """The agent can only reach a server the client handed it at session/new."""
+
+    def _registry(self, tmp_path: Path, body: str) -> McpRegistry:
+        target = tmp_path / "mcp-servers.yaml"
+        target.write_text(body, encoding="utf-8")
+        return McpRegistry.from_file(target)
+
+    async def test_declared_servers_reach_the_agent(self, tmp_path: Path) -> None:
+        registry = self._registry(
+            tmp_path,
+            "servers:\n"
+            "  - name: docs\n"
+            "    command: mcp-docs\n"
+            "    args: ['--stdio']\n"
+            "    read_only: true\n",
+        )
+        os.environ["ACP_FIXTURE_MODE"] = "echo_mcp"
+        runner = AcpRunner(agent_command(), name="acp-mcp", mcp=registry)
+
+        result = await runner.run(
+            "task-1", "go", RunnerConfig(model="any", role="core-implementer")
+        )
+
+        assert result.success
+        assert json.loads(result.output) == [
+            {
+                "name": "docs",
+                "command": "mcp-docs",
+                "args": ["--stdio"],
+                "env": [],
+            }
+        ]
+        assert "forwarded: docs" in result.evidence["mcp"]
+
+    async def test_a_planning_role_never_receives_a_mutating_server(
+        self, tmp_path: Path
+    ) -> None:
+        registry = self._registry(
+            tmp_path,
+            "servers:\n"
+            "  - name: deploy\n"
+            "    command: mcp-deploy\n"
+            "    read_only: false\n",
+        )
+        os.environ["ACP_FIXTURE_MODE"] = "echo_mcp"
+        runner = AcpRunner(agent_command(), name="acp-mcp", mcp=registry)
+
+        result = await runner.run(
+            "task-1", "plan", RunnerConfig(model="any", role="goal-planner")
+        )
+
+        assert result.success
+        assert json.loads(result.output) == []
+        assert "forwarded: none" in result.evidence["mcp"]
+
+    async def test_without_a_registry_no_servers_are_forwarded(self) -> None:
+        os.environ["ACP_FIXTURE_MODE"] = "echo_mcp"
+        runner = AcpRunner(agent_command(), name="acp-plain")
+
+        result = await runner.run(
+            "task-1", "go", RunnerConfig(model="any", role="core-implementer")
+        )
+
+        assert json.loads(result.output) == []
+        assert result.evidence["mcp"] == "MCP forwarding is disabled"
+
+
+@pytest.mark.asyncio
+class TestTerminalAndFileEvents:
+    """What the agent runs and changes reaches the client as typed events."""
+
+    async def test_a_run_streams_terminal_and_file_events_in_order(self) -> None:
+        seen: list[tuple[str, NormalizedUpdate]] = []
+
+        async def sink(task_id: str, event: NormalizedUpdate) -> None:
+            seen.append((task_id, event))
+
+        os.environ["ACP_FIXTURE_MODE"] = "tooling"
+        runner = AcpRunner(agent_command(), name="acp-tooling", on_event=sink)
+
+        result = await runner.run("task-7", "go", RunnerConfig(model="any"))
+
+        assert result.success
+        assert [event.kind for _, event in seen] == [
+            UpdateKind.TERMINAL, UpdateKind.FILE, UpdateKind.MESSAGE
+        ]
+        assert {task_id for task_id, _ in seen} == {"task-7"}
+
+    async def test_terminal_output_lands_in_the_transcript(self) -> None:
+        os.environ["ACP_FIXTURE_MODE"] = "tooling"
+        runner = AcpRunner(agent_command(), name="acp-tooling")
+
+        result = await runner.run("task-7", "go", RunnerConfig(model="any"))
+
+        assert "work done" in result.transcript
+        assert "2 passed" in result.transcript
+        # The agent's answer is what the task produced; terminal output is
+        # context, so the two are not silently interleaved.
+        assert "--- terminal ---" in result.transcript
+
+    async def test_changed_files_are_recorded_as_evidence(self) -> None:
+        os.environ["ACP_FIXTURE_MODE"] = "tooling"
+        runner = AcpRunner(agent_command(), name="acp-tooling")
+
+        result = await runner.run("task-7", "go", RunnerConfig(model="any"))
+
+        assert result.evidence["files_changed"] == "backend/auth.py"
+
+    async def test_an_unrecognized_update_is_kept_but_not_published(self) -> None:
+        """It stays in the raw updates for debugging; nothing downstream sees it."""
+        os.environ["ACP_FIXTURE_MODE"] = "tooling"
+        client = AcpClient()
+        try:
+            await client.start(agent_command())
+            await client.initialize()
+            await client.new_session(".")
+            result = await client.prompt("go")
+        finally:
+            await client.close()
+
+        kinds = [str(u.get("sessionUpdate")) for u in result.updates]
+        assert "something_new_this_client_never_heard_of" in kinds
+        assert len(result.events) == len(result.updates) - 1

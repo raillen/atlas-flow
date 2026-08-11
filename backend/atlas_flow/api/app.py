@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from atlas_flow import __version__
 from atlas_flow.api.routes import router as api_router
-from atlas_flow.api.websocket import broadcast_domain_event
+from atlas_flow.api.websocket import broadcast_agent_event, broadcast_domain_event
 from atlas_flow.api.websocket import router as ws_router
 from atlas_flow.config import AtlasFlowConfig
 from atlas_flow.discuss.store import DiscussionStore
@@ -21,9 +21,11 @@ from atlas_flow.execution.scheduler import Scheduler
 from atlas_flow.goals.loader import resolve_project
 from atlas_flow.harness.engine import Harness
 from atlas_flow.harness.runner import DummyRunner
+from atlas_flow.mcp.registry import McpRegistry
 from atlas_flow.routing.discovery import ModelRegistry
 from atlas_flow.routing.router import ModelRouter
 from atlas_flow.routing.store import RoutingStore
+from atlas_flow.runners.acp import AcpRunner
 from atlas_flow.runners.cli import CliRunner
 from atlas_flow.verification.gates import GateCoordinator
 
@@ -66,6 +68,21 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     harness.register(DummyRunner("dummy"))
     harness.register(CliRunner("cmd"))
 
+    # An ACP agent is registered only when one is configured: there is no
+    # sensible default agent to guess at, and a runner that cannot start is
+    # worse than one that is absent.
+    mcp = McpRegistry.load(config)
+    if config.acp_agent_command:
+        harness.register(
+            AcpRunner(
+                list(config.acp_agent_command),
+                name="acp",
+                cwd=str(root),
+                mcp=mcp,
+                on_event=broadcast_agent_event,
+            )
+        )
+
     app.state.config = config
     app.state.persistence = db
     app.state.scheduler = Scheduler(db)
@@ -75,6 +92,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.router = router
     app.state.routing_store = routing_store
     app.state.registry = registry
+    app.state.mcp = mcp
     app.state.worktrees = worktree_manager_for(config, root)
     app.state.project_root = root
     # Background run tasks are kept referenced so they are not garbage

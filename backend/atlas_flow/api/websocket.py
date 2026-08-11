@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from atlas_flow.acp.events import NormalizedUpdate
 from atlas_flow.execution.models import DomainEvent
 
 router = APIRouter()
@@ -77,6 +78,16 @@ async def broadcast_domain_event(event: DomainEvent) -> None:
             **event.payload,
         },
     )
+
+
+async def broadcast_agent_event(task_id: str, event: NormalizedUpdate) -> None:
+    """Runner subscriber: push agent narration to the clients as it arrives.
+
+    These are not persisted. A run's durable history is its domain events;
+    terminal chunks and thoughts are volume, and storing every one of them
+    would bury the audit trail rather than enrich it.
+    """
+    await manager.broadcast(event.event_name, {"task_id": task_id, **event.payload()})
 
 
 @router.websocket("/ws/{session_id}")

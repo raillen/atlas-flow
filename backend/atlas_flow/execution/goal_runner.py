@@ -299,6 +299,7 @@ class GoalRunner:
                     model=model_id,
                     max_turns=self.config.command_code_max_turns,
                     timeout_seconds=self.config.command_code_timeout_seconds,
+                    role=role,
                 ),
             )
             latency_ms = (time.monotonic() - started) * 1000
@@ -378,6 +379,7 @@ class GoalRunner:
                 model=reviewer.command_code_id,
                 max_turns=self.config.command_code_max_turns,
                 timeout_seconds=self.config.command_code_timeout_seconds,
+                role="reviewer",
             ),
         )
         latency_ms = (time.monotonic() - started) * 1000

@@ -35,6 +35,9 @@ class RunnerConfig:
     timeout_seconds: int = 300
     headless: bool = True
     extra_args: list[str] = field(default_factory=list)
+    # The role decides which MCP servers the agent is allowed to reach, so it
+    # travels with the request rather than being inferred by the runner.
+    role: str = ""
 
 
 class Runner(ABC):

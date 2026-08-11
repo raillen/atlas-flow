@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 
 from atlas_flow.harness.runner import Runner, RunnerCapability, RunnerConfig, RunnerResult
+from atlas_flow.security.guard import SecurityGuard
 
 
 class CliRunner(Runner):
@@ -46,8 +47,12 @@ class CliRunner(Runner):
                 error=f"Command Code timed out after {config.timeout_seconds}s",
             )
 
-        output = stdout.decode("utf-8", errors="replace")
-        error_output = stderr.decode("utf-8", errors="replace")
+        # Redacted at the boundary: everything past this point — transcripts,
+        # attempt errors, the event stream — is somewhere a token must not be.
+        output = SecurityGuard.redact_secrets(stdout.decode("utf-8", errors="replace"))
+        error_output = SecurityGuard.redact_secrets(
+            stderr.decode("utf-8", errors="replace")
+        )
 
         success = proc.returncode == 0
         return RunnerResult(

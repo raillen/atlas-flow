@@ -34,6 +34,30 @@ appears in the working repository.
 | `ATLAS_FLOW_AUTONOMY` | `autonomy_mode` |
 | `ATLAS_FLOW_STATE_DIR` | `state_dir` |
 
+## Logging and redaction
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `log_level` | `INFO` | Standard logging level. |
+| `redaction_patterns` | `[]` | Extra regexes added to the built-in secret patterns. |
+
+Redaction is not a switch. Every `RunnerResult` and every normalized ACP update
+is redacted at the runner boundary, because a run that may leak a token is not a
+configuration preference. Project patterns are added to the built-in set, never
+substituted for it — losing the defaults by declaring one custom pattern is
+exactly how a redaction list becomes a leak.
+
+## MCP
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `mcp_enabled` | `false` | Whether declared MCP servers are forwarded to agents at all. |
+| `mcp_servers` | `[]` | Further allowlist by server name. Empty means "whatever the file declares". |
+
+Servers themselves live in `.ai/orchestration/mcp-servers.yaml`. See
+[MCP Integration](../01-architecture/MCP_INTEGRATION.md) for the role and
+secret rules the registry enforces.
+
 ## Budgets
 
 | Key | Default | Meaning |
