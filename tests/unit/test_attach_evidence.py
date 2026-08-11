@@ -129,5 +129,8 @@ def test_a_failing_gate_cannot_complete_a_goal(
     )
 
     assert attach_evidence.main() == 1
-    assert "FAILED" in capsys.readouterr().err
+    # The refusal now comes from the evidence check rather than from this
+    # script's own guard: an entry opening with a failing verdict no longer
+    # counts as covering its gate at all.
+    assert "failing evidence on gate(s): review" in capsys.readouterr().err
     assert yaml.safe_load(goal_file.read_text())["state"] == "ACTIVE"

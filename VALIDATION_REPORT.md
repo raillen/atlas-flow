@@ -8,12 +8,12 @@ Generated: 2026-08-10
 |-------|---------|--------|
 | Python lint | `uv run --project backend ruff check .` | PASS |
 | Python types | `uv run --project backend mypy` | PASS (strict, 56 files) |
-| Python tests | `uv run --project backend pytest` | PASS — 317 tests |
+| Python tests | `uv run --project backend pytest` | PASS — 328 tests |
 | TypeScript build | `pnpm run typecheck` | PASS |
 | JS lint | `pnpm run lint` | PASS |
 | JS tests | `pnpm run test` | PASS — 57 tests, including an axe-core DOM audit |
 | Docs links | `python scripts/validate_docs.py` | PASS |
-| Goal contracts | `python scripts/validate_goals.py` | PASS — 11 Goals, 0 DONE |
+| Goal contracts | `python scripts/validate_goals.py` | PASS — 11 Goals, 11 DONE with evidence |
 | Command Code | `scripts/validate_command_code.sh` | PASS — 9 agents, 15 skills |
 | Desktop shell | `cargo fmt`, `clippy -D warnings`, `cargo test` | PASS — 9 tests |
 | Dependency audit | `sh scripts/audit_dependencies.sh` | PASS — no vulnerabilities; 17 unmaintained-crate warnings from Tauri's GTK3 chain |
@@ -88,6 +88,13 @@ The re-review moved all eleven Goals from FAILED to PARTIAL, and found three mor
 25. **The AppImage was unbuildable, not merely unverified.** `linuxdeploy` is itself an AppImage and mounting one needs FUSE. `APPIMAGE_EXTRACT_AND_RUN=1` removes that requirement; the bundle now builds, and the smoke test unpacks it and checks the executable is inside rather than trusting the file name.
 26. **`GET /api/goals` re-parsed every Goal on every request** — ~47 ms idle, **253 ms on a loaded machine**, over its own 150 ms budget. Found by running the suite while the machine was busy, which is the only way a budget measured on an idle machine means anything. The loader now caches per project root and invalidates on the file signature: ~5 ms, and an edit is still seen immediately.
 
+## Findings from the self-review (2026-08-11)
+
+The owner waived model diversity and undertook a second reading of their own. The self-review found two defects, both reproduced before being fixed; the write-up and its limitations are at `docs/07-decisions/reviews/2026-08-11-self-review.md`.
+
+27. **A failing review satisfied the review gate.** `check_declared_evidence` counted any truthy evidence value as coverage, so a Goal carrying `review: "FAILED — the reviewer rejected this"` was reported completable. Live at the time: all eleven Goals carried `review: "PARTIAL — ..."`, so the validator would have accepted DONE on every one of them. An entry opening with a non-passing verdict is now reported as *failing* rather than as covering its gate.
+28. **Parallel tasks overspent the attempt budget.** The check and the accounting straddled the `await` where the model runs, so every concurrent task passed the same check before any had counted itself. Reproduced: a cap of one bought four attempts. Reservation and accounting are separate now, and a crash between them keeps the slot spent rather than releasing it.
+
 ## Known gaps
 
 These are tracked in the Goal files, not hidden:
@@ -99,7 +106,7 @@ These are tracked in the Goal files, not hidden:
 - **No screen-reader walkthrough.** Automated rules catch structure, not whether the result is comprehensible when read aloud (P09).
 - **The signing key has no passphrase**, so it works unattended and anyone with read access to the maintainer's home directory can sign as the project. A deliberate trade, recorded rather than hidden (P10).
 - **17 unmaintained-crate warnings** from the gtk-rs GTK3 bindings Tauri 2 depends on. Reported by the audit rather than swallowed; nothing can be done from this repository.
-- **The review gate is PARTIAL on every Goal.** Two reviews on 2026-08-11: FAILED, then PARTIAL. Both rounds of findings are closed except the ones above, but closing a finding does not move the gate — that takes another review (P00–P10).
+- **The review gate was closed by a self-review**, after the owner waived the model-diversity rule and undertook a second reading of their own. It is recorded as a self-review in every Goal's evidence and written up with its own limitations at `docs/07-decisions/reviews/2026-08-11-self-review.md`. Two earlier rounds by a different model are what found most of what is listed above.
 
 ## How to run
 

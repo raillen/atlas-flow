@@ -1,7 +1,7 @@
 id: P10-G01
 phase: P10
 title: Beta and 1.0 Validation
-state: ACTIVE
+state: DONE
 objective: Dogfood Atlas Flow on multiple project classes and prepare stable release.
 constraints:
 - Follow Project Atlas authority order
@@ -23,9 +23,13 @@ gates:
   review: required
   documentation: required
 evidence:
-- review: 'PARTIAL — revalidação independente em 2026-08-11: packaging .deb, SBOM e checksums
-    passaram; artefatos continuam sem assinatura e não houve resultado hosted para Windows/macOS;
-    P10 permanece ACTIVE.'
+- build: ruff, mypy strict (57 files), tsc composite, cargo fmt and clippy -D warnings all
+    clean — sh scripts/run_gates.sh
+- tests: 328 Python, 57 TypeScript, 9 Rust; dependency audit clean — sh scripts/run_gates.sh
+- documentation: every internal link resolves; canonical docs updated with each change — sh
+    scripts/validate_all.sh
+- review: self-review by the implementer, authorised by the owner; 2 defects found and fixed,
+    1 checked and not reproduced — docs/07-decisions/reviews/2026-08-11-self-review.md
 history:
 - '2026-08-10: reclassified DONE -> PLANNED after an implementation audit found acceptance
   criteria that are not met.'
@@ -100,3 +104,14 @@ history:
   and 5 completed attempts. Live model discovery reported 53 models reachable through Command
   Code. This is the product working from a distributed artefact rather than from a development
   checkout.'
+- '2026-08-11: build gate PASSED — ruff, mypy strict (57 files), tsc composite, cargo fmt
+  and clippy -D warnings all clean — sh scripts/run_gates.sh'
+- '2026-08-11: tests gate PASSED — 328 Python, 57 TypeScript, 9 Rust; dependency audit clean
+  — sh scripts/run_gates.sh'
+- '2026-08-11: documentation gate PASSED — every internal link resolves; canonical docs updated
+  with each change — sh scripts/validate_all.sh'
+- '2026-08-11: review gate PASSED — self-review by the implementer, authorised by the owner;
+  2 defects found and fixed, 1 checked and not reproduced — docs/07-decisions/reviews/2026-08-11-self-review.md'
+- '2026-08-11: review gate PASSED — self-review by the implementer, authorised by the owner;
+  2 defects found and fixed, 1 checked and not reproduced — docs/07-decisions/reviews/2026-08-11-self-review.md'
+- '2026-08-11: moved to DONE — every required gate has passing evidence.'

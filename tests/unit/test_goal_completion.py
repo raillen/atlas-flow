@@ -225,3 +225,60 @@ class TestValidatorEnforcement:
         )
         assert result.returncode == 0, result.stdout + result.stderr
         assert "Goal validation: PASS" in result.stdout
+
+
+class TestDeclaredVerdicts:
+    """A gate that reports failing is not a gate that is covered."""
+
+    GATES = {
+        "build": "required",
+        "tests": "required",
+        "review": "required",
+        "documentation": "required",
+    }
+    PASSING = [
+        {"build": "green"},
+        {"tests": "317 passed"},
+        {"documentation": "validator passes"},
+    ]
+
+    def _check(self, review: str) -> object:
+        return check_declared_evidence(
+            {"id": "T-G01", "gates": self.GATES,
+             "evidence": [*self.PASSING, {"review": review}]}
+        )
+
+    @pytest.mark.parametrize(
+        "review",
+        [
+            "FAILED — the reviewer rejected this Goal",
+            "PARTIAL — some gates were not evidenced",
+            "PENDING: nobody has reviewed it",
+            "BLOCKED - waiting on a decision",
+            "UNVERIFIED",
+        ],
+    )
+    def test_a_non_passing_verdict_does_not_cover_its_gate(self, review: str) -> None:
+        # Regression: any truthy value counted as coverage, so a Goal carrying
+        # `review: "FAILED — rejected"` was completable. The gate whose entire
+        # purpose is independent refusal could be satisfied by recording the
+        # refusal.
+        check = self._check(review)
+
+        assert check.completable is False
+        assert "failing evidence" in check.describe()
+
+    def test_a_passing_verdict_covers_its_gate(self) -> None:
+        assert self._check("reviewed 2026-08-11, no open findings").completable
+
+    def test_an_empty_entry_covers_nothing(self) -> None:
+        check = check_declared_evidence(
+            {"id": "T-G01", "gates": self.GATES,
+             "evidence": [*self.PASSING, {"review": ""}]}
+        )
+
+        assert check.completable is False
+
+    def test_a_word_that_merely_starts_like_a_verdict_still_passes(self) -> None:
+        """'Failed to reproduce' is a result, not a verdict of failure."""
+        assert self._check("Failedover to the backup reviewer; approved").completable

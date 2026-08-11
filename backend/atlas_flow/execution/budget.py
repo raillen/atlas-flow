@@ -95,7 +95,7 @@ class BudgetLedger:
         return max(0, self.max_attempts - self.attempts)
 
     def check_can_start_attempt(self) -> None:
-        """Raise before starting work that the budget cannot pay for."""
+        """Raise if the budget is already spent. Reserves nothing."""
         if self.attempts >= self.max_attempts:
             raise BudgetExceeded(BudgetKind.ATTEMPTS, self.attempts, self.max_attempts)
         if self.max_tokens and self.tokens >= self.max_tokens:
@@ -103,8 +103,20 @@ class BudgetLedger:
         if self.max_cost_usd and self.cost_usd >= self.max_cost_usd:
             raise BudgetExceeded(BudgetKind.COST, self.cost_usd, self.max_cost_usd)
 
-    def record(self, usage: Usage) -> None:
+    def reserve_attempt(self) -> None:
+        """Claim one attempt, or raise. Check and claim happen together.
+
+        Tasks run concurrently, and an attempt is a long await: asking "may I?"
+        and then counting the attempt when it finishes leaves every parallel
+        task free to pass the same check before any of them has counted. With
+        four parallel tasks and a cap of one, four attempts run. Reserving up
+        front is what makes the cap a cap.
+        """
+        self.check_can_start_attempt()
         self.attempts += 1
+
+    def record(self, usage: Usage) -> None:
+        """Record what a reserved attempt actually spent."""
         if not usage.reported:
             self.unmeasured_attempts += 1
             return

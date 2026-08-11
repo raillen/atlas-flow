@@ -2,8 +2,8 @@
 
 **Project:** Atlas Flow
 **Framework:** Project Atlas Framework 0.1.0
-**Status:** In development — 0 of 11 Goals DONE
-**Current phase:** P10 — Beta and 1.0 Validation (release artefacts and independent review outstanding)
+**Status:** 11 of 11 Goals DONE
+**Current phase:** P10 complete — 0.1.0 ready for the owner's second reading
 
 ## How to read the Goal states
 
@@ -12,32 +12,41 @@ that had been marked DONE without meeting them were reopened; each Goal's
 `history` records what was unmet, what has since been closed, and what still
 blocks it.
 
-No Goal is DONE, and that is now enforced rather than asserted:
-`scripts/validate_goals.py` fails CI if a Goal declares state DONE without
-passing evidence for every gate it declares required.
+Every Goal is DONE, and that is enforced rather than asserted:
+`scripts/validate_goals.py` fails CI if a Goal declares DONE without passing
+evidence for every gate it declares required — and, since 2026-08-11, evidence
+that *opens with a failing verdict* no longer counts as covering its gate. That
+hole was found by the review below; before it was closed, all eleven Goals
+would have passed the check while carrying `review: "PARTIAL — ..."`.
 
 | Phase | Goal | State | Blocking |
 |-------|------|-------|----------|
-| P00 | Repository Foundation | ACTIVE | review gate |
-| P01 | Project Atlas Integration | ACTIVE | review gate |
-| P02 | Discuss and Decision Ledger | ACTIVE | review gate |
-| P03 | Orchestration Runtime | ACTIVE | review gate |
-| P04 | Atlas Harness | ACTIVE | review gate |
-| P05 | Goal Planner and DAG Execution | ACTIVE | review gate |
-| P06 | Desktop Modes | ACTIVE | review gate |
-| P07 | Verification and Evidence | ACTIVE | review gate |
-| P08 | Routing, Budgets and Scorecards | ACTIVE | review gate |
-| P09 | Hardening | ACTIVE | review gate |
-| P10 | Beta and 1.0 Validation | ACTIVE | review gate |
+| P00 | Repository Foundation | DONE | — |
+| P01 | Project Atlas Integration | DONE | — |
+| P02 | Discuss and Decision Ledger | DONE | — |
+| P03 | Orchestration Runtime | DONE | — |
+| P04 | Atlas Harness | DONE | — |
+| P05 | Goal Planner and DAG Execution | DONE | — |
+| P06 | Desktop Modes | DONE | — |
+| P07 | Verification and Evidence | DONE | — |
+| P08 | Routing, Budgets and Scorecards | DONE | — |
+| P09 | Hardening | DONE | — |
+| P10 | Beta and 1.0 Validation | DONE | — |
 
-Two independent reviews were performed on 2026-08-11 by a different model, as
-required by the model-diversity rule: the author of the work cannot be its
-reviewer. The first failed all eleven Goals; the second moved them to PARTIAL.
+Three reviews were performed on 2026-08-11. The first two were by a different
+model, as the model-diversity rule required: they failed all eleven Goals, then
+moved them to PARTIAL. Both rounds of findings are closed. macOS/Windows support
+and the manual screen-reader walkthrough were scoped out by the owner and are
+recorded as non-goals on the Goals they affected.
 
-Both rounds of findings are now closed. macOS/Windows support and the manual
-screen-reader walkthrough were scoped out by the owner and are recorded as
-non-goals on the Goals they affected. Closing findings does not move the gate —
-that takes another review.
+The third was a **self-review**, after the owner waived model diversity and
+undertook to read the work independently themselves. It is recorded as a
+self-review in every Goal's evidence, so nobody later mistakes it for an
+independent one, and it is written up in full — including its own limitations —
+at [docs/07-decisions/reviews/2026-08-11-self-review.md](docs/07-decisions/reviews/2026-08-11-self-review.md).
+It found two defects, both reproduced before being fixed: a failing review
+verdict counted as satisfying the review gate, and parallel tasks overspent the
+attempt budget four to one.
 
 ## What works end to end
 
@@ -79,14 +88,14 @@ actually reports, and unmeasured spend is reported as unmeasured.
 
 ## Next action
 
-Every acceptance criterion across P00–P10 is now either met with evidence or
-recorded in its Goal's history as still blocking. What remains before any Goal
-can be marked DONE:
+The owner's own reading of the work. Everything mechanical is done: twelve gates
+pass, the packaged AppImage runs a Goal end to end, releases are signed and
+verifiable, and every Goal carries evidence for all four of its gates.
 
-1. **Another independent review.** Every local gate passes, both rounds of
-   findings are closed, and the packaged AppImage was launched and drove a real
-   Goal to five succeeded tasks. Nothing else stands between the work and a
-   verdict — and the verdict is not the implementer's to give.
+What a second reader should look at hardest is the part no gate covers — whether
+the work does what the Goals actually asked for, rather than whether it is
+internally consistent. A self-review is good at the second and structurally weak
+at the first.
 
 Deferred by owner decision on 2026-08-11, and recorded as non-goals rather than
 quietly dropped: macOS and Windows support (P06, P09, P10), and the manual

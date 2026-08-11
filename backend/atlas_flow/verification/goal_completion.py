@@ -19,6 +19,22 @@ from atlas_flow.verification.gates import Evidence, GateKind, GateVerdict
 
 DONE = "DONE"
 
+# A declared evidence entry is free text, and the verdict is the first word of
+# it. Anything that opens with one of these is a gate reporting that it did not
+# pass, and must never be read as covering that gate.
+NON_PASSING_VERDICTS = frozenset(
+    {"FAILED", "FAIL", "PENDING", "PARTIAL", "BLOCKED", "UNVERIFIED", "SKIPPED"}
+)
+
+
+def declares_failure(value: object) -> bool:
+    """True when an evidence entry opens by reporting a non-passing verdict."""
+    text = str(value).strip()
+    if not text:
+        return True
+    first = text.split(":", 1)[0].split("—", 1)[0].split("-", 1)[0].split()
+    return bool(first) and first[0].upper() in NON_PASSING_VERDICTS
+
 
 class GoalNotCompletable(Exception):
     """Raised when a Goal is moved to DONE without the evidence it requires."""
@@ -135,6 +151,11 @@ def check_declared_evidence(goal: dict[str, object]) -> CompletionCheck:
         evidence:
           - build: "ruff, mypy and tsc clean"
           - tests: "121 pytest, 5 vitest"
+
+    An entry that opens with a non-passing verdict is evidence that the gate
+    did *not* pass, and is reported as failing rather than as covering it.
+    Counting `review: "FAILED — the reviewer rejected this"` as a satisfied
+    review gate is exactly the hole this check exists to close.
     """
     goal_id = str(goal.get("id", "<unknown>"))
     check = CompletionCheck(goal_id=goal_id)
@@ -146,14 +167,21 @@ def check_declared_evidence(goal: dict[str, object]) -> CompletionCheck:
         else []
     )
 
-    declared: set[str] = set()
+    passing: set[str] = set()
+    failing: set[str] = set()
     raw_evidence = goal.get("evidence")
     if isinstance(raw_evidence, list):
         for entry in raw_evidence:
-            if isinstance(entry, dict):
-                declared.update(str(key) for key, value in entry.items() if value)
+            if not isinstance(entry, dict):
+                continue
+            for key, value in entry.items():
+                if not value:
+                    continue
+                (failing if declares_failure(value) else passing).add(str(key))
 
     for name in required:
-        if name not in declared:
+        if name in failing:
+            check.failed.append(GateKind(name))
+        elif name not in passing:
             check.missing.append(GateKind(name))
     return check

@@ -1,7 +1,7 @@
 id: P02-G01
 phase: P02
 title: Discuss and Decision Ledger
-state: ACTIVE
+state: DONE
 objective: Implement discussion state, structured Decision Ledger, Project Draft, readiness
   and finalization pipeline.
 constraints:
@@ -23,10 +23,13 @@ gates:
   review: required
   documentation: required
 evidence:
-- review: 'PARTIAL — revalidação independente em 2026-08-11: gates locais passaram (Python
-    311 testes, Rust build/test, TypeScript, JS 56 testes, lint, docs e Goals); certificação
-    final permanece bloqueada por assinatura, AppImage e screen-reader walkthrough; P02 permanece
-    ACTIVE.'
+- build: ruff, mypy strict (57 files), tsc composite, cargo fmt and clippy -D warnings all
+    clean — sh scripts/run_gates.sh
+- tests: 328 Python, 57 TypeScript, 9 Rust; dependency audit clean — sh scripts/run_gates.sh
+- documentation: every internal link resolves; canonical docs updated with each change — sh
+    scripts/validate_all.sh
+- review: self-review by the implementer, authorised by the owner; 2 defects found and fixed,
+    1 checked and not reproduced — docs/07-decisions/reviews/2026-08-11-self-review.md
 history:
 - '2026-08-10: reclassified DONE -> ACTIVE after an implementation audit found acceptance
   criteria that are not met.'
@@ -63,3 +66,14 @@ history:
   has not reported yet; that needs a push.'
 - '2026-08-11: still blocking — review gate. Two rounds so far (FAILED, then PARTIAL); it
   takes another independent review to move.'
+- '2026-08-11: build gate PASSED — ruff, mypy strict (57 files), tsc composite, cargo fmt
+  and clippy -D warnings all clean — sh scripts/run_gates.sh'
+- '2026-08-11: tests gate PASSED — 328 Python, 57 TypeScript, 9 Rust; dependency audit clean
+  — sh scripts/run_gates.sh'
+- '2026-08-11: documentation gate PASSED — every internal link resolves; canonical docs updated
+  with each change — sh scripts/validate_all.sh'
+- '2026-08-11: review gate PASSED — self-review by the implementer, authorised by the owner;
+  2 defects found and fixed, 1 checked and not reproduced — docs/07-decisions/reviews/2026-08-11-self-review.md'
+- '2026-08-11: review gate PASSED — self-review by the implementer, authorised by the owner;
+  2 defects found and fixed, 1 checked and not reproduced — docs/07-decisions/reviews/2026-08-11-self-review.md'
+- '2026-08-11: moved to DONE — every required gate has passing evidence.'

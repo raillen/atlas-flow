@@ -65,13 +65,13 @@ class TestEnforcement:
     def test_the_attempt_cap_stops_a_runaway_loop(self) -> None:
         ledger = BudgetLedger(max_attempts=2, max_tokens=0, max_cost_usd=0)
 
-        ledger.check_can_start_attempt()
+        ledger.reserve_attempt()
         ledger.record(Usage(reported=False))
-        ledger.check_can_start_attempt()
+        ledger.reserve_attempt()
         ledger.record(Usage(reported=False))
 
         with pytest.raises(BudgetExceeded) as raised:
-            ledger.check_can_start_attempt()
+            ledger.reserve_attempt()
         assert raised.value.kind == BudgetKind.ATTEMPTS
         assert ledger.remaining_attempts() == 0
 
@@ -107,7 +107,9 @@ class TestEnforcement:
     def test_unmeasured_attempts_are_reported_rather_than_counted_as_zero(self) -> None:
         ledger = BudgetLedger(max_attempts=10, max_tokens=1000, max_cost_usd=1.0)
 
+        ledger.reserve_attempt()
         ledger.record(Usage(tokens=100, reported=True))
+        ledger.reserve_attempt()
         ledger.record(Usage(reported=False))
 
         summary = ledger.summary()
@@ -117,3 +119,54 @@ class TestEnforcement:
         # The run cannot claim it stayed under a token budget it never saw.
         assert summary["spend_is_measured"] is False
         assert ledger.has_unmeasured_spend is True
+
+
+@pytest.mark.asyncio
+class TestConcurrentReservation:
+    """An attempt is a long await, and tasks run in parallel."""
+
+    async def test_parallel_tasks_cannot_overspend_the_attempt_cap(self) -> None:
+        # Regression: check_can_start_attempt() before the await and record()
+        # after it let four parallel tasks pass the same check while attempts
+        # was still zero, then all four ran. A cap of one bought four attempts.
+        import asyncio
+
+        ledger = BudgetLedger(max_attempts=1, max_tokens=0, max_cost_usd=0)
+        ran = 0
+
+        async def attempt() -> None:
+            nonlocal ran
+            try:
+                ledger.reserve_attempt()
+            except BudgetExceeded:
+                return
+            await asyncio.sleep(0)
+            ran += 1
+            ledger.record(Usage(reported=False))
+
+        await asyncio.gather(*(attempt() for _ in range(4)))
+
+        assert ran == 1
+        assert ledger.attempts == 1
+
+    async def test_a_reserved_attempt_counts_even_if_it_never_reports_usage(
+        self,
+    ) -> None:
+        """A crash between reserving and recording must not free the slot."""
+        ledger = BudgetLedger(max_attempts=2, max_tokens=0, max_cost_usd=0)
+
+        ledger.reserve_attempt()
+        # ...the attempt dies here, record() is never reached.
+        ledger.reserve_attempt()
+
+        with pytest.raises(BudgetExceeded):
+            ledger.reserve_attempt()
+
+    async def test_recording_usage_does_not_double_count_the_attempt(self) -> None:
+        ledger = BudgetLedger(max_attempts=5, max_tokens=0, max_cost_usd=0)
+
+        ledger.reserve_attempt()
+        ledger.record(Usage(tokens=100, reported=True))
+
+        assert ledger.attempts == 1
+        assert ledger.tokens == 100

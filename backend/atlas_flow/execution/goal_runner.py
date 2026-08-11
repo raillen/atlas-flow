@@ -282,7 +282,10 @@ class GoalRunner:
 
             if self.budget is not None:
                 try:
-                    self.budget.check_can_start_attempt()
+                    # Reserved before the await, not checked before and counted
+                    # after: parallel tasks would otherwise all pass the same
+                    # check and overspend the cap between them.
+                    self.budget.reserve_attempt()
                 except BudgetExceeded as exc:
                     outcome.error = str(exc)
                     outcome.budget_stopped = True
@@ -360,7 +363,7 @@ class GoalRunner:
 
         if self.budget is not None:
             try:
-                self.budget.check_can_start_attempt()
+                self.budget.reserve_attempt()
             except BudgetExceeded as exc:
                 await self._record_gate(
                     run, task, GateKind.REVIEW, GateVerdict.PENDING, str(exc),
