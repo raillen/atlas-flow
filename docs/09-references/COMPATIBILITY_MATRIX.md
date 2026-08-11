@@ -1,14 +1,15 @@
 # Project Atlas Compatibility Matrix
 
-O Atlas Flow pode abrir qualquer diretório real no desktop Linux, mas as
-capacidades dependem do modo detectado.
+O Atlas Flow pode abrir qualquer diretório real no Windows ou no Linux
+desktop, mas as capacidades dependem do modo detectado.
 
 ## Host platform
 
 | Platform | Support |
 | --- | --- |
-| Linux desktop, x86_64 | Supported, built and tested |
-| macOS, Windows | Out of scope (owner decision, 2026-08-11) |
+| Linux desktop, x86_64 | Supported target. **Not yet built or tested on this branch.** |
+| Windows, x86_64 | Supported target since [ADR-018](../07-decisions/ADR-018-AVALONIA-DESKTOP.md). Was a non-goal on P06, P09 and P10 under the owner decision of 2026-08-11; those Goals inherit the work. **Nothing has been tested on Windows.** |
+| macOS | Out of scope (owner decision, 2026-08-11, unchanged) |
 
 ## Project modes
 
@@ -21,6 +22,13 @@ capacidades dependem do modo detectado.
 
 Abrir não implica executar. Plan, Run e Review continuam visíveis na interface,
 mas são bloqueados com motivo e ação corretiva quando o projeto não está pronto.
+
+### Requisito de runtime
+
+Nenhum. O executável é NativeAOT self-contained. A versão anterior exigia
+Python e `uv` na máquina do usuário mesmo em build empacotado.
+
+Git continua obrigatório no `PATH` para isolamento por worktree.
 
 ## Framework e manifests
 

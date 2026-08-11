@@ -26,11 +26,12 @@ Checked 2026-08-10.
 ## Protocols
 - https://agentclientprotocol.com/get-started/introduction
 - https://agentclientprotocol.com/get-started/architecture
-- https://agentclientprotocol.com/libraries/python
+- https://agentclientprotocol.com/protocol
 - https://docs.copilotkit.ai/ag-ui/introduction
 
 ## UI
 - https://docs.copilotkit.ai
-- https://reactflow.dev
+
 - https://ui.shadcn.com
-- https://tauri.app
+- https://avaloniaui.net
+- https://learn.microsoft.com/dotnet/core/deploying/native-aot

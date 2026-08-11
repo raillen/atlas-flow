@@ -1,6 +1,11 @@
 # ADR-013 — A workspace shell, not five pages
 
 **Status:** Accepted · 2026-08-11
+**Amended:** 2026-08-11 by [ADR-018](ADR-018-AVALONIA-DESKTOP.md). The
+information architecture decided here stands unchanged and was never a React
+decision. The implementation details below that name Tauri, the webview bridge
+or a Content-Security-Policy describe the superseded stack; they are kept
+because each records a defect the port can reintroduce in a new form.
 **Supersedes:** nothing. Implements what `INFORMATION_ARCHITECTURE.md` already
 specified and the code never built.
 

@@ -50,12 +50,12 @@ alterar o runtime existente de Goals, Runs ou desktop.
 Sempre execute a partir da raiz do projeto:
 
 ```sh
-uv run --project backend --all-groups atlas validate --json
-uv run --project backend --all-groups atlas validate --write
-uv run --project backend --all-groups atlas impact --changed --json
-uv run --project backend --all-groups atlas context "context engine" --budget small --json
-uv run --project backend --all-groups atlas docs build --visibility internal
-uv run --project backend --all-groups atlas intelligence summary --json
+dotnet run --project src/AtlasFlow.Cli -- validate --json
+dotnet run --project src/AtlasFlow.Cli -- validate --write
+dotnet run --project src/AtlasFlow.Cli -- impact --changed --json
+dotnet run --project src/AtlasFlow.Cli -- context "context engine" --budget small --json
+dotnet run --project src/AtlasFlow.Cli -- docs build --visibility internal
+dotnet run --project src/AtlasFlow.Cli -- intelligence summary --json
 ```
 
 O guia completo está em [Atlas CLI](../06-user-guide/ATLAS_CLI.md).

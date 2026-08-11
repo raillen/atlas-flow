@@ -27,41 +27,54 @@ one place to test.
    credentials that arrive without a `token:` label.
 2. **Custom redaction patterns replaced the defaults.** Declaring one project
    pattern silently disabled every built-in one. They are additive now.
-3. **The desktop shell had no Content Security Policy** (`csp: null`). It now
-   declares `default-src 'self'` with `connect-src` limited to IPC and the
-   backend on localhost.
+3. **The desktop shell had no Content Security Policy** (`csp: null`). It was
+   fixed to declare `default-src 'self'` with `connect-src` limited to IPC and
+   the backend on localhost. The port deletes the whole category: there is no
+   webview, no loopback listener and no remote-content boundary inside the
+   application. This is the single largest reduction in attack surface the
+   change produces, and it was a side effect rather than the goal.
 4. **`validate_git_command` forbade `commit` and `merge`** — the two operations
    the runtime exists to perform — and was never wired in, so it protected
    nothing while being wrong. It now refuses publishing, history rewriting and
    discarding uncommitted work, and every git call passes through it.
 5. **`sanitize_shell_arg` and `validate_model_output_for_ui` were removed.** The
-   CLI runner passes arguments as argv, never through a shell, and React
-   escapes its own output; applying either would have corrupted prompts and
-   double-escaped transcripts while looking like protection.
+   CLI runner passes arguments as argv, never through a shell, and the view
+   layer renders text as text rather than as markup; applying either would have
+   corrupted prompts and double-escaped transcripts while looking like
+   protection. The reasoning survives the port, but the second half must be
+   re-established rather than assumed: Avalonia renders `TextBlock` content as
+   text, and any control that interprets markup instead is a new instance of
+   the same question.
 
 ## Dependency auditing
 
-`sh scripts/audit_dependencies.sh` checks all three ecosystems against their own
-advisory databases — pip-audit, `pnpm audit`, `cargo audit` — and is what CI
-runs, so a reviewer can reproduce the result instead of taking CI's word for it.
+`sh scripts/audit_dependencies.sh` checks the dependency graph against the
+advisory database — `dotnet list package --vulnerable --include-transitive` —
+and is what CI runs, so a reviewer can reproduce the result instead of taking
+CI's word for it.
+
+One ecosystem now, where the previous stack had three (pip-audit, `pnpm audit`,
+`cargo audit`). **The script has not been rewritten yet.**
 
 Being unable to reach a database is reported as a **failure**, not skipped:
 "I could not check" and "there is nothing to find" are different answers, and
 only one of them is evidence.
 
-Adding it found **PYSEC-2026-1845** in pytest 8.4.2 on the first run; the
-project is on pytest 9.x.
+On the previous stack, adding it found **PYSEC-2026-1845** in pytest 8.4.2 on
+the first run.
 
-Current result: no vulnerabilities in any ecosystem, and **17 unmaintained-crate
-warnings** from Rust — the gtk-rs GTK3 bindings that Tauri 2 pulls in
-transitively. `cargo audit` exits zero for those, so the script counts and
-reports them rather than letting a zero exit code imply there was nothing to
-say. Nothing can be done about them from this repository; they move when Tauri
-moves.
+The last result on that stack was: no vulnerabilities in any ecosystem, and
+**17 unmaintained-crate warnings** from the gtk-rs GTK3 bindings Tauri 2 pulled
+in transitively — nothing that could be done about them from this repository.
+That dependency chain is deleted with the webview, and those warnings go with
+it.
+
+**Current result on this branch: unknown.** No audit has been run against the
+.NET dependency graph, and the graph itself is unverified.
 
 ## Release integrity
 
-`SHA256SUMS` covers the `.deb`, the AppImage and the SBOM, and is signed with a
+`SHA256SUMS` covers each package and the SBOM, and is signed with a
 detached GPG signature by the project key `C4ECF972E0FFC81D`, whose public half
 is committed at `docs/09-references/RELEASE_SIGNING_KEY.asc`. The signature is
 over the digest list rather than each artefact — that is what a verifier

@@ -1,29 +1,39 @@
 # Validation Report
 
-Generated: 2026-08-10
+Generated: 2026-08-11 — **C# port branch**
 
-## Automated checks
+## Nothing on this branch has been validated
+
+No .NET SDK was available on the machine this branch was written on. The
+solution has not been restored, compiled, tested, published or packaged, and the
+package versions in `Directory.Packages.props` are unconfirmed.
 
 | Check | Command | Result |
 |-------|---------|--------|
-| Python lint | `uv run --project backend ruff check .` | PASS |
-| Python types | `uv run --project backend mypy` | PASS (strict, 56 files) |
-| Python tests | `uv run --project backend pytest` | PASS — 356 tests |
-| TypeScript build | `pnpm run typecheck` | PASS |
-| JS lint | `pnpm run lint` | PASS |
-| JS tests | `pnpm run test` | PASS — 78 tests, including an axe-core DOM audit |
-| Docs links | `python scripts/validate_docs.py` | PASS |
-| Goal contracts | `python scripts/validate_goals.py` | PASS — 11 Goals, 11 DONE with evidence |
-| Command Code | `scripts/validate_command_code.sh` | PASS — 9 agents, 15 skills |
-| Desktop shell | `cargo fmt`, `clippy -D warnings`, `cargo test` | PASS — 16 tests |
-| Dependency audit | `sh scripts/audit_dependencies.sh` | PASS — no vulnerabilities; 17 unmaintained-crate warnings from Tauri's GTK3 chain |
-| Packaging | `sh scripts/package_smoke.sh` | PASS — deb and AppImage, SBOM (840 components), SHA256SUMS, GPG signature verified from a clean keyring |
-| Packaged app | `sh scripts/e2e_packaged.sh` | PASS — drives the real AppImage: starts a backend, serves the right project |
-| Every gate at once | `sh scripts/bootstrap.sh && sh scripts/run_gates.sh` | PASS — 12 gates |
+| Restore | `dotnet restore --locked-mode` | NOT RUN |
+| Build | `dotnet build -c Release` | NOT RUN |
+| Tests | `dotnet test` | NOT RUN |
+| Format | `dotnet format --verify-no-changes` | NOT RUN |
+| Vulnerable packages | `dotnet list package --vulnerable --include-transitive` | NOT RUN |
+| AOT publish, Linux | `dotnet publish -c Release -r linux-x64` | NOT RUN |
+| AOT publish, Windows | `dotnet publish -c Release -r win-x64` | NOT RUN |
+| Docs links | `atlas docs validate` | NOT RUN — the validator is still Python |
+| Goal contracts | `atlas goals validate` | NOT RUN — the validator is still Python |
 
-Run everything with `scripts/validate_all.sh`.
+The previous stack's results are **not** carried over into this table. They were
+true statements about a Python backend and a Tauri bundle that this branch
+deletes, and restating them under new command names would be a false claim about
+software that has never been built.
 
-Roughly 8,300 lines of source are covered by roughly 4,000 lines of tests.
+Those results, and the defects that produced them, are preserved below as
+history. Every section dated 2026-08-11 describes the superseded stack
+(ADR-003, ADR-004) and is kept because the defects it records are the ones a
+port is most likely to reintroduce.
+
+## Historical — the superseded Python and Tauri stack
+
+Everything from here to *Known gaps* describes the implementation now in
+`reference/`. It is not a claim about this branch.
 
 ## Test coverage by subsystem
 
@@ -116,29 +126,37 @@ Three defects reached a build that twelve gates called green, and a fourth got p
 
 ## Known gaps
 
-These are tracked in the Goal files, not hidden:
+Product gaps, unchanged by the port and tracked in the Goal files:
 
 - **Models are reached only through Command Code.** There is no provider SDK and there will not be one (ADR-012). If `cmd` is absent, discovery degrades to the policy roster and the CLI and ACP runners are the only paths that perform work.
 - **Adaptive scoring is post-MVP.** The scorecard is fed and persisted, but routing order is still the deterministic policy order; it does not yet reorder candidates by observed success (RFC-001).
-- **macOS and Windows are out of scope** by an owner decision on 2026-08-11, recorded as non-goals on P06, P09 and P10. The supported platform is Linux on desktop, x86_64.
-- **The screen-reader walkthrough is deferred** by the same decision. The automated rendered-DOM audit stays required and passing (P09).
-- **No screen-reader walkthrough.** Automated rules catch structure, not whether the result is comprehensible when read aloud (P09).
+- **No screen-reader walkthrough.** Deferred by owner decision on 2026-08-11. Automated rules catch structure, not whether the result is comprehensible when read aloud (P09).
 - **The signing key has no passphrase**, so it works unattended and anyone with read access to the maintainer's home directory can sign as the project. A deliberate trade, recorded rather than hidden (P10).
-- **17 unmaintained-crate warnings** from the gtk-rs GTK3 bindings Tauri 2 depends on. Reported by the audit rather than swallowed; nothing can be done from this repository.
-- **The review gate was closed by a self-review**, after the owner waived the model-diversity rule and undertook a second reading of their own. It is recorded as a self-review in every Goal's evidence and written up with its own limitations at `docs/07-decisions/reviews/2026-08-11-self-review.md`. Two earlier rounds by a different model are what found most of what is listed above.
+- **The review gate was closed by a self-review**, after the owner waived the model-diversity rule and undertook a second reading of their own. It is recorded as a self-review in every Goal's evidence and written up with its own limitations at `docs/07-decisions/reviews/2026-08-11-self-review.md`.
+
+Gaps created by the port, all of them open:
+
+- **The whole port.** 10,051 lines of orchestration logic and 6,266 lines of UI are not written. The scaffold compiles nothing because it contains nothing to compile.
+- **The automated accessibility audit is gone.** `axe-core` has no native equivalent. Contrast checks port; the rendered-DOM audit does not. See [ACCESSIBILITY.md](docs/02-ui-ux/ACCESSIBILITY.md).
+- **Windows is untested.** ADR-018 reopens it as a target. Nothing has been built or run there.
+- **The Python tooling is still Python.** `validate_goals.py`, `validate_docs.py`, `generate_sbom.py`, `attach_evidence.py` and `generate_icons.py` are wired into CI gates and have no C# replacement.
+- **`reference/` still exists.** Two stacks in one branch, deliberately and temporarily. Its deletion condition is in [`reference/README.md`](reference/README.md).
+
+Closed by the port, worth recording:
+
+- **The interpreter requirement.** The packaged app no longer needs Python and `uv` on the user's machine. This was the main open question for 1.0.
+- **17 unmaintained-crate warnings** from the gtk-rs GTK3 bindings Tauri 2 depended on. The dependency chain that produced them is deleted.
 
 ## How to run
 
 ```sh
-# Backend
-uv run --project backend uvicorn atlas_flow.api.app:create_app --factory
-
-# Frontend (separate terminal)
-pnpm --filter @atlas-flow/desktop dev
+dotnet run --project src/AtlasFlow.Desktop
 ```
 
-Open http://localhost:1420. The Plan tab lists the Goals in Git; starting one
-executes it and switches to Build, which follows the run live.
+One process, one window. There is no backend to start in another terminal and no
+port to open.
 
 To open a different project, set `ATLAS_FLOW_PROJECT_ROOT`. See
 [Getting Started](docs/06-user-guide/GETTING_STARTED.md).
+
+These commands describe the intended surface. None of them has been run.

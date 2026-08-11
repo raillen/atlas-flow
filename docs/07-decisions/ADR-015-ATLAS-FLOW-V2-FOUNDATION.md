@@ -29,7 +29,7 @@ externos para funcionar.
 
 ## Decisão
 
-1. A fundação v2 vive em `backend/atlas_flow/evolution/` e usa modelos Pydantic
+1. A fundação v2 vive em `src/AtlasFlow.Orchestration/Context/` e usa `record` types de domínio
    versionados, sem nomes de providers ou modelos no domínio.
 2. `atlas.config.yaml` é o manifesto v2 opcional na migração; projetos legados
    continuam indexáveis com metadata derivada e recebem um warning explícito.

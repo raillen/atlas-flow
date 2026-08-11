@@ -1,6 +1,8 @@
 # Data Models
 
-Use typed Pydantic/domain models separate from ORM.
+Use C# `record` types for the domain model, separate from any persistence type.
+The domain projects reference no database and no serializer: a Goal that cannot
+be expressed without SQLite is a Goal type that is wrong.
 
 - DiscussionDecision: id, discussion, status, statement, rationale, provenance, impacts.
 - Run: project, Goal id/revision, state, autonomy, timestamps.

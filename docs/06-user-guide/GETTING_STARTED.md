@@ -1,9 +1,29 @@
 # Getting Started
 
+## Requisitos
+
+.NET 10 SDK e Git no `PATH`. No Arch Linux:
+
+```bash
+sudo pacman -S dotnet-sdk
+```
+
+Não há mais nada para instalar. A versão anterior exigia Python e `uv` na
+máquina do usuário mesmo em build empacotado; esta não exige.
+
+## Executar
+
+```bash
+dotnet run --project src/AtlasFlow.Desktop
+```
+
+Um processo, uma janela. Não existe backend para subir em outro terminal nem
+porta local para abrir.
+
 ## Abrir um projeto
 
-Atlas Flow aceita qualquer diretório existente no desktop Linux. Ao abrir, ele
-inspeciona o projeto sem executar comandos e mostra um modo:
+Atlas Flow aceita qualquer diretório existente no Windows ou no Linux desktop.
+Ao abrir, ele inspeciona o projeto sem executar comandos e mostra um modo:
 
 - **Project Atlas ready** — Discuss, Plan, Run, Review e Knowledge;
 - **External project** — explorar arquivos e documentação, Discuss e preparar
@@ -26,21 +46,17 @@ O scaffold cria somente a estrutura mínima do Project Atlas. Decisões, Goals,
 critérios de aceitação e comandos de verificação ainda precisam ser definidos e
 aceitos explicitamente.
 
-## Executar com Tauri em um mount `noexec`
+## Checkout em um mount `noexec`
 
-Se o checkout estiver em um mount com `noexec`, use o alias `atlas-tauri` após
-recarregar o Zsh:
+O build .NET não executa binários a partir do diretório de saída durante a
+compilação, então o problema que exigia o alias `atlas-tauri` não existe mais.
+
+O que ainda importa: o pacote NuGet global fica em `~/.nuget/packages`. Se o
+`HOME` estiver em um mount `noexec`, aponte-o para outro lugar:
 
 ```bash
-source ~/.zshrc
-atlas-tauri
+export NUGET_PACKAGES=/caminho/executavel/nuget
 ```
-
-O alias chama o CLI Tauri via Node diretamente, usa o backend do checkout por um
-caminho absoluto, passa `ATLAS_FLOW_PROJECT_ROOT` para o projeto aberto e move os
-artefatos do Cargo e o cache do Vite para `~/.cache`. Isso evita que os wrappers
-em `node_modules/.bin` e os diretórios de build sejam executados na unidade
-`noexec`.
 
 ## Workflow recomendado
 
@@ -64,3 +80,11 @@ sh scripts/validate_all.sh
 ```
 
 Consulte `docs/09-references/COMPATIBILITY_MATRIX.md` para os requisitos completos.
+
+## Estado desta branch
+
+O porte para C# é um esqueleto. A estrutura da solução e a documentação estão
+prontas; a lógica de orquestração ainda não foi portada, e nada aqui foi
+compilado. Os comandos acima descrevem o destino, não o que roda hoje.
+
+A implementação Python de onde o porte é lido está em `reference/`.

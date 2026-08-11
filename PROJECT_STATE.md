@@ -1,5 +1,17 @@
 # Current Project State
 
+> **Esta branch é o porte para C# (`csharp-avalonia`).** Os estados de Goal
+> abaixo descrevem a implementação Python/Tauri, que agora vive em `reference/`
+> e continua sendo desenvolvida na `main`.
+>
+> Nenhum Goal está DONE nesta branch. O runtime mudou, e um Goal cujo gate de
+> build nunca compilou não passou o gate — ver
+> [RELEASE_GATES.md](docs/04-quality/RELEASE_GATES.md).
+>
+> P06 (Desktop Modes), P09 (Hardening) e P10 (Beta e validação 1.0) reabrem por
+> [ADR-018](docs/07-decisions/ADR-018-AVALONIA-DESKTOP.md): Windows voltou ao
+> escopo depois de ter sido registrado como non-goal em 2026-08-11.
+
 **Project:** Atlas Flow
 **Framework:** Project Atlas Framework 0.1.0
 **Status:** 11 of 13 Goals DONE; P11 and P12 active

@@ -1,7 +1,7 @@
 id: P03-G01
 phase: P03
 title: Orchestration Runtime
-state: DONE
+state: ACTIVE
 objective: Implement Run/Task/Attempt domain, event log, SQLite state and scheduler baseline.
 constraints:
 - Follow Project Atlas authority order
@@ -30,6 +30,7 @@ evidence:
 - review: self-review by the implementer, authorised by the owner; 2 defects found and fixed,
     1 checked and not reproduced — docs/07-decisions/reviews/2026-08-11-self-review.md
 history:
+- '2026-08-11: state DONE -> ACTIVE. The C# port (ADR-017, ADR-018) replaced the runtime this Goal''s build and tests evidence was produced on. The evidence below is left unedited because it is a true record of the superseded stack; it is no longer evidence for this branch. Re-earning it is the port''s work.'
 - '2026-08-10: reclassified DONE -> ACTIVE after an implementation audit found acceptance
   criteria that are not met.'
 - '2026-08-10: unmet — Crash recovery fixture passes: Persistence defaults to file::memory:?cache=shared

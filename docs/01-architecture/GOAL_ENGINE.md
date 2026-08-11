@@ -23,8 +23,8 @@ failing evidence. So the project declares them in
 
 ```yaml
 gates:
-  tests: "python -m pytest tests/unit -q"
-  documentation: "python scripts/validate_docs.py"
+  tests: "dotnet test --filter Category!=Integration"
+  documentation: "atlas docs validate"
 ```
 
 They run once, after every task in the run has succeeded — verifying

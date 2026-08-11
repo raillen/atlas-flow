@@ -6,7 +6,7 @@
 - **P03 Orchestration Runtime** — Run/Task/Attempt, event bus, SQLite, cancellation/recovery.
 - **P04 Atlas Harness** — ACP and generic CLI runner.
 - **P05 Goal Planner & DAG** — planning, worktrees, safe concurrency, integration.
-- **P06 Desktop UX** — Tauri shell and five main modes.
+- **P06 Desktop UX** — Avalonia workspace shell and the six workspace stages.
 - **P07 Verification & Evidence** — deterministic gates and independent review.
 - **P08 Routing & Intelligence** — role routing, budgets, scorecards, fallback.
 - **P09 Hardening** — security, recovery, accessibility, performance, packaging.

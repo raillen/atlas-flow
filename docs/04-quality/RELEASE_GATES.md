@@ -4,25 +4,36 @@ What must be true before Atlas Flow is released, and what is true today. This
 table is the honest version: a gate is only PASS when something checkable says
 so.
 
-| Gate | Status | Evidence |
-| --- | --- | --- |
-| Release Goals DONE with evidence | **PASS** | 11 of 11. Each carries evidence for build, tests, review and documentation, and `scripts/validate_goals.py` refuses a DONE Goal without it — including, since 2026-08-11, evidence that opens with a failing verdict. |
-| CI green on supported platforms | **PARTIAL** | The supported platform is Linux. `foundation-ci.yml` runs Python, JavaScript, the desktop shell, the dependency audit, the validators and the packaging smoke test on ubuntu-latest. No hosted result has been observed yet — it reports on the next push. |
-| Protocol contracts green | **PASS** | ACP against a live fixture agent, AG-UI envelopes, and the REST surface are covered by tests. |
-| No critical or high security findings | **PASS** | `sh scripts/audit_dependencies.sh` runs pip-audit, pnpm audit and cargo audit locally and in CI, and reports being unable to reach a database as a failure rather than a pass. No independent security review has been performed. See [Security Testing](SECURITY_TESTING.md). |
-| Performance within accepted variance | **PASS** | Measured and asserted in `tests/integration/test_performance.py`; see [Performance Budgets](PERFORMANCE_BUDGETS.md). |
-| Recovery suite | **PASS** | `tests/integration/test_fault_injection.py` covers both interrupt modes, idempotence and state that outlives its process. |
-| Installation tests | **PASS** | `sh scripts/package_smoke.sh` builds and verifies both supported bundles — `.deb` and AppImage, the latter unpacked and checked for its executable — plus SBOM, checksums and signature. |
-| Project Atlas compatibility | **PASS** | Three project categories built and executed end to end; see [the compatibility matrix](../09-references/COMPATIBILITY_MATRIX.md). |
-| Updated documentation | **PASS** | `scripts/validate_docs.py` checks every internal link; canonical docs are updated with each change. |
-| SBOM, checksums and signature | **PASS** | `scripts/package_smoke.sh` writes a CycloneDX 1.5 SBOM (840 components), `SHA256SUMS` over the `.deb`, AppImage and SBOM, and a detached GPG signature. The project key exists (`C4ECF972E0FFC81D`), its public half is committed, and the whole chain — import, verify, `sha256sum -c` — was exercised from a clean keyring. |
-| Review | **PASS** (self-review) | Two rounds by a different model (FAILED, then PARTIAL) with every finding closed, then a self-review after the owner waived model diversity and undertook a second reading of their own. Recorded as a self-review everywhere it appears: [the write-up](../07-decisions/reviews/2026-08-11-self-review.md) states its own limitations and the two defects it found. |
+## Status on the C# port branch
 
-One row is still PARTIAL and says why: no hosted CI result has been observed
-yet, because that needs a push. Everything else is checkable now and was
-checked.
+Every gate below is **NOT ESTABLISHED**. That is not a regression in the
+product — it is the correct reading of a branch where the runtime changed and
+nothing has been compiled.
+
+| Gate | Status | What it now requires |
+| --- | --- | --- |
+| Release Goals DONE with evidence | NOT ESTABLISHED | The validator is `scripts/validate_goals.py`, still Python. Its C# replacement has not been written, so no Goal on this branch can produce checkable evidence. |
+| CI green on supported platforms | NOT ESTABLISHED | Two platforms now, not one. `foundation-ci.yml` targets a Python/Node/Rust toolchain that no longer exists and has to be rewritten for `dotnet` on `ubuntu-latest` and `windows-latest`. |
+| Protocol contracts green | NOT ESTABLISHED | ACP against a live fixture agent and AG-UI envelopes must be re-covered in `AtlasFlow.Protocols.Tests`. There is no REST surface to cover any more. |
+| No critical or high security findings | NOT ESTABLISHED | `dotnet list package --vulnerable --include-transitive` replaces pip-audit, pnpm audit and cargo audit. It must fail the build on any advisory and must treat an unreachable database as a failure, not a pass. |
+| Performance within accepted variance | NOT ESTABLISHED | No budget has ever been measured against an Avalonia build. See [Performance Budgets](PERFORMANCE_BUDGETS.md) and the note in [UX_FOUNDATION](../02-ui-ux/UX_FOUNDATION.md) about measurements that were pre-registered and then not taken. |
+| Recovery suite | NOT ESTABLISHED | Both interrupt modes, idempotence and state that outlives its process must be re-covered in `AtlasFlow.Integration.Tests`. |
+| Installation tests | NOT ESTABLISHED | `deb`, Flatpak and MSI. The full checklist is in [PACKAGING.md](../03-implementation/PACKAGING.md). |
+| Project Atlas compatibility | NOT ESTABLISHED | Three project categories, built and executed end to end, on both platforms. |
+| Updated documentation | **PASS** | The documentation was ported with the stack and states its own limits. This is the one gate a branch with no compiler can honestly pass. |
+| SBOM, checksums and signature | NOT ESTABLISHED | One lockfile now (`packages.lock.json`) instead of three. The signing chain itself is unchanged and previously worked end to end. |
+| Review | NOT ESTABLISHED | No review of the C# branch has been performed. The model-diversity rule applies again from scratch. |
+| Accessibility | NOT ESTABLISHED | This gate previously leaned on the `axe-core` suite, which has no native equivalent. What replaces each part, and what nothing replaces, is in [ACCESSIBILITY.md](../02-ui-ux/ACCESSIBILITY.md). |
+
+The previous stack passed most of these. Those results are preserved in
+[`VALIDATION_REPORT.md`](../../VALIDATION_REPORT.md) as history and are
+deliberately not carried across, because they described a Python backend and a
+Tauri bundle that this branch deletes.
 
 ## Findings from the 2026-08-11 reviews
+
+Historical, describing the superseded stack. Kept because the defects it records
+are the ones a port is most likely to reintroduce.
 
 Three rounds. The first two by a model other than the implementer: FAILED, then
 PARTIAL. The third a self-review, authorised by the owner, which found two more
@@ -30,25 +41,24 @@ defects — a failing review verdict satisfying the review gate, and parallel
 tasks overspending the attempt budget four to one. Both reproduced before being
 fixed; see [the write-up](../07-decisions/reviews/2026-08-11-self-review.md).
 
-| Finding | Status |
-| --- | --- |
-| Local gates could not be run at all | Closed — bootstrap relocates Python/Cargo environments; Node tools and Tauri frontend build now use JS entrypoints where the checkout is noexec. |
-| CI Linux-only | Closed — three-platform matrix |
-| No `cargo build`/`test` in CI | Closed, and the shell has 9 unit tests instead of none |
-| No dependency audit | Closed — found and fixed PYSEC-2026-1845 in pytest |
-| Windows/macOS bundles unconfigured | Closed — targets and `.ico`/`.icns` icons |
-| ACP does not resume a session | Closed — resumption with a stale-id fallback |
-| No DOM/screen-reader audit | Partly closed — axe-core/DOM suite passes 11 tests; the manual screen-reader walkthrough is deferred by owner decision |
-| Artefacts unsigned | Closed — project key created, releases signed, verification exercised from a clean keyring |
-| AppImage unverified | Closed — `APPIMAGE_EXTRACT_AND_RUN=1` removes the FUSE requirement; built, unpacked, checked |
-| Dependency audit not reproducible locally | Closed — `scripts/audit_dependencies.sh`, used by CI and by `run_gates.sh` |
-| No hosted result for Windows/macOS | Withdrawn — macOS and Windows are out of scope by owner decision (2026-08-11) |
-| `tests/e2e` held only a `.gitkeep` | Closed — the placeholder is gone, the audit is real |
+| Finding | Status then | Carried into the port? |
+| --- | --- | --- |
+| Local gates could not be run at all | Closed | Re-check. The `noexec` workaround was Node/Cargo specific; `NUGET_PACKAGES` is the equivalent lever. |
+| CI Linux-only | Closed | **Reopened.** CI must be rewritten for two platforms. |
+| No `cargo build`/`test` in CI | Closed | Obsolete — no Rust. |
+| No dependency audit | Closed | **Reopened** under a different tool. |
+| Windows/macOS bundles unconfigured | Closed, then withdrawn | **Reopened for Windows** by ADR-018. macOS stays out of scope. |
+| ACP does not resume a session | Closed | Must be re-covered by a test in the port; resumption with a stale-id fallback. |
+| No DOM/screen-reader audit | Partly closed | **Reopened and cannot be closed the same way.** No `axe-core` for a native toolkit. |
+| Artefacts unsigned | Closed | The GPG chain is unchanged and should survive; unverified here. |
+| AppImage unverified | Closed | Obsolete — Flatpak replaces AppImage. |
+| Dependency audit not reproducible locally | Closed | **Reopened** with the audit script. |
+| `tests/e2e` held only a `.gitkeep` | Closed | Watch for it. An empty `AtlasFlow.Integration.Tests` is the same defect wearing a new name. |
 
 ## The rule this table exists to protect
 
 A gate is not passed by writing that it is. `all_passed` exempts nothing:
 a gate that is hard to satisfy has to be declared optional in the Goal, not
-skipped at evaluation time. The same standard applies here — the FAIL rows stay
-FAIL until the artefact exists, and the PARTIAL rows say what is missing rather
-than rounding up.
+skipped at evaluation time. The same standard applies here — the NOT ESTABLISHED
+rows stay that way until the artefact exists, and no row is rounded up because
+the previous stack once passed it.

@@ -38,12 +38,13 @@ cognitiva e enfraquecia a conversa como ponto de entrada do produto.
 - peso tipográfico é contido e estados são pontos discretos com rótulos curtos;
 - a base visual é compacta e legível, com temas escuro e claro baseados nos
   mesmos tokens semânticos; o escuro é o padrão inicial;
-- o frontend continua em Tauri + React + TypeScript nesta fase.
+- o frontend é Avalonia 11 sobre .NET 10, sem webview (ADR-018).
 
 ## Temas
 
 O shell oferece um botão acessível para alternar entre `dark` e `light`. A
-preferência é local à instalação e persistida em `localStorage`; não altera o
+preferência é local à instalação e persistida no arquivo de settings do
+usuário; não altera o
 contrato do backend nem cria uma configuração de projeto que poderia ser
 aplicada involuntariamente a outras pessoas.
 
@@ -74,11 +75,34 @@ projeto aberto, rejeita traversal e persiste as referências junto da mensagem.
 O conteúdo não é enviado automaticamente a nenhum provider; a referência é
 um vínculo explícito ao contexto canônico.
 
-## Fora desta fase
+## O renderer nativo: o que esta seção previa, e o que aconteceu
 
-GTK4/libadwaita fica como alternativa futura para um renderer nativo, caso
-medições de RSS, CPU, inicialização e distribuição mostrem que Tauri/WebView é
-o gargalo. A decisão não será tomada por preferência ou comparação visual.
+Esta seção dizia que GTK4/libadwaita ficava como alternativa futura para um
+renderer nativo, **caso medições de RSS, CPU, inicialização e distribuição
+mostrassem que Tauri/WebView era o gargalo**, e que a decisão não seria tomada
+por preferência ou comparação visual.
+
+A troca aconteceu em 2026-08-11 ([ADR-018](../07-decisions/ADR-018-AVALONIA-DESKTOP.md)).
+Registrando com precisão: **as medições não foram feitas.** A decisão partiu de
+duas restrições concretas — o app empacotado não subia sem Python instalado no
+host, e o webview era a parte mais pesada — e de um julgamento do owner, não de
+um número medido contra um orçamento.
+
+Isso não invalida a decisão. Invalida a afirmação de que ela seguiu o critério
+que esta seção havia pré-registrado, e a diferença fica escrita aqui em vez de
+ser apagada.
+
+Duas correções ao texto original, para quem for auditar depois:
+
+- **O renderer escolhido não foi GTK4.** GTK4 era a resposta certa enquanto
+  Linux era a única plataforma. Windows voltou ao escopo e derrubou o GTK4;
+  Avalonia ganhou por ser a única opção nativa com acessibilidade real nas duas
+  plataformas.
+- **Os orçamentos continuam devendo.** `PERFORMANCE_BUDGETS.md` precisa de
+  números do binário Avalonia, e nenhum existe — nada nesta branch foi
+  compilado.
+
+## Fora desta fase
 
 Também ficam adiados upload remoto de arquivos, colaboração em tempo real e
 uma cópia visual de Codex ou Antigravity.

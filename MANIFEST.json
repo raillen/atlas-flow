@@ -622,6 +622,16 @@
       "bytes": 131
     },
     {
+      "path": "docs/07-decisions/ADR-017-DOTNET-RUNTIME.md",
+      "sha256": "256d0a281dfffc8dc527888d852f4adf9abb43babdaa1cdb5e2c0eeb1d6a6cfb",
+      "bytes": 131
+    },
+    {
+      "path": "docs/07-decisions/ADR-018-AVALONIA-DESKTOP.md",
+      "sha256": "256d0a281dfffc8dc527888d852f4adf9abb43babdaa1cdb5e2c0eeb1d6a6cfb",
+      "bytes": 131
+    },
+    {
       "path": "docs/07-decisions/ADR-005-AGUI.md",
       "sha256": "327f32877895aa783fd33109d0b7decba65b0fbd82fd5b8d52e3b7ef04e63a6b",
       "bytes": 135

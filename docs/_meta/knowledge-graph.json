@@ -515,13 +515,13 @@
       "id": "doc:docs/07-decisions/ADR-003-PYTHON-BACKEND.md",
       "type": "document",
       "path": "docs/07-decisions/ADR-003-PYTHON-BACKEND.md",
-      "title": "ADR-003 — Python orchestration backend"
+      "title": "ADR-003 — Python orchestration backend (superseded by ADR-017)"
     },
     {
       "id": "doc:docs/07-decisions/ADR-004-TAURI-REACT.md",
       "type": "document",
       "path": "docs/07-decisions/ADR-004-TAURI-REACT.md",
-      "title": "ADR-004 — Tauri 2 + React desktop"
+      "title": "ADR-004 — Tauri 2 + React desktop (superseded by ADR-018)"
     },
     {
       "id": "doc:docs/07-decisions/ADR-005-AGUI.md",
@@ -678,6 +678,18 @@
       "type": "goal",
       "path": ".ai/goals/P10/P10-G01.yaml",
       "title": "Beta and 1.0 Validation"
+    },
+    {
+      "id": "doc:docs/07-decisions/ADR-017-DOTNET-RUNTIME.md",
+      "type": "document",
+      "path": "docs/07-decisions/ADR-017-DOTNET-RUNTIME.md",
+      "title": "ADR-017 — One .NET runtime, not three"
+    },
+    {
+      "id": "doc:docs/07-decisions/ADR-018-AVALONIA-DESKTOP.md",
+      "type": "document",
+      "path": "docs/07-decisions/ADR-018-AVALONIA-DESKTOP.md",
+      "title": "ADR-018 — Avalonia, and the end of the webview"
     }
   ],
   "edges": [
@@ -850,6 +862,16 @@
       "from": "doc:docs/03-implementation/COMMAND_CODE_INTEGRATION.md",
       "to": "doc:docs/05-governance/AI_ORCHESTRATION.md",
       "type": "implements"
+    },
+    {
+      "from": "doc:docs/07-decisions/ADR-017-DOTNET-RUNTIME.md",
+      "to": "doc:docs/07-decisions/ADR-003-PYTHON-BACKEND.md",
+      "type": "supersedes"
+    },
+    {
+      "from": "doc:docs/07-decisions/ADR-018-AVALONIA-DESKTOP.md",
+      "to": "doc:docs/07-decisions/ADR-004-TAURI-REACT.md",
+      "type": "supersedes"
     }
   ]
 }

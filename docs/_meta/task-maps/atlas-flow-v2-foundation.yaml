@@ -11,16 +11,16 @@ read:
     - docs/07-decisions/ADR-015-ATLAS-FLOW-V2-FOUNDATION.md
 touch:
   likely:
-    - backend/atlas_flow/evolution/**
+    - src/AtlasFlow.Orchestration/Context/**
     - schemas/**
-    - tests/unit/test_evolution_foundation.py
+    - tests/AtlasFlow.Orchestration.Tests/**
 usually_dont_touch:
-  - apps/desktop/**
-  - backend/atlas_flow/execution/**
+  - src/AtlasFlow.Desktop/**
+  - src/AtlasFlow.Orchestration/Execution/**
 verify:
-  - uv run --project backend --all-groups python -m pytest tests/unit/test_evolution_foundation.py
-  - uv run --project backend --all-groups ruff check backend/atlas_flow/evolution backend/atlas_flow/cli.py
-  - uv run --project backend --all-groups python -m mypy --strict backend/atlas_flow/evolution backend/atlas_flow/cli.py
+  - dotnet test tests/AtlasFlow.Orchestration.Tests
+  - dotnet format --verify-no-changes
+  - dotnet build -c Release
 documentation:
   - docs/03-implementation/ATLAS_FLOW_V2_FOUNDATION.md
   - docs/06-user-guide/ATLAS_CLI.md

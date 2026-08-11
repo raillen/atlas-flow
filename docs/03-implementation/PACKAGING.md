@@ -1,119 +1,66 @@
 # Packaging and Distribution
 
-The desktop client is a Tauri 2 shell around the React app in
-`apps/desktop/src`, configured in `apps/desktop/src-tauri/tauri.conf.json`.
+The desktop client is a single NativeAOT executable built from
+`src/AtlasFlow.Desktop`. There is no sidecar, no interpreter and no runtime for
+the user to install.
 
-**Supported platform: Linux on desktop, x86_64.** macOS and Windows are out of
-scope by an owner decision on 2026-08-11 and are recorded as non-goals on P06,
-P09 and P10. Nothing here claims a platform it does not build and test — the
-ICO and ICNS renderers still exist in `scripts/generate_icons.py` behind
-`--all-platforms`, but no such icon is shipped and no such target is declared.
+**Supported platforms: Linux x86_64 and Windows x86_64.** Windows was a recorded
+non-goal on P06, P09 and P10 under an owner decision of 2026-08-11; ADR-018
+reopens it, and those three Goals inherit the work. macOS remains out of scope.
 
-## What the shell owns
+Nothing here claims a platform it does not build and test. At the time of
+writing that is **every platform** — see [Verified](#verified).
 
-Orchestration lives in the Python backend. The shell owns the three things a
-browser cannot do for itself:
+## What the shell used to own, and no longer does
 
-| Command | Purpose |
+The Tauri build exposed four IPC commands so that a webview could reach an
+orchestrator running in another process:
+
+| Command | Why it existed |
 | --- | --- |
-| `backend_status` | Whether a backend this window started is still alive, plus the URL, command and project root. |
-| `start_backend` | Starts the backend if this window has not already. Idempotent. |
-| `stop_backend` | Kills the backend this window started. |
-| `project_root` | The nearest ancestor directory holding `PROJECT_MANIFEST.yaml`. |
+| `backend_status` | Whether a spawned backend was still alive |
+| `start_backend` | Start it, idempotently |
+| `stop_backend` | Kill the one this window started |
+| `project_root` | Find the nearest `PROJECT_MANIFEST.yaml` |
 
-The backend is started on request rather than at launch, so a developer already
-running `uvicorn` by hand keeps that process instead of racing a second one for
-the port. A backend this shell started is killed when the app exits — leaving it
-holding the port is how the next launch fails for no visible reason.
+Three of those four are deleted rather than ported. `AtlasFlow.Desktop`
+references `AtlasFlow.Application` and calls it directly, so there is no process
+to start, no port to race for, no exit status to interpret and no state to
+render for a backend that failed to come up. `project_root` survives as an
+ordinary method.
 
-Overrides: `ATLAS_FLOW_API` (backend URL), `ATLAS_FLOW_BACKEND_CMD` (the argv to
-run), `ATLAS_FLOW_PROJECT_ROOT` (working directory).
+This is the largest single simplification in the port, and it is the reason the
+port was worth doing rather than merely worth wanting.
 
-Every screen also runs under plain `vite dev`, where there is no Tauri: the
-bridge in `apps/desktop/src/desktop.ts` reports `isDesktop() === false` and each
-call resolves to `null` rather than throwing.
-
-## Security
-
-`capabilities/default.json` grants the window the core defaults plus
-`shell:allow-open`. Nothing grants the frontend permission to execute arbitrary
-commands: it can ask for *the backend* to start, and the argv is decided in
-Rust.
-
-A Content Security Policy is set in `tauri.conf.json` — `default-src 'self'`,
-with `connect-src` limited to the IPC endpoint and the backend on localhost. It
-was previously `null`, which disables CSP entirely.
-
-## Running the packaged app
-
-The bundles are written to `$CARGO_TARGET_DIR/release/bundle/`. On a checkout
-that lives on a `noexec` mount, `CARGO_TARGET_DIR` points elsewhere, and the
-AppImage cannot be run from the project directory at all — the mount forbids it.
-
-```sh
-ATLAS_FLOW_PROJECT_ROOT=/path/to/project \
-  "$CARGO_TARGET_DIR/release/bundle/appimage/Atlas Flow_0.1.0_amd64.AppImage"
-```
-
-`ATLAS_FLOW_PROJECT_ROOT` is not optional in a packaged build unless the app is
-launched from inside the project: an AppImage runs with its working directory
-inside its own mount, so there is nothing there to search. When no project can
-be determined the Project tab says so and refuses to start a backend, rather
-than starting one somewhere with no Goals.
-
-Two things the bundle does *not* do to the backend it starts:
-
-- **Inherit the bundle's environment.** An AppImage points `PYTHONHOME`,
-  `LD_LIBRARY_PATH` and a dozen GTK variables at itself. A Python backend that
-  inherits them dies on startup complaining about Python paths, which is a
-  message about the wrong problem. Every variable mentioning the bundle is
-  removed from the child, and `PATH` keeps everything except its bundle entries.
-- **Claim success it has not checked.** Spawning succeeds even for a command
-  that dies immediately, so the shell waits, asks whether the process is still
-  alive, and reports the exit status and log path when it is not.
-
-The backend's output goes to `/tmp/atlas-flow-backend.log`, and the Project tab
-shows that path.
+Overrides that remain: `ATLAS_FLOW_PROJECT_ROOT` sets the working project when
+the app is launched from outside one.
 
 ## Building
 
 ```sh
-sh scripts/package_smoke.sh
+dotnet publish src/AtlasFlow.Desktop -c Release -r linux-x64
+dotnet publish src/AtlasFlow.Desktop -c Release -r win-x64
 ```
 
-That builds the frontend, produces the `deb` bundle, and then checks what came
-out: "it compiled" is not the same as "it packages", and the binary, desktop
-entry, icons and control metadata are produced by a different part of the
-toolchain than the one that compiles Rust. `--verify-only` re-runs just the
-checks against an existing bundle.
+`PublishAot`, `SelfContained` and `StripSymbols` are set for Release in the
+`.csproj`, so those flags do not need to be passed and cannot be forgotten.
 
-Targets configured: `deb` and `appimage`. Icons live in `src-tauri/icons` and
-are generated, not hand-drawn — PNG only, which is what the Linux bundlers need.
+**Always verify a change against a Release publish, not `dotnet run`.**
+NativeAOT rejects runtime code generation and unbounded reflection. A dependency
+or a serializer that works in Debug and fails at AOT publish — or worse, fails
+at startup in the shipped artefact — is the most common way a green local build
+produces a broken release.
 
-If the checkout is on a `noexec` mount, set `CARGO_TARGET_DIR` to a path that
-is not: cargo executes build scripts out of the target directory, and a mount
-that forbids that fails the build with a bare `Permission denied`.
-
-The same script writes the release artefacts beside the bundle, so a package
-and the record of what is inside it never drift apart:
-
-- `sbom.cyclonedx.json` — CycloneDX 1.5, generated by
-  `scripts/generate_sbom.py` from `backend/uv.lock`, `pnpm-lock.yaml` and
-  `Cargo.lock`. Reading lockfiles rather than an installed environment keeps the
-  SBOM a description of the release rather than of the machine that built it.
-- `SHA256SUMS` — over the `.deb`, the AppImage and the SBOM.
-- `SHA256SUMS.asc` — a detached GPG signature, when `ATLAS_SIGNING_KEY` names a
-  key. The signature covers the digest list rather than each artefact: that is
-  what a verifier checks, and it cannot be sidestepped by swapping a file the
-  list already names. The script verifies its own signature before reporting
-  success. With no key configured it prints `unsigned` and carries on — an
-  unsigned release that claims to be signed is worse than one that admits it.
+Targets: `deb` and Flatpak on Linux, MSI on Windows. Flatpak is preferred over
+AppImage now that the binary is self-contained: there is no advantage left in
+the extract-and-run machinery.
 
 ## Signing and verifying
 
-The release key is `Atlas Flow Release Signing <raillen@atlas-flow.dev>`,
-fingerprint `1AAF FA26 944C 1D56 B850  AAE8 C4EC F972 E0FF C81D`, expiring
-2028-08-10. Its **public half** is committed at
+Unchanged by the port. The release key is
+`Atlas Flow Release Signing <raillen@atlas-flow.dev>`, fingerprint
+`1AAF FA26 944C 1D56 B850  AAE8 C4EC F972 E0FF C81D`, expiring 2028-08-10. Its
+**public half** is committed at
 [`docs/09-references/RELEASE_SIGNING_KEY.asc`](../09-references/RELEASE_SIGNING_KEY.asc);
 the private half lives only in the maintainer's keyring and is never in this
 repository — `.gitignore` refuses the shapes a private key comes in.
@@ -132,6 +79,10 @@ gpg --verify SHA256SUMS.asc SHA256SUMS
 sha256sum -c SHA256SUMS
 ```
 
+The signature covers the digest list rather than each artefact: that is what a
+verifier checks, and it cannot be sidestepped by swapping a file the list
+already names.
+
 The key carries **no passphrase**, so scripts and CI can use it unattended. That
 is a deliberate trade: anyone who can read the maintainer's home directory can
 sign as the project. Add one with `gpg --change-passphrase C4ECF972E0FFC81D`
@@ -140,35 +91,53 @@ and give CI a separate exported key if that trade stops being acceptable.
 Renewal, before 2028-08-10:
 `gpg --quick-set-expire 1AAFFA26944C1D56B850AAE8C4ECF972E0FFC81D 2y`
 
-## AppImage
+## Release artefacts
 
-Two things in `linuxdeploy` — not in the application — stood between this
-repository and an AppImage. The packaging script exports both fixes:
+Written beside the package, so a build and the record of what is inside it never
+drift apart:
 
-- `APPIMAGE_EXTRACT_AND_RUN=1`, because `linuxdeploy` is itself an AppImage and
-  mounting one needs FUSE, which build machines and CI runners frequently lack.
-- `NO_STRIP=1`, because the `strip` it ships is older than the `.relr.dyn`
-  relocation sections current toolchains emit and fails on every system library
-  it copies with `unknown type [0x13]`. Not stripping costs bundle size and
-  nothing else.
-
-The check is that the AppImage *unpacks into a tree containing the executable* —
-a file with the right extension proves nothing.
+- `sbom.cyclonedx.json` — CycloneDX 1.5. Generated from `packages.lock.json`
+  rather than from an installed environment, so the SBOM describes the release
+  and not the machine that built it. One lockfile now, where the Tauri build
+  needed three (`uv.lock`, `pnpm-lock.yaml`, `Cargo.lock`).
+- `SHA256SUMS` — over each package and the SBOM.
+- `SHA256SUMS.asc` — a detached GPG signature when `ATLAS_SIGNING_KEY` names a
+  key. The script verifies its own signature before reporting success. With no
+  key configured it prints `unsigned` and carries on — an unsigned release that
+  claims to be signed is worse than one that admits it.
 
 ## Verified
 
-- `deb`: built and smoke-tested. Contains `/usr/bin/atlas-flow-desktop`, the
-  desktop entry, and 32/128/512px icons.
-- `AppImage`: built and unpacked; carries the executable.
-- SBOM: 840 components — 34 pypi, 355 npm, 451 cargo.
-- Signing: exercised end to end with a throwaway key, signature verified.
+**Nothing.** No .NET SDK was available on the machine this branch was written
+on. The solution has not been restored, compiled, published or packaged, and the
+package versions in `Directory.Packages.props` are unconfirmed guesses.
+
+The previous stack's verification results are deliberately not carried over.
+They were true statements about a Tauri bundle that this branch deletes, and
+reproducing them here under new headings would be a false claim about software
+that has never been built.
+
+To be established before any release claim:
+
+- [ ] `dotnet restore` resolves every package
+- [ ] `dotnet build` clean, with warnings as errors
+- [ ] `dotnet test` green
+- [ ] Release AOT publish succeeds on `linux-x64`
+- [ ] Release AOT publish succeeds on `win-x64`
+- [ ] The published binary starts and opens a window on both platforms
+- [ ] `deb` contains the executable, desktop entry and icons
+- [ ] Flatpak manifest builds
+- [ ] MSI installs and uninstalls cleanly
+- [ ] SBOM generated from `packages.lock.json`
+- [ ] Signing exercised end to end
 
 ## Not yet done
 
-- **Shipping the Python backend inside the bundle.** The packaged app expects a
-  backend it can start from the project directory; it does not carry its own
-  interpreter. This is the main open question for 1.0.
+- **Everything in the checklist above.**
 - **A published signing key.** The mechanism works; no project key exists or is
   distributed, so released artefacts are still effectively unsigned.
-- **A LICENSE file.** `Cargo.toml` declares MIT but the repository has no
-  license text, so the bundle carries none.
+- **A LICENSE file.** The repository has no license text, so no package can
+  carry one.
+- **Icons.** `scripts/generate_icons.py` is Python and targeted the Tauri
+  bundler's layout. Windows needs an ICO, which that script could produce behind
+  `--all-platforms` but never shipped.

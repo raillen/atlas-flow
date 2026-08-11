@@ -17,8 +17,25 @@ tags: [ux, frontend, gtk, chat]
 
 # ADR-016 — Fundação de UX do Atlas Flow e adiamento de GTK
 
-**Status:** Accepted
+**Status:** Accepted, superseded in part by [ADR-018](ADR-018-AVALONIA-DESKTOP.md)
 **Date:** 2026-08-11
+
+> **Emenda de 2026-08-11.** A direção de UX abaixo — chat-first, compacta,
+> orientada a contexto, com referências persistentes — permanece integralmente
+> válida e independe do toolkit.
+>
+> A escolha de renderer não permanece. Este ADR dizia que o frontend continuaria
+> em Tauri 2 + React + TypeScript, e que uma alternativa nativa só seria
+> considerada após uma prova de conceito medir o custo real do WebView.
+>
+> **Essa prova de conceito não foi feita.** O ADR-018 troca o renderer com base
+> em duas restrições concretas (o app empacotado não subia sem Python no host; o
+> webview era a parte mais pesada) e num julgamento do owner. Registrado assim
+> porque a condição que este documento estabeleceu não foi cumprida, e apagar
+> isso seria pior do que admitir.
+>
+> O renderer escolhido também não foi GTK4: Windows voltou ao escopo e derrubou
+> essa opção. Ver [ADR-018](ADR-018-AVALONIA-DESKTOP.md).
 
 ## Decisão
 

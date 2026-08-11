@@ -340,11 +340,19 @@ documents:
   section: 07-decisions
   canonical: true
 - path: docs/07-decisions/ADR-003-PYTHON-BACKEND.md
-  title: ADR-003 — Python orchestration backend
+  title: ADR-003 — Python orchestration backend (superseded by ADR-017)
   section: 07-decisions
   canonical: true
 - path: docs/07-decisions/ADR-004-TAURI-REACT.md
-  title: ADR-004 — Tauri 2 + React desktop
+  title: ADR-004 — Tauri 2 + React desktop (superseded by ADR-018)
+  section: 07-decisions
+  canonical: true
+- path: docs/07-decisions/ADR-017-DOTNET-RUNTIME.md
+  title: ADR-017 — One .NET runtime, not three
+  section: 07-decisions
+  canonical: true
+- path: docs/07-decisions/ADR-018-AVALONIA-DESKTOP.md
+  title: ADR-018 — Avalonia, and the end of the webview
   section: 07-decisions
   canonical: true
 - path: docs/07-decisions/ADR-005-AGUI.md

@@ -1,9 +1,9 @@
 # Atlas-Flow — Plano de Implementação da Evolução do Framework
 
-**Documento:** AF-EVO-001  
-**Status:** Proposed / Implementation Guide  
-**Versão:** 1.0  
-**Data:** 2026-08-11  
+**Documento:** AF-EVO-001
+**Status:** Proposed / Implementation Guide
+**Versão:** 1.0
+**Data:** 2026-08-11
 **Objetivo:** orientar a evolução do Atlas-Flow de um framework de documentação orientado a humanos/LLMs para uma plataforma de **Knowledge, Context, Documentation Publishing, Token Economy e Project Intelligence** reutilizável entre projetos.
 
 > **Implementation status — 2026-08-11:** a primeira fatia vertical está em

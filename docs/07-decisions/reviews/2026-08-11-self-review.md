@@ -1,5 +1,16 @@
 # Review — 2026-08-11 (self-review, implementer)
 
+> **Historical.** This review examined the Python and Tauri implementation, now
+> in `reference/` and superseded by [ADR-017](../ADR-017-DOTNET-RUNTIME.md) and
+> [ADR-018](../ADR-018-AVALONIA-DESKTOP.md). It is not a review of the C# port,
+> and nothing in it should be read as evidence for this branch.
+>
+> It is preserved unedited. The two defects it found — a failing review verdict
+> satisfying the review gate, and parallel tasks overspending the attempt budget
+> four to one — are exactly the kind a port reintroduces, so the record is worth
+> more than the tidiness of deleting it.
+
+
 **Reviewer:** the model that implemented the work (Opus 5).
 **Authorised by:** the project owner, on 2026-08-11, waiving the
 model-diversity requirement recorded in `.commandcode/taste/taste.md`.
