@@ -1,0 +1,35 @@
+schema_version: 2
+
+project:
+  name: atlas-flow
+  version: 0.1.0
+
+atlas:
+  docs_root: docs
+  data_root: .atlas
+
+documentation:
+  title: Atlas Flow Documentation
+  default_visibility: internal
+
+publishing:
+  public: []
+  internal:
+    - 00-product
+    - 01-architecture
+    - 02-ui-ux
+    - 03-implementation
+    - 04-quality
+    - 05-governance
+    - 06-user-guide
+    - 07-decisions
+    - 08-rfcs
+    - 09-references
+  private: []
+
+intelligence:
+  enabled: true
+  dashboard: true
+
+context:
+  default_budget: medium

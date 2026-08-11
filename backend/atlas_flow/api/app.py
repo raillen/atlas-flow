@@ -25,6 +25,7 @@ from atlas_flow.goals.loader import resolve_project
 from atlas_flow.harness.engine import Harness
 from atlas_flow.harness.runner import DummyRunner
 from atlas_flow.mcp.registry import McpRegistry
+from atlas_flow.project.inspection import inspect_project
 from atlas_flow.routing.discovery import ModelRegistry
 from atlas_flow.routing.router import ModelRouter
 from atlas_flow.routing.store import RoutingStore
@@ -164,14 +165,33 @@ def create_app() -> FastAPI:
 
     @app.get("/api/project")
     def get_project() -> dict[str, Any]:
+        inspection = inspect_project(app.state.project_root)
+        if not inspection.capabilities.can_plan:
+            return {
+                "id": inspection.project_id,
+                "name": inspection.project_name,
+                "types": inspection.types,
+                "phases": 0,
+                "agents": [],
+                "skills": [],
+                "runners": app.state.harness.runners(),
+                "mode": inspection.mode,
+                "reason": inspection.reason,
+                "recommendation": inspection.recommendation,
+            }
+
         ctx = resolve_project(app.state.project_root)
         return {
             "id": ctx.project.id,
+            "name": ctx.project.id,
             "types": ctx.project.types,
             "phases": len(ctx.phases),
             "agents": ctx.agents.agents,
             "skills": ctx.skills.skills,
             "runners": app.state.harness.runners(),
+            "mode": inspection.mode,
+            "reason": inspection.reason,
+            "recommendation": inspection.recommendation,
         }
 
     @app.get("/api/config")

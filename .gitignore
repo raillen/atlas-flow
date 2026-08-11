@@ -35,6 +35,9 @@ apps/desktop/src-tauri/gen/schemas
 *.db-shm
 .atlas-flow/
 
+# Atlas Flow v2 derived indexes, site output and intelligence projections.
+.atlas/
+
 # Env / secrets
 .env
 .env.*

@@ -28,18 +28,26 @@ export const StatusBadge: FC<{ value: string }> = ({ value }) => {
   const colours = tone[toneFor(value)];
   return (
     <span
+      className="status-badge"
       style={{
         color: colours.fg,
-        background: colours.bg,
-        border: `1px solid ${colours.border}`,
-        borderRadius: 999,
-        padding: "0.1rem 0.5rem",
-        fontSize: "0.7rem",
-        fontWeight: 600,
-        letterSpacing: "0.02em",
+        fontSize: "0.64rem",
+        fontWeight: 500,
+        letterSpacing: "0.01em",
+        lineHeight: 1.2,
       }}
     >
-      {value}
+      <span
+        aria-hidden="true"
+        style={{
+          width: 5,
+          height: 5,
+          flex: "0 0 auto",
+          borderRadius: "50%",
+          background: colours.fg,
+        }}
+      />
+      <span>{value}</span>
     </span>
   );
 };
@@ -49,7 +57,7 @@ export const SectionHeading: FC<{ children: ReactNode; actions?: ReactNode }> = 
   actions,
 }) => (
   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-    <h2 style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0 }}>{children}</h2>
+    <h2 style={{ fontSize: "1rem", fontWeight: 500, margin: 0 }}>{children}</h2>
     {actions}
   </div>
 );
@@ -103,5 +111,5 @@ export const buttonStyle: React.CSSProperties = {
   color: text.primary,
   cursor: "pointer",
   fontSize: "0.8rem",
-  fontWeight: 500,
+  fontWeight: 400,
 };

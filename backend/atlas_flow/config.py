@@ -51,6 +51,10 @@ class AtlasFlowConfig:
     # registered — there is no sensible default agent to guess at.
     acp_agent_command: list[str] = field(default_factory=list)
 
+    # Provider credential references. Values are environment variable names or
+    # keychain identifiers, never credential material.
+    provider_credential_refs: dict[str, str] = field(default_factory=dict)
+
     # MCP
     mcp_enabled: bool = False
     mcp_servers: list[str] = field(default_factory=list)
@@ -159,6 +163,23 @@ class AtlasFlowConfig:
                 quality = data.get("quality", {})
                 if isinstance(quality, dict) and "max_cross_model_attempts" in quality:
                     merged["max_retries_per_task"] = quality["max_cross_model_attempts"]
+
+        # settings.yaml contains project-owned values that do not have a
+        # canonical policy file of their own. It is intentionally flat so the
+        # Settings UI can patch one key without rewriting unrelated policy.
+        settings_path = config_dir / "settings.yaml"
+        if settings_path.is_file():
+            data = yaml.safe_load(settings_path.read_text())
+            if isinstance(data, dict):
+                known = {
+                    "planning_requires_human",
+                    "max_parallel_tasks",
+                    "max_fallback_attempts",
+                    "max_tokens_per_run",
+                    "max_cost_per_run_usd",
+                    "mcp_servers",
+                }
+                merged.update({key: data[key] for key in known if key in data})
 
         return merged
 

@@ -1,89 +1,71 @@
 # Information Architecture
 
-Atlas Flow is a workspace, not a set of pages. See
-[ADR-013](../07-decisions/ADR-013-WORKSPACE-SHELL.md) for why.
+Atlas Flow é um workspace de supervisão de Goals e agentes, não uma IDE nem um
+conjunto de páginas isoladas. O contexto atual — projeto, modo, Goal, run e
+próxima ação — permanece visível enquanto a pessoa muda de atividade.
 
-## The task the interface has to serve
+## Perguntas que a interface responde
 
-A person opens Atlas Flow on a project and wants to answer four questions,
-usually in this order and often several times a day:
+1. **O que precisa da minha atenção?** → bloqueios, recuperação, decisões,
+   permissões, reviews e runs ativos.
+2. **O que estamos definindo?** → Discuss persistido, decisões, premissas,
+   perguntas abertas e Project Draft.
+3. **O que será executado?** → Goal, DAG, contexto, risco, escopo, routing,
+   autonomia, runner e orçamento.
+4. **O que os agentes estão fazendo?** → runs, tasks, tentativas, atividade,
+   worktrees, diffs e erros.
+5. **Posso chamar isso de concluído?** → critérios, gates, testes e evidências.
+6. **Qual é a verdade do projeto?** → documentação canônica, ADRs, Goals e Git.
 
-1. **What is this project trying to do?** → Goals, and where each one stands.
-2. **What is happening right now?** → the run in flight, and whether it is going
-   well.
-3. **What does it need from me?** → a decision, a permission, a review.
-4. **Can I trust that it is done?** → evidence, per gate, traceable to a command.
+## Workspace
 
-Every region below exists to answer one of those without navigating away from
-the others.
-
-## Regions
-
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ projeto ▾  Attention Define Plan Run Review Knowledge       │
+├────────────┬──────────────────────────────┬─────────────────┤
+│ Goals      │ Project mode banner          │ Goal/run detail │
+│ por fase   │ Attention / Define / Plan     │ gates/evidence  │
+│            │ Run / Review / Knowledge      │ selected item   │
+├────────────┴──────────────────────────────┴─────────────────┤
+│ run atual · progresso · estado do engine · Stop             │
+└─────────────────────────────────────────────────────────────┘
 ```
-┌───────────────────────────────────────────────────────────┐
-│ ▣ project ▾            Discuss  Plan  Build  Review  Docs │  header
-├────────────┬─────────────────────────────┬────────────────┤
-│  P00 ✓     │                             │  Gates         │
-│  P01 ✓     │      the active stage       │  Evidence      │  sidebar
-│  P08 ●     │      (chat / plan / run)    │  Routing       │  centre
-│  P09 ○     │                             │                │  inspector
-├────────────┴─────────────────────────────┴────────────────┤
-│ ● run-4f2a · P08-G01 · 3/5 tasks · mimo-v2.5     [Stop]   │  status
-└───────────────────────────────────────────────────────────┘
-```
 
-**Header** — which project is open, and which stage of the pipeline is showing.
-The project switcher opens a folder or returns to a recent one; opening a
-project restarts the backend against that root.
+- **Header:** projeto aberto, modo atual e atividades do workspace.
+- **Banner de modo:** explica `external`, `atlas-needs-adaptation` e
+  `atlas-incompatible`; oferece adaptação apenas quando ela é segura.
+- **Sidebar:** Goals e estado, quando o projeto está Atlas ready.
+- **Centro:** uma atividade por vez, em largura total.
+- **Inspector:** detalhes do Goal ou item selecionado, sempre no mesmo lugar.
+- **Status bar:** run em voo e engine, sempre visíveis.
 
-**Sidebar** — the Goals this project declares, grouped by phase, each with its
-state. This is the context, and it does not go away when you change stage.
-Selecting a Goal drives the inspector.
+Em janelas menores, a sidebar recolhe e o inspector vira drawer. Detalhe técnico
+é progressive disclosure: aparece sob demanda, não compete com decisão,
+progresso e bloqueio.
 
-**Centre** — one stage at a time, at full width. Stages are the pipeline a Goal
-moves through, not unrelated screens.
+## Estágios
 
-**Inspector** — everything known about the selected Goal or run: gate verdicts,
-attached evidence, the model each role routed to and why. Properties live here
-and nowhere else.
-
-**Status bar** — the run in flight, and the engine. Both are always visible;
-the run always offers to stop. A run executing with no sign of it in the window
-was the single worst thing about the previous design, and the engine is the
-first question behind every empty list and failed request in the window, so
-neither is something you should have to navigate to find.
-
-## Stages
-
-| Stage | Answers | Ends when |
+| Estágio | Responde | Disponibilidade |
 | --- | --- | --- |
-| Discuss | What should we build, and what did we decide? | Decisions accepted; ADRs written |
-| Plan | What will this Goal take? | A task DAG exists |
-| Build | What is happening, and what did each agent do? | Every task is terminal |
-| Review | Can this Goal be called done? | Every required gate has passing evidence |
-| Docs | What does this project already say? | — (reference, not a stage) |
+| Attention | O que precisa de atenção agora? | sempre |
+| Define | O que estamos decidindo? | sempre |
+| Plan | O que este Goal vai exigir? | Project Atlas válido |
+| Run | O que os agentes estão fazendo? | Project Atlas válido + Git |
+| Review | Há evidência suficiente para concluir? | Project Atlas válido |
+| Knowledge | O que o projeto declara? | sempre; explorer somente leitura também funciona em projeto externo |
 
-The pipeline is left to right, and the header shows it in that order. A Goal
-does not have to travel it linearly, but the order is the default reading, and
-the previous design communicated no order at all.
+`Plan`, `Run` e `Review` não desaparecem em projeto externo: permanecem visíveis,
+desabilitados e explicam a condição que falta. Isso ensina o workflow sem
+prometer uma execução sem governança.
 
-## Persistent affordances
+## Onboarding de projeto externo
 
-- **Project switcher** — header, always.
-- **Run in flight** — status bar, always, with a stop button.
-- **Engine** — status bar, always, with its address and a stop control. Opening
-  a project starts it; nobody should have to press Start to make a working
-  application stop looking broken.
-- **Selected Goal** — sidebar selection drives the inspector, across stages.
-- **Keyboard** — every stage reachable by arrow keys from the stage list; every
-  critical flow (open project, run a Goal, cancel, accept a decision) reachable
-  without a pointer.
+1. Abrir diretório.
+2. Inspecionar modo, framework, Git e manifests.
+3. Explorar arquivos e documentação.
+4. Discutir intenção e preparação da adaptação.
+5. Revisar preview de arquivos novos e conflitos.
+6. Autorizar criação do scaffold.
+7. Reinspecionar e liberar o workspace Atlas quando válido.
 
-## What is deliberately absent
-
-- **Docking and rearrangeable panels.** A learnable layout beats a configurable
-  one until the layout is learned.
-- **An icon-only toolbar.** Icons are not the only explanation for any action
-  here; anything not universally understood carries a label.
-- **Modes without a visible marker.** If the interface behaves differently, the
-  window says so.
+Nenhuma etapa escreve ou executa algo silenciosamente.

@@ -1,116 +1,109 @@
 import { describe, expect, it } from "vitest";
 import {
   STATE_TONES,
-  accent,
   contrast,
+  palette,
   size,
   space,
-  surface,
-  text,
-  tone,
   toneFor,
+  type ThemeMode,
+  type ThemePalette,
 } from "./theme";
 
 // WCAG 2.2 AA. Everything the app renders in colour is normal-size text, so
 // the 3.0 large-text allowance is not claimed anywhere.
 const TEXT_MINIMUM = 4.5;
 const NON_TEXT_MINIMUM = 3.0;
+const themes: Array<[ThemeMode, ThemePalette]> = [
+  ["dark", palette.dark],
+  ["light", palette.light],
+];
 
-describe("text contrast", () => {
-  it("primary text is legible on both surfaces", () => {
-    expect(contrast(text.primary, surface.page)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
-    expect(contrast(text.primary, surface.raised)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
-  });
+for (const [mode, current] of themes) {
+  describe(`${mode} theme contrast`, () => {
+    it("primary text is legible on both surfaces", () => {
+      expect(contrast(current.text.primary, current.surface.page)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
+      expect(contrast(current.text.primary, current.surface.raised)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
+    });
 
-  it("muted text is legible, not merely lighter", () => {
-    // Rendered at 0.8rem — normal text, so it gets no large-text discount.
-    expect(contrast(text.muted, surface.page)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
-    expect(contrast(text.muted, surface.raised)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
-  });
+    it("muted text is legible, not merely lighter", () => {
+      expect(contrast(current.text.muted, current.surface.page)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
+      expect(contrast(current.text.muted, current.surface.raised)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
+    });
 
-  it("faint detail such as a timestamp is still readable", () => {
-    // The event log renders these at 0.75rem monospace on both surfaces.
-    expect(contrast(text.faint, surface.page)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
-    expect(contrast(text.faint, surface.raised)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
-  });
+    it("faint detail such as a timestamp is still readable", () => {
+      expect(contrast(current.text.faint, current.surface.page)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
+      expect(contrast(current.text.faint, current.surface.raised)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
+    });
 
-  it("the accent carries legible text on top of it", () => {
-    // The active tab is white on the accent; a mid-tone accent fails here.
-    expect(contrast(accent.on, accent.base)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
-    expect(contrast(text.primary, accent.soft)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
-  });
+    it("the accent carries legible text on top of it", () => {
+      expect(contrast(current.accent.on, current.accent.base)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
+      expect(contrast(current.text.primary, current.accent.soft)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
+    });
 
-  it("error text is legible on the surfaces it appears on", () => {
-    expect(contrast(text.danger, surface.page)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
-    expect(contrast(text.danger, tone.negative.bg)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
-  });
-});
+    it("error text is legible on the surfaces it appears on", () => {
+      expect(contrast(current.text.danger, current.surface.page)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
+      expect(contrast(current.text.danger, current.tone.negative.bg)).toBeGreaterThanOrEqual(TEXT_MINIMUM);
+    });
 
-describe("status tones", () => {
-  it("every tone is legible on its own tint", () => {
-    for (const [name, colours] of Object.entries(tone)) {
+    it("every tone is legible on its own tint", () => {
+      for (const [name, colours] of Object.entries(current.tone)) {
+        expect(
+          contrast(colours.fg, colours.bg),
+          `${name} foreground on its tint`,
+        ).toBeGreaterThanOrEqual(TEXT_MINIMUM);
+      }
+    });
+
+    it("every tone is legible when a badge sits directly on the page", () => {
+      for (const [name, colours] of Object.entries(current.tone)) {
+        expect(
+          contrast(colours.fg, current.surface.page),
+          `${name} foreground on the page`,
+        ).toBeGreaterThanOrEqual(TEXT_MINIMUM);
+      }
+    });
+
+    it("tone borders are distinguishable from the surface they sit on", () => {
+      for (const [name, colours] of Object.entries(current.tone)) {
+        expect(
+          contrast(colours.border, colours.bg),
+          `${name} border against its own tint`,
+        ).toBeGreaterThanOrEqual(1.2);
+      }
+    });
+
+    it("distinguishes success from failure by more than hue alone", () => {
       expect(
-        contrast(colours.fg, colours.bg),
-        `${name} foreground on its tint`,
-      ).toBeGreaterThanOrEqual(TEXT_MINIMUM);
-    }
-  });
+        Math.abs(contrast(current.tone.positive.fg, current.surface.page) -
+          contrast(current.tone.negative.fg, current.surface.page)),
+      ).toBeGreaterThan(0.4);
+    });
 
-  it("every tone is legible when a badge sits directly on the page", () => {
-    for (const [name, colours] of Object.entries(tone)) {
-      expect(
-        contrast(colours.fg, surface.page),
-        `${name} foreground on the page`,
-      ).toBeGreaterThanOrEqual(TEXT_MINIMUM);
-    }
+    it("keeps the focus ring visible against every surface", () => {
+      expect(contrast(current.focus, current.surface.page)).toBeGreaterThanOrEqual(NON_TEXT_MINIMUM);
+      expect(contrast(current.focus, current.surface.raised)).toBeGreaterThanOrEqual(NON_TEXT_MINIMUM);
+    });
   });
+}
 
-  it("tone borders are distinguishable from the surface they sit on", () => {
-    for (const [name, colours] of Object.entries(tone)) {
-      expect(
-        contrast(colours.border, colours.bg),
-        `${name} border against its own tint`,
-      ).toBeGreaterThanOrEqual(1.2);
-    }
-  });
-
+describe("status mapping", () => {
   it("keeps a non-colour cue available for every state", () => {
-    // Colour is never the only signal: the badge always shows its label. This
-    // guards the mapping, so a new state cannot appear with no tone at all.
+    // Colour is never the only signal: the badge always shows its label.
     for (const state of Object.keys(STATE_TONES)) {
       expect(toneFor(state)).toBeTruthy();
     }
     expect(toneFor("SOMETHING_NEW")).toBe("neutral");
   });
-
-  it("distinguishes success from failure by more than hue alone", () => {
-    // Red/green confusion is the common case; their tints must differ in
-    // luminance too, so a monochrome or colour-blind reading still separates them.
-    expect(
-      Math.abs(contrast(tone.positive.fg, surface.page) -
-        contrast(tone.negative.fg, surface.page)),
-    ).toBeGreaterThan(0.4);
-  });
-});
-
-describe("focus indication", () => {
-  it("the focus ring is visible against every surface", () => {
-    const ring = "#1e40af";
-    expect(contrast(ring, surface.page)).toBeGreaterThanOrEqual(NON_TEXT_MINIMUM);
-    expect(contrast(ring, surface.raised)).toBeGreaterThanOrEqual(NON_TEXT_MINIMUM);
-  });
 });
 
 describe("density tokens", () => {
   it("has one scale, in ascending order", () => {
-    // Inline numbers are how a layout drifts; a scale with a gap in it is how
-    // people start inventing their own.
     const values = Object.values(space);
     expect([...values].sort((a, b) => a - b)).toEqual(values);
   });
 
   it("leaves room for both panels on a normal window", () => {
-    // Sidebar and inspector must not squeeze the work into a column.
     const smallest = 1280;
     const centre = smallest - size.sidebar - size.inspector;
     expect(centre).toBeGreaterThan(600);
@@ -121,13 +114,12 @@ describe("density tokens", () => {
     expect(centreAtBreakpoint).toBeGreaterThan(size.sidebar);
   });
 
-  it("keeps chrome distinguishable from the work surface", () => {
-    expect(contrast(surface.chrome, surface.card)).toBeGreaterThan(1.02);
-    expect(contrast(text.primary, surface.chrome)).toBeGreaterThanOrEqual(4.5);
-  });
-
-  it("keeps a selected row readable", () => {
-    expect(contrast(text.primary, surface.selected)).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(text.muted, surface.selected)).toBeGreaterThanOrEqual(4.5);
+  it("keeps both themes distinguishable and readable", () => {
+    for (const current of Object.values(palette)) {
+      expect(contrast(current.surface.chrome, current.surface.card)).toBeGreaterThan(1.02);
+      expect(contrast(current.text.primary, current.surface.chrome)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(current.text.primary, current.surface.selected)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(current.text.muted, current.surface.selected)).toBeGreaterThanOrEqual(4.5);
+    }
   });
 });

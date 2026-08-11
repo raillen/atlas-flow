@@ -13,6 +13,8 @@ from atlas_flow.discuss.models import (
     DecisionState,
     DiscussionSession,
     Message,
+    MessageReference,
+    ReferenceKind,
 )
 from atlas_flow.discuss.store import DiscussionStore
 from atlas_flow.execution.persistence import Persistence
@@ -34,6 +36,9 @@ async def store(tmp_path: Path) -> AsyncIterator[tuple[DiscussionStore, Path]]:
 def _session_with_decisions() -> DiscussionSession:
     session = DiscussionSession(project_id="atlas-flow", title="Kickoff")
     session.messages.append(Message(content="We need a Python backend"))
+    session.messages[0].references.append(
+        MessageReference(path="docs/ATLAS.md", kind=ReferenceKind.FILE)
+    )
     session.messages.append(Message(content="Agreed", turn_type="decision_candidate"))
 
     accepted = DecisionCandidate(
@@ -72,6 +77,7 @@ class TestDiscussionStore:
         assert [m.content for m in loaded.messages] == [
             m.content for m in session.messages
         ]
+        assert loaded.messages[0].references[0].path == "docs/ATLAS.md"
         assert len(loaded.decisions) == 2
         assert loaded.draft.product == Completeness.SUFFICIENT
         assert loaded.draft.architecture == Completeness.PARTIAL

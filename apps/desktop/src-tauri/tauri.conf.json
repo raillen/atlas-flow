@@ -7,7 +7,7 @@
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "node node_modules/vite/bin/vite.js build",
-    "beforeDevCommand": "pnpm --filter @atlas-flow/desktop dev"
+    "beforeDevCommand": "node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 1420"
   },
   "app": {
     "withGlobalTauri": true,

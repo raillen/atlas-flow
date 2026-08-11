@@ -7,7 +7,7 @@ Target: WCAG 2.2 AA.
 Colour is the part of accessibility that quietly rots, so the palette is data
 rather than scattered literals. `apps/desktop/src/theme.ts` holds every token,
 and `theme.test.ts` computes real contrast ratios for every pair the screens
-render:
+render in both the dark and light palettes:
 
 | Check | Threshold |
 | --- | --- |
@@ -27,9 +27,10 @@ the most common colour-vision deficiencies.
 
 ## Keyboard and focus
 
-- Primary navigation implements the WAI-ARIA tabs pattern: arrow keys move
-  between tabs, Home and End jump to the ends, and only the active tab is in the
-  tab order. `App.test.ts` covers the key model.
+- Primary workspace navigation implements the WAI-ARIA tabs pattern: arrow
+  keys move between stages, Home and End jump to the ends, disabled stages remain
+  visibly labelled with their reason, and only the active stage is in the tab
+  order. `Workspace.test.ts` covers the key model.
 - Focus follows the selection **after** the render, not inside the key handler.
   Moving it synchronously focused a tab whose `tabIndex` was still `-1` from the
   previous render, underneath a panel being replaced: the first arrow key worked
@@ -39,7 +40,7 @@ the most common colour-vision deficiencies.
 - `:focus-visible` draws a 2px ring in `index.css`. The rule never removes an
   outline without replacing it — keyboard navigation is unusable the moment
   focus becomes invisible.
-- `prefers-contrast: more` switches the ring to black.
+- `prefers-contrast: more` strengthens the ring independently for each theme.
 
 ## Motion and text size
 
@@ -79,5 +80,5 @@ looking at nothing.
   not declared unnecessary: automated rules catch structure, not whether the
   result is comprehensible when read aloud. It stays recorded as outstanding on
   P09.
-- **The Plan DAG has no textual alternative yet** beyond the task list it is
-  derived from.
+- **No manual screen-reader walkthrough yet.** Automated DOM and axe checks pass,
+  but the owner-deferred walkthrough remains outstanding.

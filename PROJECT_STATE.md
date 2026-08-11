@@ -2,8 +2,8 @@
 
 **Project:** Atlas Flow
 **Framework:** Project Atlas Framework 0.1.0
-**Status:** 11 of 11 Goals DONE
-**Current phase:** P10 complete — 0.1.0 ready for the owner's second reading
+**Status:** 11 of 13 Goals DONE; P11 and P12 active
+**Current phase:** P12 active — UX foundation
 
 ## How to read the Goal states
 
@@ -12,7 +12,8 @@ that had been marked DONE without meeting them were reopened; each Goal's
 `history` records what was unmet, what has since been closed, and what still
 blocks it.
 
-Every Goal is DONE, and that is enforced rather than asserted:
+Every completed Goal is DONE, and that is enforced rather than asserted; P11
+and P12 are the active evolution Goals:
 `scripts/validate_goals.py` fails CI if a Goal declares DONE without passing
 evidence for every gate it declares required — and, since 2026-08-11, evidence
 that *opens with a failing verdict* no longer counts as covering its gate. That
@@ -32,6 +33,8 @@ would have passed the check while carrying `review: "PARTIAL — ..."`.
 | P08 | Routing, Budgets and Scorecards | DONE | — |
 | P09 | Hardening | DONE | — |
 | P10 | Beta and 1.0 Validation | DONE | — |
+| P11 | Atlas Flow v2 Foundation | ACTIVE | Independent review and full Goal evidence |
+| P12 | Atlas Flow UX Foundation | ACTIVE | Independent review and full Goal evidence |
 
 Three reviews were performed on 2026-08-11. The first two were by a different
 model, as the model-diversity rule required: they failed all eleven Goals, then
@@ -88,9 +91,10 @@ actually reports, and unmeasured spend is reported as unmeasured.
 
 ## Next action
 
-The owner's own reading of the work. Everything mechanical is done: twelve gates
-pass, the packaged AppImage runs a Goal end to end, releases are signed and
-verifiable, and every Goal carries evidence for all four of its gates.
+Complete the P11 and P12 foundation reviews and then continue the remaining
+AF-EVO-001 phases. The P00–P10 gates pass, the packaged AppImage runs a Goal end to end,
+releases are signed and verifiable, and every completed Goal carries evidence
+for all four of its gates.
 
 What a second reader should look at hardest is the part no gate covers — whether
 the work does what the Goals actually asked for, rather than whether it is

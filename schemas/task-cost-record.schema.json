@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas-flow.dev/schemas/task-cost-record.schema.json",
+  "title": "Atlas Flow task cost record v1",
+  "type": "object",
+  "required": ["schema_version", "task_id", "title", "observed_tokens", "cost_source", "confidence"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "task_id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "observed_tokens": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+    "observed_cost_usd": { "type": ["number", "null"], "minimum": 0 },
+    "cost_source": { "enum": ["provider_usage", "calculated", "estimated", "allocated", "unknown"] },
+    "billing_mode": { "enum": ["api", "subscription", "free", "local", "unknown"] },
+    "confidence": { "enum": ["high", "medium", "low", "unknown"] }
+  },
+  "additionalProperties": true
+}

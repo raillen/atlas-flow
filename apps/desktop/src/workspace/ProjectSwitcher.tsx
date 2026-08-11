@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { useEffect, useRef, useState } from "react";
+import { ChevronDown, FolderOpen } from "lucide-react";
 import { desktop, isDesktop, projectName } from "../desktop";
 import { accent, size, space, surface, text, tone, type } from "../theme";
 
@@ -85,11 +86,9 @@ export const ProjectSwitcher: FC<{
           cursor: busy ? "wait" : "pointer",
         }}
       >
-        <span aria-hidden="true">▣</span>
+        <FolderOpen size={15} aria-hidden="true" />
         {busy ? "Opening…" : label}
-        <span aria-hidden="true" style={{ color: text.faint }}>
-          ▾
-        </span>
+        <ChevronDown size={14} aria-hidden="true" style={{ color: text.faint }} />
       </button>
 
       {open && (

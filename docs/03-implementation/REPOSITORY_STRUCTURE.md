@@ -18,6 +18,7 @@ atlas-flow/
 │   ├── goals/
 │   ├── planner/
 │   ├── context/
+│   ├── evolution/
 │   ├── workforce/
 │   ├── routing/
 │   ├── harness/
@@ -26,6 +27,7 @@ atlas-flow/
 │   ├── verification/
 │   ├── persistence/
 │   └── security/
+├── schemas/
 ├── tests/{unit,integration,e2e,fixtures,reliability}/
 └── scripts/
 ```

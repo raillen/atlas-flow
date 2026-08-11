@@ -27,6 +27,8 @@ const DEFAULT_BACKEND_COMMAND: &[&str] = &[
     "run",
     "--project",
     "backend",
+    "python",
+    "-m",
     "uvicorn",
     "atlas_flow.api.app:create_app",
     "--factory",
@@ -59,8 +61,45 @@ fn backend_url() -> String {
     env::var("ATLAS_FLOW_API").unwrap_or_else(|_| DEFAULT_BACKEND_URL.to_string())
 }
 
+fn backend_project_path() -> Option<PathBuf> {
+    if let Some(value) = env::var("ATLAS_FLOW_BACKEND_PROJECT")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+    {
+        return Some(PathBuf::from(value));
+    }
+
+    let source_backend = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../backend");
+    source_backend.is_dir().then_some(source_backend)
+}
+
+fn default_backend_command(project: Option<&Path>) -> Vec<String> {
+    match project {
+        Some(project) => vec![
+            "uv".to_string(),
+            "run".to_string(),
+            "--project".to_string(),
+            project.to_string_lossy().to_string(),
+            "python".to_string(),
+            "-m".to_string(),
+            "uvicorn".to_string(),
+            "atlas_flow.api.app:create_app".to_string(),
+            "--factory".to_string(),
+            "--port".to_string(),
+            "8000".to_string(),
+        ],
+        None => DEFAULT_BACKEND_COMMAND
+            .iter()
+            .map(|value| value.to_string())
+            .collect(),
+    }
+}
+
 fn backend_command() -> Vec<String> {
-    parse_backend_command(env::var("ATLAS_FLOW_BACKEND_CMD").ok().as_deref())
+    match env::var("ATLAS_FLOW_BACKEND_CMD").ok().as_deref() {
+        Some(value) if !value.trim().is_empty() => parse_backend_command(Some(value)),
+        _ => default_backend_command(backend_project_path().as_deref()),
+    }
 }
 
 /// The environment reading is separated from the decision so the decision can
@@ -299,6 +338,7 @@ fn start_backend(
     command
         .args(args)
         .current_dir(&root)
+        .env("ATLAS_FLOW_PROJECT_ROOT", &root)
         .stdout(Stdio::from(out))
         .stderr(Stdio::from(err));
     strip_bundle_environment(&mut command);
@@ -338,12 +378,9 @@ fn recents_path() -> PathBuf {
     base.join("atlas-flow").join("recent-projects")
 }
 
-/// A path is only offered again if it still holds a project.
-///
-/// A recents list that lists directories which have been moved, renamed or
-/// deleted teaches people not to trust it.
-fn is_project(path: &Path) -> bool {
-    path.join("PROJECT_MANIFEST.yaml").is_file()
+/// A path is only offered again if it is still an existing directory.
+fn is_openable_project(path: &Path) -> bool {
+    path.is_dir()
 }
 
 fn read_recents() -> Vec<String> {
@@ -352,7 +389,7 @@ fn read_recents() -> Vec<String> {
         .lines()
         .map(str::trim)
         .filter(|line| !line.is_empty())
-        .filter(|line| is_project(Path::new(line)))
+        .filter(|line| is_openable_project(Path::new(line)))
         .map(str::to_string)
         .collect()
 }
@@ -390,13 +427,13 @@ fn open_project(
     opened: State<'_, OpenProject>,
 ) -> Result<BackendStatus, String> {
     let root = PathBuf::from(&path);
-    if !root.is_dir() {
-        return Err(format!("{path} is not a directory"));
+    if !is_openable_project(&root) {
+        return Err(format!("{path} is not an existing directory"));
     }
-    if !is_project(&root) {
-        return Err(format!(
-            "{path} has no PROJECT_MANIFEST.yaml, so it is not a Project Atlas project"
-        ));
+    if let Some(bundle) = bundle_dir()
+        && root.starts_with(&bundle)
+    {
+        return Err("The Atlas Flow application bundle cannot be opened as a project".to_string());
     }
 
     stop_running_backend(&backend);
@@ -458,8 +495,26 @@ mod tests {
     use std::fs;
 
     #[test]
-    fn an_unset_command_falls_back_to_the_default() {
-        assert_eq!(parse_backend_command(None), DEFAULT_BACKEND_COMMAND);
+    fn an_unset_command_uses_an_absolute_backend_project_when_available() {
+        let command = default_backend_command(Some(std::path::Path::new("/srv/atlas/backend")));
+        assert_eq!(
+            command[0..7],
+            [
+                "uv",
+                "run",
+                "--project",
+                "/srv/atlas/backend",
+                "python",
+                "-m",
+                "uvicorn"
+            ]
+        );
+        assert!(!command.iter().any(|value| value == "backend"));
+    }
+
+    #[test]
+    fn the_legacy_default_remains_available_without_a_backend_project() {
+        assert_eq!(default_backend_command(None), DEFAULT_BACKEND_COMMAND);
     }
 
     /// The backend port is configurable, so the CSP must not pin one.

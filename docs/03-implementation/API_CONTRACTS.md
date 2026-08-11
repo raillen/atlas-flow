@@ -1,76 +1,94 @@
 # API Contracts
 
-The local backend serves the desktop client over HTTP plus one WebSocket. Every
-endpoint reads real state: Goals and documentation come from Git, runs and
-evidence come from the operational database.
+The local backend serves the desktop client over HTTP plus one WebSocket. JSON
+uses `snake_case`; the client converts fields to `camelCase` at its boundary.
+Errors use `{"detail": "..."}`. `404` means missing resource; `409` means the
+resource exists but its current state/capability forbids the operation.
 
-## Wire conventions
+## Project and inspection
 
-Requests and responses are JSON with `snake_case` fields; the client converts to
-`camelCase` at its boundary. Event payloads are passed through untouched, since
-they round-trip to the backend.
-
-Errors use the FastAPI `{"detail": "..."}` shape. `404` means the resource does
-not exist; `409` means it exists but its current state forbids the operation.
-
-## Endpoints
-
-### Project
 - `GET /healthz` — liveness and version.
-- `GET /api/project` — project id, registries, registered runners.
-- `GET /api/config` — effective configuration, including the resolved database path.
+- `GET /api/project` — project summary and detected mode.
+- `GET /api/project/inspection` — mode, framework, Git, missing/invalid
+  manifests, recommendation and capabilities.
+- `GET /api/project/files` — bounded, read-only text/binary file index; ignores
+  `.git`, `.atlas-flow`, dependency and build directories.
+- `GET /api/project/files/{path}` — bounded text preview; traversal and binary
+  content are refused.
+- `POST /api/project/adaptation/preview` — non-writing scaffold preview.
+- `POST /api/project/adaptation/apply` — creates only explicitly selected new
+  preview paths; never overwrites; returns written paths and fresh inspection.
 
-### Goals
-- `GET /api/goals` — every Goal declared in Git.
+A project may always be explored and discussed. `can_plan`, `can_run` and
+`can_review` come from the inspection contract; external projects receive an
+explicit `409` when they call a gated operation.
+
+## Goals and verification
+
+- `GET /api/goals` — every Goal declared in Git, or an empty list while the
+  project is not executable.
 - `GET /api/goals/{goal_id}`
-- `GET /api/goals/{goal_id}/verification` — gate verdicts, attached evidence, and
-  whether the Goal may be completed. `blocking` explains why not.
+- `GET /api/goals/{goal_id}/verification` — gate verdicts, evidence and
+  completion blocking reason.
 
-### Runs
+## Plans and runs
+
+- `POST /api/goals/{goal_id}/plans` — creates a `DRAFT` plan snapshot.
+- `GET /api/goals/{goal_id}/plans` — plan history.
+- `GET /api/plans/{plan_id}`
+- `POST /api/plans/{plan_id}/lock` — transitions a draft once to `LOCKED`.
+- `POST /api/runs` — accepts `plan_id`; when supplied, only a matching locked
+  snapshot can execute, and it becomes `CONSUMED` after scheduling.
 - `GET /api/runs` — newest first.
-- `POST /api/runs` — start a Goal. Returns `202` as soon as the run is scheduled;
-  execution continues in the background and is followed through the event stream.
 - `GET /api/runs/{run_id}` — run, tasks, attempts and events.
 - `GET /api/runs/{run_id}/events`
-- `POST /api/runs/{run_id}/cancel` — ask a run to stop. `202` once the request is
-  recorded; `409` when the run is past the point where the state machine allows
-  cancellation, which is asked of the machine rather than of a list kept beside
-  it. Cooperative: the runner winds down between tasks so no state change is
-  interrupted, but the attempt already talking to a model is cancelled outright.
+- `POST /api/runs/{run_id}/cancel` — cooperative cancellation, with `409` after
+  the state machine reaches a non-cancellable phase.
 
-### Routing
-- `GET /api/routing` — live registry state (`pending` | `reachable` |
-  `degraded`), the models it reported, the model each role routes to with its
-  explanation, and aggregated per-model statistics from past runs.
-- `GET /api/runs/{run_id}/routing` — the route decision behind every task in the
-  run: role, selected model, candidate list, reason and fallback count. An
-  unknown run id yields an empty list, not a `404`; a run that recorded no
-  decisions and a run that never existed are indistinguishable here.
+A legacy request without `plan_id` remains temporarily accepted for migration,
+but the desktop workspace always uses create → review → lock → run.
 
-See [Model Router](../01-architecture/MODEL_ROUTER.md) for what the states mean.
+## Routing and Discuss
 
-### Discuss
-- `GET /api/discussions`, `POST /api/discussions`
+- `GET /api/routing`
+- `GET /api/runs/{run_id}/routing`
+- `GET/POST /api/discussions`
 - `GET /api/discussions/{session_id}`
 - `POST /api/discussions/{session_id}/messages`
 - `POST /api/discussions/{session_id}/decisions`
 - `POST /api/discussions/{session_id}/decisions/{decision_id}/accept`
-- `POST /api/discussions/{session_id}/finalize` — writes ADRs and the Decision
-  Ledger into `docs/`. Returns `409` when the draft is not complete, and refuses
-  to overwrite existing files unless `overwrite=true`.
+- `POST /api/discussions/{session_id}/finalize` — available only after the
+  project is Atlas ready.
 
-### Documentation
-- `GET /api/docs` — canonical documents grouped by section.
-- `GET /api/docs/{path}` — Markdown content. Paths are confined to `docs/`;
-  anything resolving outside it, or not ending in `.md`, is a `404`.
+## Settings
+
+- `GET /api/settings` — the settings document: every known setting with its
+  effective value, source (default/project/user/environment), owning scope and
+  restart requirement; model providers with credential state; MCP status; and
+  runtime diagnostics.
+- `POST /api/settings/validate` — dry run: validates a `{scope, values}` patch
+  without writing anything. `422` on unknown keys, values of the wrong kind, or
+  keys the scope cannot own; `409` (as `422`) when a value is controlled by an
+  environment variable.
+- `PUT /api/settings` — applies a `{scope, values}` patch to the file owning
+  that scope (`.ai/orchestration/settings.yaml` for project scope, `~/.atlas-flow.yaml`
+  for user scope). Returns the refreshed document plus `changed`,
+  `restart_required` and `restart_reason`.
+- `POST /api/settings/reset` — removes the given keys from the scope's file,
+  returning the refreshed document.
+
+A setting is read from the closest source that defines it: default → project →
+user → environment. Project-scope settings live in the project's
+`.ai/orchestration/settings.yaml`; user-scope settings in `~/.atlas-flow.yaml`.
+Credentials are never written by this API — providers report only whether their
+referenced environment variable is set.
+
+## Documentation
+
+- `GET /api/docs`
+- `GET /api/docs/{path}` — Markdown confined to `docs/`.
 
 ## Streaming
 
-`WS /ws/{session_id}` carries AG-UI envelopes: `{type, timestamp, payload}`.
-Every domain event committed by the runtime is broadcast to connected clients as
-it lands, so the desktop follows a run rather than polling it.
-
-## Not yet implemented
-
-Versioning under `/api/v1`, pause and resume of a running Goal, Goal amendment
-transitions, and Settings endpoints for runners, budgets, permissions and MCP.
+`WS /ws/{session_id}` carries AG-UI envelopes. Durable domain events are
+broadcast as committed; live agent narration is not persisted.

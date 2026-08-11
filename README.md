@@ -57,17 +57,32 @@ Release
 
 ```sh
 # Backend
-uv run --project backend uvicorn atlas_flow.api.app:create_app --factory
+uv run --project backend python -m uvicorn atlas_flow.api.app:create_app --factory
 
 # Frontend, in another terminal
 pnpm --filter @atlas-flow/desktop dev
 ```
 
-Open http://localhost:1420. The **Plan** tab lists the Goals declared in Git;
-starting one decomposes it into a task per acceptance criterion, runs each in its
-own git worktree, and switches to **Build**, which follows the run live.
+Open http://localhost:1420. Atlas Flow opens any directory and first reports its
+Project Atlas mode. An external project can be explored and discussed; after an
+authorized adaptation, the workspace enables **Plan → Run → Review**. A Goal is
+planned into a reviewable snapshot, locked, executed in isolated worktrees and
+followed through evidence.
 
 Run every check with `scripts/validate_all.sh`.
+
+The first AF-EVO-001 foundation is available through the provider-agnostic
+`atlas` CLI. It validates the v2 manifest and metadata, plans bounded context,
+analyzes impact, records task cost and builds a visibility-filtered static docs
+site:
+
+```sh
+uv run --project backend --all-groups atlas --root . validate --json
+uv run --project backend --all-groups atlas --root . context "goal execution" --json
+uv run --project backend --all-groups atlas --root . docs build --visibility internal
+```
+
+See [Atlas CLI](docs/06-user-guide/ATLAS_CLI.md) and the [v2 foundation](docs/03-implementation/ATLAS_FLOW_V2_FOUNDATION.md).
 
 ## Current state
 
@@ -75,8 +90,8 @@ Under active development. The Discuss → Goal → DAG → isolated execution �
 evidence path runs end to end, on durable state, with a real ACP client and real
 git worktrees.
 
-**No Goal is DONE**, and that is enforced: `scripts/validate_goals.py` fails CI if
-a Goal claims DONE without passing evidence for every gate it declares required.
+Goal completion is enforced: `scripts/validate_goals.py` fails CI if a Goal
+claims DONE without passing evidence for every required gate.
 
 The largest open gap is that **no LLM is ever invoked** — the router picks model
 identifiers, but the CLI and ACP runners are the only paths that perform work.

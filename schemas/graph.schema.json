@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas-flow.dev/schemas/graph.schema.json",
+  "title": "Atlas Flow knowledge graph v1",
+  "type": "object",
+  "required": ["schema_version", "nodes", "edges"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "nodes": { "type": "array", "items": { "type": "object", "required": ["id", "type"], "additionalProperties": true } },
+    "edges": { "type": "array", "items": { "type": "object", "required": ["source", "relation", "target"], "additionalProperties": false } }
+  },
+  "additionalProperties": false
+}

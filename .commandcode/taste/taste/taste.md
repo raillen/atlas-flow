@@ -1,0 +1,11 @@
+# Taste
+- Communicates in Portuguese (Brazil); expects replies in Portuguese. Confidence: 0.9
+- Terse, imperative messages ("continue", "prossiga", "execute", "o que ainda falta implementar?"); no interest in lengthy preamble. Confidence: 0.85
+- Delegates broad scope and expects autonomous execution: asked to "continue until a testable and usable MVP is finished" and let the agent drive multi-phase work without intermediate check-ins; a later bare "continue" greenlit several more phases (hardening, release docs, gates, commits) unsupervised; a bare "execute" greenlit launching backend+frontend, smoke-testing API endpoints, fixing a live bug, and verifying the fix — all without asking. Confidence: 0.9
+- Requires model/provider diversity for audit/review: the same model used for implementation (e.g., Opus 5) must not be reused for auditing the same project; auditing should use a different model to reduce implementation bias. Confidence: 0.9
+- Expects genuine execution, not simulated work or paperwork-only actions. When the user discovers a task was merely documented/registered instead of actually performed, they demand concrete execution with real evidence — not an acknowledgment followed by more documentation. Confidence: 0.85
+- For product/UI work, prefers deep, evidence-based UX analysis that maps the existing implementation and proposes a coherent end-to-end workflow rather than isolated visual tweaks. Confidence: 0.9
+- Values competitive benchmarking against comparable agentic developer tools (such as Traycer and Codex) to inform product and interaction decisions. Confidence: 0.85
+- Prefers projects outside the framework to remain openable and explorable rather than being rejected outright, with execution capabilities gated until compatibility is addressed. Confidence: 0.95
+- Prefers framework adaptation to be recommended at project open and handled through an explicit, reviewable, non-destructive flow; no silent migration, overwrite, or invented project semantics. Confidence: 0.95
+- Prefers convenient shell-based project launch commands, such as an idempotent alias in `~/.zshrc`, for starting the desktop app through the project's Tauri development workflow; expects the alias to be verified in a fresh shell. Confidence: 0.95

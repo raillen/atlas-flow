@@ -22,6 +22,7 @@ from atlas_flow.execution.models import (
     TaskState,
     can_transition,
 )
+from atlas_flow.execution.plans import PlanRecord, PlanState
 from atlas_flow.workspace import ensure_private_dir
 
 if TYPE_CHECKING:
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
 
 EventListener = Callable[[DomainEvent], Awaitable[None]]
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -114,6 +115,21 @@ CREATE INDEX IF NOT EXISTS idx_events_run ON events(run_id);
 CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
 CREATE INDEX IF NOT EXISTS idx_tasks_run ON tasks(run_id);
 CREATE INDEX IF NOT EXISTS idx_attempts_task ON attempts(task_id);
+
+CREATE TABLE IF NOT EXISTS plans (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    goal_id TEXT NOT NULL,
+    goal_revision TEXT NOT NULL,
+    state TEXT NOT NULL,
+    autonomy TEXT NOT NULL,
+    runner TEXT NOT NULL,
+    integration_target TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    tasks TEXT NOT NULL DEFAULT '[]'
+);
+
+CREATE INDEX IF NOT EXISTS idx_plans_goal ON plans(goal_id);
 """
 
 SHARED_MEMORY = "file::memory:?cache=shared"
@@ -252,6 +268,70 @@ class Persistence:
         if not self._initialized or self._conn is None:
             raise PersistenceError("Persistence not initialized")
         return self._conn
+
+    async def save_plan(self, plan: PlanRecord) -> None:
+        existing = await self.load_plan(plan.id)
+        if existing is not None and existing.state != PlanState.DRAFT:
+            if existing.state == PlanState.LOCKED and plan.state == PlanState.CONSUMED:
+                pass
+            elif existing.model_dump() != plan.model_dump():
+                raise PersistenceError(f"Plan {plan.id} is immutable after {existing.state}")
+            else:
+                return
+        await self._execute(
+            """INSERT OR REPLACE INTO plans
+               (id, project_id, goal_id, goal_revision, state, autonomy, runner,
+                integration_target, created_at, tasks)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                plan.id,
+                plan.project_id,
+                plan.goal_id,
+                plan.goal_revision,
+                str(plan.state),
+                plan.autonomy,
+                plan.runner,
+                plan.integration_target,
+                plan.created_at,
+                plan.model_dump_json(include={"tasks"}),
+            ),
+        )
+
+    async def load_plan(self, plan_id: str) -> PlanRecord | None:
+        conn = self._require_conn()
+        cursor = await conn.execute("SELECT * FROM plans WHERE id = ?", (plan_id,))
+        row = await cursor.fetchone()
+        if row is None:
+            return None
+        return PlanRecord(
+            id=row["id"],
+            project_id=row["project_id"],
+            goal_id=row["goal_id"],
+            goal_revision=row["goal_revision"],
+            state=PlanState(row["state"]),
+            autonomy=row["autonomy"],
+            runner=row["runner"],
+            integration_target=row["integration_target"],
+            created_at=row["created_at"],
+            tasks=json.loads(row["tasks"]).get("tasks", []),
+        )
+
+    async def list_plans(self, goal_id: str | None = None) -> list[PlanRecord]:
+        conn = self._require_conn()
+        if goal_id is None:
+            cursor = await conn.execute("SELECT * FROM plans ORDER BY created_at DESC")
+        else:
+            cursor = await conn.execute(
+                "SELECT * FROM plans WHERE goal_id = ? ORDER BY created_at DESC",
+                (goal_id,),
+            )
+        rows = await cursor.fetchall()
+        plans: list[PlanRecord] = []
+        for row in rows:
+            plan = await self.load_plan(row["id"])
+            if plan is not None:
+                plans.append(plan)
+        return plans
 
     async def save_run(self, run: Run) -> None:
         await self._execute(_UPSERT_RUN, _run_params(run))

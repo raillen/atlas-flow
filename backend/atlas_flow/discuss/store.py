@@ -16,6 +16,7 @@ from atlas_flow.discuss.models import (
     DecisionState,
     DiscussionSession,
     Message,
+    MessageReference,
     ProjectDraft,
 )
 from atlas_flow.execution.persistence import Persistence
@@ -34,6 +35,7 @@ CREATE TABLE IF NOT EXISTS discussion_messages (
     timestamp TEXT NOT NULL,
     content TEXT NOT NULL,
     turn_type TEXT NOT NULL DEFAULT 'message',
+    references_json TEXT NOT NULL DEFAULT '[]',
     FOREIGN KEY (session_id) REFERENCES discussions(id)
 );
 
@@ -84,6 +86,12 @@ class DiscussionStore:
 
     async def initialize(self) -> None:
         await self.db.run_script(DISCUSS_SCHEMA)
+        columns = await self.db.query("PRAGMA table_info(discussion_messages)")
+        if not any(row["name"] == "references_json" for row in columns):
+            await self.db.execute(
+                "ALTER TABLE discussion_messages ADD COLUMN references_json "
+                "TEXT NOT NULL DEFAULT '[]'"
+            )
 
     async def save_session(self, session: DiscussionSession) -> None:
         """Write the whole session: header, messages, decisions and draft."""
@@ -101,10 +109,18 @@ class DiscussionStore:
     async def save_message(self, session_id: str, message: Message) -> None:
         await self.db.execute(
             """INSERT OR REPLACE INTO discussion_messages
-                   (id, session_id, timestamp, content, turn_type)
-               VALUES (?, ?, ?, ?, ?)""",
-            (message.id, session_id, message.timestamp, message.content,
-             message.turn_type),
+                   (id, session_id, timestamp, content, turn_type, references_json)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (
+                message.id,
+                session_id,
+                message.timestamp,
+                message.content,
+                message.turn_type,
+                json.dumps(
+                    [reference.model_dump(mode="json") for reference in message.references]
+                ),
+            ),
         )
 
     async def save_decision(self, session_id: str, decision: DecisionCandidate) -> None:
@@ -180,6 +196,10 @@ class DiscussionStore:
                 timestamp=row["timestamp"],
                 content=row["content"],
                 turn_type=row["turn_type"],
+                references=[
+                    MessageReference.model_validate(item)
+                    for item in json.loads(row["references_json"] or "[]")
+                ],
             )
             for row in rows
         ]

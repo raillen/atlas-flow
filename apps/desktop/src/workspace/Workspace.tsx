@@ -1,46 +1,70 @@
 import type { FC } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { api, type GoalView } from "../api";
+import {
+  Activity,
+  AlertCircle,
+  BookOpen,
+  CheckCircle2,
+  ListChecks,
+  MessageSquare,
+  Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
+  Settings2,
+  Sun,
+  type LucideIcon,
+} from "lucide-react";
+import { api, type GoalView, type ProjectInspection } from "../api";
 import { AsyncPanel } from "../components/Primitives";
 import { desktop } from "../desktop";
 import { useAsync, usePolling } from "../hooks/useAsync";
 import { BuildScreen } from "../screens/BuildScreen";
+import { DiscussScreen } from "../screens/DiscussScreen";
 import { PlanScreen } from "../screens/PlanScreen";
 import { ProjectScreen } from "../screens/ProjectScreen";
 import { ReviewScreen } from "../screens/ReviewScreen";
 import { size, space, surface, text, type } from "../theme";
-import { ChatStage } from "./ChatStage";
+import { AdaptationWizard } from "./AdaptationWizard";
+import { AttentionStage } from "./AttentionStage";
 import { GoalSidebar } from "./GoalSidebar";
 import { Inspector } from "./Inspector";
+import { ProjectExplorer } from "./ProjectExplorer";
+import { ProjectModeBanner } from "./ProjectModeBanner";
 import { ProjectSwitcher } from "./ProjectSwitcher";
 import { RunStatusBar } from "./RunStatusBar";
+import { SettingsDrawer } from "./SettingsDrawer";
+import { ThemeProvider, useTheme } from "../theme-context";
 
-/**
- * The stages a Goal moves through, left to right.
- *
- * They are stages, not pages: the previous shell showed five equal tabs, which
- * said nothing about sequence, so nobody could tell what to do next. Docs is
- * last and is reference rather than a stage — it is here because it has to
- * live somewhere, and pretending it is part of the pipeline would be worse.
- */
-export const STAGES = ["discuss", "plan", "build", "review", "docs"] as const;
+export const STAGES = ["attention", "define", "plan", "run", "review", "knowledge"] as const;
 export type Stage = (typeof STAGES)[number];
 
 export const STAGE_LABELS: Record<Stage, string> = {
-  discuss: "Discuss",
+  attention: "Attention",
+  define: "Define",
   plan: "Plan",
-  build: "Build",
+  run: "Run",
   review: "Review",
-  docs: "Docs",
+  knowledge: "Knowledge",
 };
 
-/** What each stage answers, shown under the tab so nobody has to guess. */
 export const STAGE_PURPOSE: Record<Stage, string> = {
-  discuss: "Decide what to build",
-  plan: "See what a Goal will take",
-  build: "Watch it happen",
-  review: "Check it can be called done",
-  docs: "Read what the project says",
+  attention: "See what needs attention",
+  define: "Decide what to build",
+  plan: "Review what a Goal will take",
+  run: "Supervise agent work",
+  review: "Verify it can be called done",
+  knowledge: "Read project context",
+};
+
+const STAGE_ICONS: Record<Stage, LucideIcon> = {
+  attention: AlertCircle,
+  define: MessageSquare,
+  plan: ListChecks,
+  run: Activity,
+  review: CheckCircle2,
+  knowledge: BookOpen,
 };
 
 export function nextStageIndex(key: string, current: number, count: number): number | null {
@@ -60,15 +84,31 @@ export function nextStageIndex(key: string, current: number, count: number): num
 
 const ACTIVE_RUN_STATES = new Set(["CREATED", "PLANNING", "READY", "RUNNING"]);
 
-export const Workspace: FC = () => {
-  const [stage, setStage] = useState<Stage>("discuss");
+function stageEnabled(stage: Stage, inspection: ProjectInspection | null): boolean {
+  if (inspection === null || !inspection.capabilities) return stage === "attention" || stage === "define" || stage === "knowledge";
+  if (stage === "plan") return inspection.capabilities.canPlan;
+  if (stage === "run") return inspection.capabilities.canRun;
+  if (stage === "review") return inspection.capabilities.canReview;
+  return true;
+}
+
+const WorkspaceShell: FC = () => {
+  const { mode, toggle } = useTheme();
+  const [stage, setStage] = useState<Stage>("attention");
   const [projectEpoch, setProjectEpoch] = useState(0);
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   const [runId, setRunId] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [root, setRoot] = useState<string | null>(null);
+  const [adaptationOpen, setAdaptationOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [goalsOpen, setGoalsOpen] = useState(true);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
 
-  const goals = useAsync(() => api.goals(), [projectEpoch]);
+  const inspection = useAsync(() => api.inspection(), [projectEpoch]);
+  const goals = useAsync(
+    () => inspection.data?.capabilities?.canPlan ? api.goals() : Promise.resolve([] as GoalView[]),
+    [projectEpoch, inspection.data?.mode],
+  );
   const run = useAsync(
     async () => (runId ? await api.run(runId) : null),
     [runId, projectEpoch],
@@ -76,34 +116,39 @@ export const Workspace: FC = () => {
 
   const active = run.data ? ACTIVE_RUN_STATES.has(run.data.run.state) : false;
   usePolling(run.reload, Boolean(runId) && active, 900);
-
-  // A failed first load retries itself.
-  //
-  // The engine is reported running as soon as its process survives startup,
-  // which is a moment before it accepts connections — so the window loaded its
-  // Goals, failed, and sat behind a red Retry box with a perfectly healthy
-  // engine underneath. A shell that starts its own engine has to wait for it.
+  usePolling(inspection.reload, inspection.error !== null, 1500);
   usePolling(goals.reload, goals.error !== null, 1500);
 
   useEffect(() => {
     void desktop.projectRoot().then((value) => setRoot(value ?? null));
   }, [projectEpoch]);
 
-  // A project that has just been opened has no selection yet; picking the
-  // first Goal is better than an empty inspector nobody knows how to fill.
   useEffect(() => {
     if (selectedGoal === null && goals.data && goals.data.length > 0) {
       setSelectedGoal(goals.data[0].id);
     }
   }, [goals.data, selectedGoal]);
 
+  useEffect(() => {
+    if (inspection.data?.mode && inspection.data.mode !== "atlas-ready") {
+      setAdaptationOpen(true);
+    }
+  }, [inspection.data]);
+
   const goal: GoalView | null =
     goals.data?.find((item) => item.id === selectedGoal) ?? null;
 
   const onProjectOpened = useCallback(() => {
+    setStage("attention");
     setSelectedGoal(null);
     setRunId(null);
-    setSessionId(null);
+    setAdaptationOpen(false);
+    setProjectEpoch((value) => value + 1);
+  }, []);
+
+  const onAdaptationApplied = useCallback(() => {
+    setAdaptationOpen(false);
+    setStage("define");
     setProjectEpoch((value) => value + 1);
   }, []);
 
@@ -118,36 +163,32 @@ export const Workspace: FC = () => {
     }
   }, [runId, run]);
 
-  const startSession = useCallback(async () => {
-    const created = await api.createDiscussion();
-    setSessionId(created.sessionId);
-    return created.sessionId;
-  }, []);
-
   const showRun = useCallback((id: string) => {
     setRunId(id);
-    setStage("build");
+    setStage("run");
   }, []);
 
-  const [keyboardMove, setKeyboardMove] = useState(false);
+  const selectStage = useCallback((next: Stage) => {
+    if (stageEnabled(next, inspection.data)) setStage(next);
+  }, [inspection.data]);
 
+  const [keyboardMove, setKeyboardMove] = useState(false);
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
-      const next = nextStageIndex(event.key, STAGES.indexOf(stage), STAGES.length);
+      const current = STAGES.indexOf(stage);
+      let next = nextStageIndex(event.key, current, STAGES.length);
       if (next === null) return;
+      for (let attempts = 0; attempts < STAGES.length && !stageEnabled(STAGES[next], inspection.data); attempts += 1) {
+        next = event.key === "ArrowLeft" ? (next - 1 + STAGES.length) % STAGES.length : (next + 1) % STAGES.length;
+      }
+      if (!stageEnabled(STAGES[next], inspection.data)) return;
       event.preventDefault();
       setStage(STAGES[next]);
       setKeyboardMove(true);
     },
-    [stage],
+    [inspection.data, stage],
   );
 
-  // Focus moves after the render, not inside the handler.
-  //
-  // Focusing synchronously puts focus on a tab whose tabIndex is still -1,
-  // under a panel that is being replaced; in the WebKit view every arrow key
-  // after the first then did nothing. jsdom is forgiving enough not to catch
-  // this, so the guard is here rather than in a test.
   useEffect(() => {
     if (!keyboardMove) return;
     setKeyboardMove(false);
@@ -171,94 +212,174 @@ export const Workspace: FC = () => {
           flex: "0 0 auto",
           display: "flex",
           alignItems: "center",
-          gap: space.loose,
+          gap: space.snug,
           padding: `0 ${space.base}px`,
           borderBottom: `1px solid ${surface.border}`,
           background: surface.chrome,
         }}
       >
         <ProjectSwitcher root={root} onOpened={onProjectOpened} />
-
-        <div
-          role="tablist"
-          aria-label="Stages"
-          onKeyDown={onKeyDown}
-          style={{ display: "flex", gap: space.hair }}
-        >
-          {STAGES.map((key) => (
-            <button
-              key={key}
-              role="tab"
-              id={`stage-${key}`}
-              aria-selected={stage === key}
-              aria-controls={`stage-panel-${key}`}
-              tabIndex={stage === key ? 0 : -1}
-              title={STAGE_PURPOSE[key]}
-              onClick={() => setStage(key)}
-              style={{
-                padding: `${space.tight}px ${space.base}px`,
-                border: "none",
-                borderRadius: 6,
-                background: stage === key ? surface.card : "transparent",
-                boxShadow: stage === key ? "inset 0 0 0 1px " + surface.border : "none",
-                color: stage === key ? text.primary : text.muted,
-                font: "inherit",
-                fontSize: type.ui,
-                fontWeight: stage === key ? 600 : 400,
-                cursor: "pointer",
-              }}
-            >
-              {STAGE_LABELS[key]}
-            </button>
-          ))}
+        <div role="tablist" aria-label="Workspace stages" onKeyDown={onKeyDown} style={{ display: "flex", gap: space.hair }}>
+          {STAGES.map((key) => {
+            const enabled = stageEnabled(key, inspection.data);
+            const StageIcon = STAGE_ICONS[key];
+            return (
+              <button
+                key={key}
+                className="stage-tab"
+                role="tab"
+                id={`stage-${key}`}
+                aria-label={STAGE_LABELS[key]}
+                aria-selected={stage === key}
+                aria-controls={`stage-panel-${key}`}
+                aria-disabled={!enabled}
+                tabIndex={stage === key ? 0 : -1}
+                title={enabled ? STAGE_PURPOSE[key] : `${STAGE_PURPOSE[key]}. Available after Project Atlas adaptation.`}
+                disabled={!enabled}
+                onClick={() => selectStage(key)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: space.tight,
+                  padding: `${space.tight}px ${space.snug}px`,
+                  border: "none",
+                  borderRadius: 6,
+                  background: stage === key ? surface.card : "transparent",
+                  boxShadow: stage === key ? `inset 0 0 0 1px ${surface.border}` : "none",
+                  color: enabled ? (stage === key ? text.primary : text.muted) : text.faint,
+                  font: "inherit",
+                  fontSize: type.ui,
+                  fontWeight: stage === key ? 500 : 400,
+                  cursor: enabled ? "pointer" : "not-allowed",
+                }}
+              >
+                <StageIcon size={13} strokeWidth={1.6} aria-hidden="true" />
+                {stage === key && <span className="stage-tab__label">{STAGE_LABELS[key]}</span>}
+              </button>
+            );
+          })}
         </div>
-
-        <span style={{ marginLeft: "auto", color: text.faint, fontSize: type.small }}>
-          {STAGE_PURPOSE[stage]}
-        </span>
+        <button
+          type="button"
+          className="icon-button panel-toggle"
+          aria-label={goalsOpen ? "Recolher painel de Goals" : "Expandir painel de Goals"}
+          aria-expanded={goalsOpen}
+          title={goalsOpen ? "Recolher painel de Goals" : "Expandir painel de Goals"}
+          onClick={() => setGoalsOpen((value) => !value)}
+          style={{
+            border: `1px solid ${surface.border}`,
+            background: goalsOpen ? surface.selected : "transparent",
+          }}
+        >
+          {goalsOpen ? <PanelLeftClose size={15} strokeWidth={1.7} aria-hidden="true" /> : <PanelLeftOpen size={15} strokeWidth={1.7} aria-hidden="true" />}
+        </button>
+        <button
+          type="button"
+          className="icon-button panel-toggle"
+          aria-label={inspectorOpen ? "Recolher painel de detalhes" : "Expandir painel de detalhes"}
+          aria-expanded={inspectorOpen}
+          title={inspectorOpen ? "Recolher painel de detalhes" : "Expandir painel de detalhes"}
+          onClick={() => setInspectorOpen((value) => !value)}
+          style={{
+            border: `1px solid ${surface.border}`,
+            background: inspectorOpen ? surface.selected : "transparent",
+          }}
+        >
+          {inspectorOpen ? <PanelRightClose size={15} strokeWidth={1.7} aria-hidden="true" /> : <PanelRightOpen size={15} strokeWidth={1.7} aria-hidden="true" />}
+        </button>
+        <button
+          type="button"
+          className="icon-button theme-toggle"
+          aria-label={mode === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+          title={mode === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+          onClick={toggle}
+          style={{
+            border: `1px solid ${surface.border}`,
+            background: surface.card,
+            color: text.muted,
+          }}
+        >
+          {mode === "dark" ? <Sun size={15} aria-hidden="true" /> : <Moon size={15} aria-hidden="true" />}
+        </button>
+        <button
+          type="button"
+          aria-label="Abrir configurações"
+          onClick={() => setSettingsOpen(true)}
+          title="Abrir configurações"
+          style={{
+            padding: `${space.tight}px ${space.base}px`,
+            border: `1px solid ${surface.border}`,
+            borderRadius: 6,
+            background: surface.card,
+            color: text.muted,
+            font: "inherit",
+            fontSize: type.ui,
+            cursor: "pointer",
+          }}
+        >
+          <Settings2 size={15} aria-hidden="true" />
+        </button>
       </header>
 
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-        <AsyncPanel loading={false} error={goals.error} onRetry={goals.reload}>
-          <GoalSidebar
-            goals={goals.data ?? []}
-            selected={selectedGoal}
-            onSelect={setSelectedGoal}
-          />
-        </AsyncPanel>
+        {goalsOpen && (
+          <AsyncPanel loading={inspection.loading && !inspection.data} error={inspection.error} onRetry={inspection.reload}>
+            <GoalSidebar goals={goals.data ?? []} selected={selectedGoal} onSelect={setSelectedGoal} />
+          </AsyncPanel>
+        )}
 
-        <main
-          role="tabpanel"
-          id={`stage-panel-${stage}`}
-          aria-labelledby={`stage-${stage}`}
-          style={{ flex: 1, minWidth: 0, overflowY: "auto" }}
-        >
-          {stage === "discuss" && (
-            <ChatStage
-              sessionId={sessionId}
-              goalIds={(goals.data ?? []).map((item) => item.id)}
-              onRunStarted={showRun}
-              onSelectGoal={setSelectedGoal}
-              onCancel={cancelRun}
-              onStartSession={startSession}
+        <main role="tabpanel" id={`stage-panel-${stage}`} aria-labelledby={`stage-${stage}`} style={{ flex: 1, minWidth: 0, overflowY: "auto" }}>
+          <ProjectModeBanner inspection={inspection.data} onAdapt={() => setAdaptationOpen(true)} />
+          {stage === "attention" && (
+            <AttentionStage
+              inspection={inspection.data}
+              goalsCount={goals.data?.length ?? 0}
+              onOpenDefine={() => setStage("define")}
+              onOpenPlan={() => setStage("plan")}
+              onOpenRun={showRun}
+              onAdapt={() => setAdaptationOpen(true)}
             />
           )}
+          {stage === "define" && <DiscussScreen />}
           {stage === "plan" && <PlanScreen onRunStarted={showRun} />}
-          {stage === "build" && <BuildScreen runId={runId} />}
+          {stage === "run" && <BuildScreen runId={runId} />}
           {stage === "review" && <ReviewScreen />}
-          {stage === "docs" && <ProjectScreen />}
+          {stage === "knowledge" && (
+            <>
+              <ProjectScreen />
+              <div style={{ padding: `0 ${space.wide} ${space.wide}px` }}><ProjectExplorer /></div>
+            </>
+          )}
         </main>
 
-        <Inspector goal={goal} />
+        {inspectorOpen && <Inspector goal={goal} onClose={() => setInspectorOpen(false)} />}
       </div>
 
       <RunStatusBar
         detail={run.data ?? null}
         epoch={projectEpoch}
         onCancel={() => void cancelRun()}
-        onReveal={() => setStage("build")}
+        onReveal={() => setStage("run")}
         onEngineChanged={() => setProjectEpoch((value) => value + 1)}
+      />
+
+      <AdaptationWizard
+        inspection={inspection.data}
+        autoOpen={adaptationOpen}
+        onApplied={onAdaptationApplied}
+      />
+
+      <SettingsDrawer
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onChanged={() => setProjectEpoch((value) => value + 1)}
       />
     </div>
   );
 };
+
+export const Workspace: FC = () => (
+  <ThemeProvider>
+    <WorkspaceShell />
+  </ThemeProvider>
+);

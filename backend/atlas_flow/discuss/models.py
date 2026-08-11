@@ -23,8 +23,22 @@ class Completeness(StrEnum):
     LOCKED = "locked"
 
 
+class ReferenceKind(StrEnum):
+    FILE = "file"
+    IMAGE = "image"
+
+
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat()
+
+
+class MessageReference(BaseModel):
+    """A project-local file reference attached to a discussion message."""
+
+    path: str
+    kind: ReferenceKind = ReferenceKind.FILE
+    label: str = ""
+    mime_type: str | None = None
 
 
 class Message(BaseModel):
@@ -32,6 +46,7 @@ class Message(BaseModel):
     timestamp: str = Field(default_factory=_now_iso)
     content: str
     turn_type: str = "message"
+    references: list[MessageReference] = Field(default_factory=list)
 
 
 class DecisionCandidate(BaseModel):

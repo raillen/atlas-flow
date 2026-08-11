@@ -83,7 +83,7 @@ class TestHealthAndProject:
 class TestGoals:
     def test_goals_come_from_git_not_from_the_database(self, client: TestClient) -> None:
         goals = client.get("/api/goals").json()
-        assert len(goals) == 11
+        assert len(goals) == 13
         by_id = {g["id"]: g for g in goals}
         assert by_id["P05-G01"]["title"] == "Goal Planner and DAG Execution"
         assert by_id["P05-G01"]["gates"]["build"] == "required"
@@ -256,6 +256,32 @@ class TestDiscussions:
         assert len(reloaded["messages"]) == 1
         assert reloaded["decisions"][0]["status"] == "ACCEPTED"
         assert session_id in client.get("/api/discussions").json()
+
+    def test_message_persists_project_file_references(self, client: TestClient) -> None:
+        session_id = client.post("/api/discussions").json()["session_id"]
+
+        response = client.post(
+            f"/api/discussions/{session_id}/messages",
+            json={
+                "content": "Review this context",
+                "references": [{"path": "README.md", "kind": "file"}],
+            },
+        )
+
+        assert response.status_code == 201
+        assert response.json()["references"][0]["path"] == "README.md"
+        reloaded = client.get(f"/api/discussions/{session_id}").json()
+        assert reloaded["messages"][0]["references"][0]["path"] == "README.md"
+
+    def test_message_rejects_reference_outside_project(self, client: TestClient) -> None:
+        session_id = client.post("/api/discussions").json()["session_id"]
+
+        response = client.post(
+            f"/api/discussions/{session_id}/messages",
+            json={"content": "Unsafe", "references": [{"path": "../secret.txt"}]},
+        )
+
+        assert response.status_code == 422
 
     def test_accepting_twice_is_a_conflict(self, client: TestClient) -> None:
         session_id = client.post("/api/discussions").json()["session_id"]

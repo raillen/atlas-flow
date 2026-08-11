@@ -1,21 +1,125 @@
 /**
- * Colour tokens, in one place so they can be checked rather than trusted.
+ * Semantic theme tokens.
  *
- * Every pair a screen actually renders is asserted against WCAG 2.2 AA in
- * theme.test.ts. Status colours are the risky ones: a badge is small text on a
- * tint of its own hue, which is exactly the combination that looks fine to the
- * person who picked it and fails for everyone else.
+ * Components consume CSS custom properties so one rendered tree can switch
+ * between light and dark without duplicating components or inline styles.
+ * Literal palettes stay here as the source for contrast tests and audits.
  */
 
+export type ThemeMode = "dark" | "light";
+
+export type StatusTone = "positive" | "negative" | "waiting" | "active" | "neutral";
+
+type ColourSet = {
+  fg: string;
+  bg: string;
+  border: string;
+};
+
+export type ThemePalette = {
+  surface: {
+    page: string;
+    card: string;
+    border: string;
+    raised: string;
+    chrome: string;
+    selected: string;
+  };
+  text: {
+    primary: string;
+    muted: string;
+    faint: string;
+    danger: string;
+  };
+  accent: {
+    base: string;
+    on: string;
+    soft: string;
+    softText: string;
+  };
+  focus: string;
+  tone: Record<StatusTone, ColourSet>;
+};
+
+const darkPalette: ThemePalette = {
+  surface: {
+    page: "#0b0f14",
+    card: "#141a22",
+    border: "#283342",
+    raised: "#1b2430",
+    chrome: "#0f141b",
+    selected: "#202a3a",
+  },
+  text: {
+    primary: "#f3f6fa",
+    muted: "#a7b0bd",
+    faint: "#8692a2",
+    danger: "#fca5a5",
+  },
+  accent: {
+    base: "#6d28d9",
+    on: "#ffffff",
+    soft: "#2a2142",
+    softText: "#c4b5fd",
+  },
+  focus: "#93c5fd",
+  tone: {
+    positive: { fg: "#86efac", bg: "#10251a", border: "#1f6f3d" },
+    negative: { fg: "#fca5a5", bg: "#2b1518", border: "#7f1d1d" },
+    waiting: { fg: "#fde68a", bg: "#2a2413", border: "#7c5a12" },
+    active: { fg: "#93c5fd", bg: "#13233a", border: "#28548c" },
+    neutral: { fg: "#cbd5e1", bg: "#1b2430", border: "#475569" },
+  },
+};
+
+const lightPalette: ThemePalette = {
+  surface: {
+    page: "#f6f7fb",
+    card: "#ffffff",
+    border: "#d9dee8",
+    raised: "#eef1f6",
+    chrome: "#edf0f5",
+    selected: "#e4e7f2",
+  },
+  text: {
+    primary: "#1b2330",
+    muted: "#475467",
+    faint: "#5b6677",
+    danger: "#b42318",
+  },
+  accent: {
+    base: "#6d28d9",
+    on: "#ffffff",
+    soft: "#ede9fe",
+    softText: "#5b21b6",
+  },
+  focus: "#5b21b6",
+  tone: {
+    positive: { fg: "#166534", bg: "#dcfce7", border: "#86efac" },
+    negative: { fg: "#b42318", bg: "#fee4e2", border: "#fda29b" },
+    waiting: { fg: "#854d0e", bg: "#fef3c7", border: "#facc15" },
+    active: { fg: "#1d4ed8", bg: "#dbeafe", border: "#93c5fd" },
+    neutral: { fg: "#475569", bg: "#eef2f7", border: "#94a3b8" },
+  },
+};
+
+export const palette = {
+  dark: darkPalette,
+  light: lightPalette,
+} as const satisfies Record<ThemeMode, ThemePalette>;
+
+const cssToken = (name: string): string => `var(--atlas-${name})`;
+
+/** Runtime tokens. CSS resolves these against the active root theme. */
 export const surface = {
-  page: "#ffffff",
-  card: "#ffffff",
-  border: "#e2e8f0",
-  raised: "#f8fafc",
+  page: cssToken("surface-page"),
+  card: cssToken("surface-card"),
+  border: cssToken("border"),
+  raised: cssToken("surface-raised"),
   /** Chrome: the frame around the work, quieter than the work itself. */
-  chrome: "#f1f5f9",
+  chrome: cssToken("surface-chrome"),
   /** A selected row in a list that stays selected across stages. */
-  selected: "#eef2ff",
+  selected: cssToken("surface-selected"),
 } as const;
 
 /**
@@ -35,50 +139,62 @@ export const space = {
 } as const;
 
 export const size = {
-  header: 44,
-  status: 32,
-  sidebar: 260,
-  inspector: 300,
+  header: 40,
+  status: 28,
+  sidebar: 240,
+  inspector: 288,
   /** Below this the inspector folds away; the work matters more than detail. */
-  inspectorBreakpoint: 1100,
+  inspectorBreakpoint: 1024,
 } as const;
 
 export const type = {
-  ui: "0.8125rem",
-  small: "0.75rem",
-  tiny: "0.6875rem",
-  heading: "0.9375rem",
+  ui: "0.75rem",
+  small: "0.6875rem",
+  tiny: "0.625rem",
+  heading: "0.875rem",
 } as const;
 
 export const text = {
-  primary: "#0f172a",
+  primary: cssToken("text-primary"),
   /** Secondary text. Rendered at 0.8rem, so it is normal text for WCAG. */
-  muted: "#57606f",
+  muted: cssToken("text-muted"),
   /** Timestamps and other de-emphasized detail. Still normal text. */
-  faint: "#64748b",
-  danger: "#b91c1c",
+  faint: cssToken("text-faint"),
+  danger: cssToken("danger"),
 } as const;
 
 /** Selection and the active tab. `on` is what sits on top of `base`. */
 export const accent = {
-  base: "#4338ca",
-  on: "#ffffff",
-  soft: "#eef2ff",
+  base: cssToken("accent"),
+  on: cssToken("accent-on"),
+  soft: cssToken("accent-soft"),
+  softText: cssToken("accent-soft-text"),
 } as const;
 
-export type StatusTone = "positive" | "negative" | "waiting" | "active" | "neutral";
-
 /** Foreground for each tone. Backgrounds are a tint of the same hue. */
-export const tone: Record<StatusTone, { fg: string; bg: string; border: string }> = {
-  // Deliberately much darker than `negative`: red and green of similar
-  // lightness are the pair that disappears in grayscale and for the most
-  // common colour-vision deficiencies.
-  positive: { fg: "#14532d", bg: "#ecfdf5", border: "#a7f3d0" },
-  negative: { fg: "#b91c1c", bg: "#fef2f2", border: "#fecaca" },
-  waiting: { fg: "#854d0e", bg: "#fefce8", border: "#fde68a" },
-  active: { fg: "#1e40af", bg: "#eff6ff", border: "#bfdbfe" },
-  neutral: { fg: "#334155", bg: "#f1f5f9", border: "#cbd5e1" },
+export const tone: Record<StatusTone, ColourSet> = {
+  positive: { fg: cssToken("tone-positive-fg"), bg: cssToken("tone-positive-bg"), border: cssToken("tone-positive-border") },
+  negative: { fg: cssToken("tone-negative-fg"), bg: cssToken("tone-negative-bg"), border: cssToken("tone-negative-border") },
+  waiting: { fg: cssToken("tone-waiting-fg"), bg: cssToken("tone-waiting-bg"), border: cssToken("tone-waiting-border") },
+  active: { fg: cssToken("tone-active-fg"), bg: cssToken("tone-active-bg"), border: cssToken("tone-active-border") },
+  neutral: { fg: cssToken("tone-neutral-fg"), bg: cssToken("tone-neutral-bg"), border: cssToken("tone-neutral-border") },
 };
+
+export const THEME_STORAGE_KEY = "atlas-flow.theme";
+
+export function isThemeMode(value: string | null): value is ThemeMode {
+  return value === "dark" || value === "light";
+}
+
+export function readStoredTheme(): ThemeMode {
+  if (typeof window === "undefined") return "dark";
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return isThemeMode(stored) ? stored : "dark";
+  } catch {
+    return "dark";
+  }
+}
 
 /** Which tone a state or verdict is shown in. */
 export const STATE_TONES: Record<string, StatusTone> = {

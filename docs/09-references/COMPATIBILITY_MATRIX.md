@@ -1,6 +1,7 @@
 # Project Atlas Compatibility Matrix
 
-What Atlas Flow can open, and what it requires of the project it opens.
+O Atlas Flow pode abrir qualquer diretório real no desktop Linux, mas as
+capacidades dependem do modo detectado.
 
 ## Host platform
 
@@ -9,70 +10,40 @@ What Atlas Flow can open, and what it requires of the project it opens.
 | Linux desktop, x86_64 | Supported, built and tested |
 | macOS, Windows | Out of scope (owner decision, 2026-08-11) |
 
-The backend is portable Python and would very likely run elsewhere; the point
-is that nobody has built or tested it there, so nothing claims it.
+## Project modes
 
-## Framework versions
+| Mode | Como é detectado | Explorar/Discuss | Plan | Run | Review | Adaptar |
+| --- | --- | --- | --- | --- | --- | --- |
+| `atlas-ready` | manifests válidos, framework 0.1.x | sim | sim | sim, com Git | sim | não necessário |
+| `atlas-needs-adaptation` | framework Atlas reconhecido, manifests ausentes/inválidos | sim | não | não | não | preview + apply |
+| `external` | sem `PROJECT_MANIFEST.yaml` | sim | não | não | não | preview + apply |
+| `atlas-incompatible` | framework ou versão não suportada | sim | não | não | não | migração revisada |
 
-| project-atlas-framework | Support |
-| --- | --- |
-| 0.1.x | Supported |
-| anything else | Refused at load with an actionable error, not degraded silently |
+Abrir não implica executar. Plan, Run e Review continuam visíveis na interface,
+mas são bloqueados com motivo e ação corretiva quando o projeto não está pronto.
 
-The version is read from the opened project's `PROJECT_MANIFEST.yaml`, never
-from the process working directory — those are unrelated once Atlas Flow is
-installed rather than run from its own checkout.
+## Framework e manifests
 
-## Required manifests
+`atlas-ready` exige `project-atlas-framework` versão `0.1.x` e:
 
-`resolve_project` refuses a project missing any of these. There is no partial
-mode: a half-loaded project would produce runs whose provenance nobody could
-reconstruct.
+- `PROJECT_MANIFEST.yaml`;
+- `ENTRYPOINT.md`, `PROJECT_STATE.md`, `docs/ATLAS.md`;
+- `.ai/context/project-profile.yaml`;
+- `.ai/goals/`;
+- manifests de Agents, Skills e Recipes;
+- model policy, autonomy policy, orchestrator e fallbacks.
 
-| Path | Provides |
-| --- | --- |
-| `PROJECT_MANIFEST.yaml` | Framework version, project id and name |
-| `.ai/context/project-profile.yaml` | Project id, types, languages, risk profile |
-| `.ai/goals/**/*.yaml` | Goals, grouped into phases by their `phase` field |
-| `.ai/agents/manifest.yaml` | Available agent roles |
-| `.ai/skills/manifest.yaml` | Available skills |
-| `.ai/recipes/manifest.yaml` | Available recipes |
-| `.ai/orchestration/model-policy.yaml` | Model roster and routing principles |
-| `.ai/orchestration/autonomy-policy.yaml` | Autonomy modes and the project's current mode |
-| `.ai/orchestration/orchestrator.yaml` | Execution settings (isolation, worktree strategy) |
-| `.ai/orchestration/fallbacks.yaml` | Retry and escalation policy |
+## Adaptação
 
-Optional: `.ai/orchestration/mcp-servers.yaml` (absent means no MCP servers are
-forwarded).
+A adaptação é não destrutiva: mostra arquivos novos e conflitos, cria somente
+paths autorizados, não executa comandos, não sobrescreve arquivos e não cria
+Goals `LOCKED`/`DONE`. Depois do apply, o projeto é inspecionado novamente.
 
-## Validated project categories
+Projetos sem Git podem ser explorados e adaptados, mas execução por worktree
+permanece bloqueada até Git existir.
 
-Atlas Flow is generic by intent, so genericity is tested rather than asserted.
-`tests/integration/test_dogfooding.py` builds each of these from scratch and
-runs a Goal end to end against it:
+## Execução segura
 
-| Category | Fixture | Shape it exercises |
-| --- | --- | --- |
-| Library | `pigment` (Python) | Two phases with a cross-phase dependency, no UI |
-| Web application | `ledgerly` (TypeScript, SQL) | Multiple types, three acceptance criteria in one Goal |
-| CLI tool | `quill` (Rust) | Single phase, minimal manifest set |
-
-Each is checked for the same things: the API serves that project's Goals,
-a run reaches SUCCEEDED tasks with build evidence, every event is attributed to
-that project's id, and operational state lands in that project's
-`.atlas-flow/` rather than being shared or leaked into Atlas Flow's own
-directory.
-
-Doing this found two real defects: the project id was hardcoded to `atlas-flow`
-in five places, and the project root was resolved by walking up from the
-installed package, so an installed Atlas Flow would have served its own Goals to
-somebody else's project.
-
-## What is not covered
-
-- Projects with no Git repository. Task isolation uses git worktrees, so a
-  non-Git project can be read but not executed against.
-- Monorepos with several `PROJECT_MANIFEST.yaml` files; the nearest ancestor
-  wins, and there is no way to choose a different one except
-  `ATLAS_FLOW_PROJECT_ROOT`.
-- Framework versions beyond 0.1.x, which do not exist yet.
+A validação definitiva continua em `resolve_project()` e
+`validate_compatibility()`. O runtime não usa um formato alternativo de Goal.
+Projetos sem Atlas não recebem uma semântica de execução paralela implícita.

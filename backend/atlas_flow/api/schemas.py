@@ -9,9 +9,166 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from atlas_flow.discuss.models import MessageReference
 from atlas_flow.execution.models import Attempt, DomainEvent, Run, Task
+from atlas_flow.execution.plans import PlanRecord
 from atlas_flow.goals.models import Goal
+from atlas_flow.project.adaptation import AdaptationPreview
+from atlas_flow.project.inspection import ProjectInspection
 from atlas_flow.verification.gates import Evidence
+
+
+class ConfigSourceView(BaseModel):
+    value: str
+    scope: str
+    environment_variable: str | None = None
+
+
+class SettingView(BaseModel):
+    key: str
+    value: object
+    default: object
+    source: ConfigSourceView
+    restart_required: bool
+    applies_to: str
+    description: str
+    kind: str
+
+
+class ProviderView(BaseModel):
+    key: str
+    provider: str
+    command_code_id: str
+    priority: str
+    availability: str
+    credential_ref: str | None = None
+    credential_configured: bool = False
+
+
+class SettingsDocumentView(BaseModel):
+    settings: list[SettingView]
+    providers: list[ProviderView]
+    mcp: dict[str, object]
+    diagnostics: dict[str, object]
+    restart_required: bool = False
+    restart_reason: str | None = None
+
+
+class SettingsPatchRequest(BaseModel):
+    scope: str
+    values: dict[str, object]
+
+
+class SettingsValidateRequest(SettingsPatchRequest):
+    pass
+
+
+class SettingsResetRequest(BaseModel):
+    scope: str
+    keys: list[str]
+
+
+class SettingsSaveResponse(SettingsDocumentView):
+    changed: list[str] = Field(default_factory=list)
+    written_paths: list[str] = Field(default_factory=list)
+
+
+class ProjectCapabilitiesView(BaseModel):
+    can_explore: bool
+    can_discuss: bool
+    can_adapt: bool
+    can_plan: bool
+    can_run: bool
+    can_review: bool
+
+
+class ProjectInspectionView(BaseModel):
+    root: str
+    mode: str
+    project_id: str
+    project_name: str
+    types: list[str]
+    framework_name: str | None
+    framework_version: str | None
+    framework_supported: bool
+    git_present: bool
+    missing_manifests: list[str]
+    invalid_manifests: list[str]
+    reason: str
+    recommendation: str
+    capabilities: ProjectCapabilitiesView
+
+    @staticmethod
+    def of(inspection: ProjectInspection) -> ProjectInspectionView:
+        return ProjectInspectionView(
+            root=str(inspection.root),
+            mode=str(inspection.mode),
+            project_id=inspection.project_id,
+            project_name=inspection.project_name,
+            types=inspection.types,
+            framework_name=inspection.framework_name,
+            framework_version=inspection.framework_version,
+            framework_supported=inspection.framework_supported,
+            git_present=inspection.git_present,
+            missing_manifests=inspection.missing_manifests,
+            invalid_manifests=inspection.invalid_manifests,
+            reason=inspection.reason,
+            recommendation=inspection.recommendation,
+            capabilities=ProjectCapabilitiesView(
+                can_explore=inspection.capabilities.can_explore,
+                can_discuss=inspection.capabilities.can_discuss,
+                can_adapt=inspection.capabilities.can_adapt,
+                can_plan=inspection.capabilities.can_plan,
+                can_run=inspection.capabilities.can_run,
+                can_review=inspection.capabilities.can_review,
+            ),
+        )
+
+
+class ProjectFileView(BaseModel):
+    path: str
+    kind: str
+    size: int
+
+
+class ProjectFileContent(BaseModel):
+    path: str
+    content: str
+    truncated: bool = False
+
+
+class AdaptationFileView(BaseModel):
+    path: str
+    action: str
+    reason: str
+
+
+class AdaptationPreviewView(BaseModel):
+    ready: bool
+    files: list[AdaptationFileView]
+    conflicts: list[str]
+    limitations: list[str]
+
+    @staticmethod
+    def of(preview: AdaptationPreview) -> AdaptationPreviewView:
+        return AdaptationPreviewView(
+            ready=preview.ready,
+            files=[
+                AdaptationFileView(path=item.path, action=item.action, reason=item.reason)
+                for item in preview.files
+            ],
+            conflicts=preview.conflicts,
+            limitations=preview.limitations,
+        )
+
+
+class AdaptationApplyRequest(BaseModel):
+    paths: list[str]
+
+
+class AdaptationApplyView(BaseModel):
+    written: list[str]
+    inspection: ProjectInspectionView
 
 
 class GoalView(BaseModel):
@@ -38,6 +195,51 @@ class GoalView(BaseModel):
             dependencies=goal.dependencies,
             evidence_count=len(goal.evidence),
         )
+
+
+class PlanTaskView(BaseModel):
+    id: str
+    objective: str
+    dependencies: list[str] = Field(default_factory=list)
+    write_scope: list[str] = Field(default_factory=list)
+    gates: list[str] = Field(default_factory=list)
+    risk: str
+    parallelizable: bool
+    capabilities: list[str] = Field(default_factory=list)
+
+
+class PlanView(BaseModel):
+    id: str
+    project_id: str
+    goal_id: str
+    goal_revision: str
+    state: str
+    autonomy: str
+    runner: str
+    integration_target: str
+    created_at: str
+    tasks: list[PlanTaskView] = Field(default_factory=list)
+
+    @staticmethod
+    def of(plan: PlanRecord) -> PlanView:
+        return PlanView(
+            id=plan.id,
+            project_id=plan.project_id,
+            goal_id=plan.goal_id,
+            goal_revision=plan.goal_revision,
+            state=str(plan.state),
+            autonomy=plan.autonomy,
+            runner=plan.runner,
+            integration_target=plan.integration_target,
+            created_at=plan.created_at,
+            tasks=[PlanTaskView(**task.model_dump()) for task in plan.tasks],
+        )
+
+
+class CreatePlanRequest(BaseModel):
+    autonomy: str = "agentic"
+    runner: str = "dummy"
+    integration_target: str = "main"
 
 
 class TaskView(BaseModel):
@@ -179,6 +381,7 @@ class CreateRunRequest(BaseModel):
     goal_id: str
     runner: str = "dummy"
     integration_target: str = "main"
+    plan_id: str | None = None
 
 
 class ModelStatsView(BaseModel):
@@ -212,6 +415,7 @@ class RoutingView(BaseModel):
 class MessageRequest(BaseModel):
     content: str
     turn_type: str = "message"
+    references: list[MessageReference] = Field(default_factory=list)
 
 
 class DecisionRequest(BaseModel):

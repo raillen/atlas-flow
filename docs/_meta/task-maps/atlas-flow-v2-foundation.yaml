@@ -1,0 +1,26 @@
+schema_version: 1
+id: TASKMAP-atlas-flow-v2-foundation
+intent: atlas flow v2 foundation
+risk: medium
+read:
+  required:
+    - docs/03-implementation/ATLAS_FLOW_V2_FOUNDATION.md
+    - docs/01-architecture/CONTEXT_ENGINE.md
+    - docs/01-architecture/DOMAIN_MODEL.md
+  optional:
+    - docs/07-decisions/ADR-015-ATLAS-FLOW-V2-FOUNDATION.md
+touch:
+  likely:
+    - backend/atlas_flow/evolution/**
+    - schemas/**
+    - tests/unit/test_evolution_foundation.py
+usually_dont_touch:
+  - apps/desktop/**
+  - backend/atlas_flow/execution/**
+verify:
+  - uv run --project backend --all-groups python -m pytest tests/unit/test_evolution_foundation.py
+  - uv run --project backend --all-groups ruff check backend/atlas_flow/evolution backend/atlas_flow/cli.py
+  - uv run --project backend --all-groups python -m mypy --strict backend/atlas_flow/evolution backend/atlas_flow/cli.py
+documentation:
+  - docs/03-implementation/ATLAS_FLOW_V2_FOUNDATION.md
+  - docs/06-user-guide/ATLAS_CLI.md

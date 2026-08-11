@@ -1,24 +1,29 @@
 # Plan UX
 
-Views: Phase list, Goal board, DAG, Workforce, Context preview.
+Plan começa com um Goal e termina com um snapshot bloqueado, não com um run
+iniciado imediatamente.
 
-Goal panel shows objective, constraints, non-goals, acceptance, dependencies, gates, evidence.
+## Fluxo
 
-DAG nodes communicate role, state, risk, write scope, route and gate. Cycles block execution.
+1. Selecionar Goal.
+2. Criar snapshot determinístico ou planejado.
+3. Revisar DAG, tarefas, dependências, write scope, risco, gates, runner,
+   autonomia e routing.
+4. Corrigir ou rejeitar o plano enquanto ele está `DRAFT`.
+5. Executar `Lock plan`.
+6. Executar somente o snapshot `LOCKED`.
 
-Controlled/Agentic modes expose explicit Lock & Run.
+A execução registra Goal/revisão, settings e plano consumido. Um snapshot depois
+de `LOCKED` é imutável; se o Goal canônico mudar, um novo plano é necessário.
 
-## The graph and its alternative
+## Projeto externo
 
-The plan is drawn as an SVG: one column per dependency layer, left to right in
-the order the scheduler will run them, with curved edges between tasks that
-actually depend on each other. An edge pointing at a task that is not on screen
-is dropped rather than drawn into space.
+Em `external`, `atlas-needs-adaptation` e `atlas-incompatible`, Plan aparece
+bloqueado com razão e ação corretiva. A pessoa pode explorar e discutir a
+adaptação, mas não criar uma execução que não teria Goals ou gates confiáveis.
 
-Beneath it is the same information as a list of stages. That list is a **peer,
-not a fallback**: a drawing alone is unreadable to a screen reader, so the
-graph carries `role="img"` with a sentence describing its shape, and the stage
-list carries the detail. Neither is the lesser version of the other.
+## DAG e alternativa textual
 
-Nothing clever is attempted about crossing edges. A plan wide enough for that
-to matter is a plan whose stage list is the better view anyway.
+O DAG continua sendo uma visualização peer da lista de tarefas. Cada tarefa
+expõe objetivo, dependências, escopo, risco, capacidades e gates. A lista é
+usável por teclado e leitor de tela; o gráfico não é a única fonte de informação.

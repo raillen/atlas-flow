@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas-flow.dev/schemas/atlas-project.schema.json",
+  "title": "Atlas Flow project manifest v2",
+  "type": "object",
+  "required": ["schema_version", "project", "atlas", "documentation", "context"],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "project": { "type": "object", "additionalProperties": { "type": "string" } },
+    "atlas": {
+      "type": "object",
+      "properties": { "docs_root": { "type": "string" }, "data_root": { "type": "string" } },
+      "additionalProperties": false
+    },
+    "documentation": {
+      "type": "object",
+      "properties": { "title": { "type": "string" }, "default_visibility": { "enum": ["public", "internal", "private"] } },
+      "additionalProperties": false
+    },
+    "context": {
+      "type": "object",
+      "properties": { "default_budget": { "enum": ["small", "medium", "large"] } },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

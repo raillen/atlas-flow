@@ -1,86 +1,66 @@
 # Getting Started
 
-## Prerequisites
+## Abrir um projeto
 
-- Python 3.12+ with `uv`
-- Node.js 24+ with `pnpm` 11+
-- Git (task isolation uses real worktrees)
-- Rust toolchain — only to build the desktop shell
-- Command Code CLI (`cmd`) — optional; without it, model discovery reports a
-  degraded registry and routing falls back to the policy roster
+Atlas Flow aceita qualquer diretório existente no desktop Linux. Ao abrir, ele
+inspeciona o projeto sem executar comandos e mostra um modo:
 
-## Install
+- **Project Atlas ready** — Discuss, Plan, Run, Review e Knowledge;
+- **External project** — explorar arquivos e documentação, Discuss e preparar
+  adaptação;
+- **Needs adaptation** — corrigir/completar manifests através de preview;
+- **Incompatible framework** — inspeção disponível, mas exige migração revisada.
 
-```bash
-git clone <repo-url> atlas-flow
-cd atlas-flow
-uv sync --project backend
-pnpm install
-```
+Projetos externos não são tratados como se tivessem Goals. Plan, Run e Review
+permanecem bloqueados até a adaptação autorizada e validada. A adaptação nunca
+sobrescreve arquivos nem cria Goals concluídos.
 
-If your checkout is on a mount with `noexec`, point build tooling elsewhere:
-`export CARGO_TARGET_DIR=~/.cache/atlas-flow-target`, and create the Python
-environment outside the mount with `UV_PROJECT_ENVIRONMENT`. Cargo executes
-build scripts out of its target directory and Python loads compiled extensions
-from the virtualenv; a `noexec` mount fails both with a bare permission error.
+## Adaptação
 
-## Run it
+1. Abra **Review adaptation** no banner do projeto.
+2. Examine arquivos novos, conflitos e limitações.
+3. Confirme **Create scaffold**.
+4. Revise o resultado no Git e continue em Define.
 
-```bash
-# Terminal 1 — backend
-uv run --project backend uvicorn atlas_flow.api.app:create_app --factory --reload
+O scaffold cria somente a estrutura mínima do Project Atlas. Decisões, Goals,
+critérios de aceitação e comandos de verificação ainda precisam ser definidos e
+aceitos explicitamente.
 
-# Terminal 2 — desktop client
-pnpm --filter @atlas-flow/desktop dev
-```
+## Executar com Tauri em um mount `noexec`
 
-Open **http://localhost:1420**:
-
-- **Discuss** — conversation that can become ADRs and a Decision Ledger
-- **Plan** — the Goals in Git, and the task DAG a run will execute
-- **Build** — live task, attempt and event state, plus agent narration
-- **Review** — gate verdicts, evidence, and which model each role routes to
-- **Project** — canonical documentation, and the backend process if you launched
-  the packaged desktop app
-
-In the packaged app the Project tab can start and stop the backend for you. It
-does not start one at launch, so a backend you are already running by hand keeps
-the port.
-
-## Open a different project
-
-Atlas Flow orchestrates whatever project it is opened on. Point it at one:
+Se o checkout estiver em um mount com `noexec`, use o alias `atlas-tauri` após
+recarregar o Zsh:
 
 ```bash
-ATLAS_FLOW_PROJECT_ROOT=/path/to/your/project \
-  uv run --project backend uvicorn atlas_flow.api.app:create_app --factory
+source ~/.zshrc
+atlas-tauri
 ```
 
-Without that variable the project root is the nearest ancestor of the working
-directory containing `PROJECT_MANIFEST.yaml`. The project must be a Project
-Atlas 0.1.x project — see
-[the compatibility matrix](../09-references/COMPATIBILITY_MATRIX.md) for exactly
-what is required.
+O alias chama o CLI Tauri via Node diretamente, usa o backend do checkout por um
+caminho absoluto, passa `ATLAS_FLOW_PROJECT_ROOT` para o projeto aberto e move os
+artefatos do Cargo e o cache do Vite para `~/.cache`. Isso evita que os wrappers
+em `node_modules/.bin` e os diretórios de build sejam executados na unidade
+`noexec`.
 
-Operational state lands in `<project>/.atlas-flow/`, which ignores itself, so
-running Atlas Flow never makes your repository look dirty. Deleting it loses run
-history and nothing else: canonical truth stays in Git.
+## Workflow recomendado
 
-## Validate
+1. **Attention** — veja bloqueios, recuperação e próximas ações.
+2. **Define** — registre intenção, decisões, perguntas e Project Draft.
+3. **Plan** — crie um snapshot, revise DAG/risco/contexto e bloqueie-o.
+4. **Run** — supervisione tarefas, tentativas, worktrees e atividade dos agentes.
+5. **Review** — relacione critérios, tarefas, testes e evidências.
+6. **Knowledge** — consulte a documentação canônica e o histórico.
+
+## Execução
+
+Run exige Project Atlas válido e Git para isolamento por worktree. Um run da UI
+sempre nasce de um plano `LOCKED`; o plano fica imutável e é marcado como
+`CONSUMED` quando a execução é agendada.
+
+## Validação
 
 ```bash
-sh scripts/validate_all.sh          # docs, Goals, Command Code registries
-uv run --project backend ruff check .
-uv run --project backend mypy
-uv run --project backend pytest
-pnpm run typecheck && pnpm run lint && pnpm run test
+sh scripts/validate_all.sh
 ```
 
-`scripts/package_smoke.sh` builds the desktop bundle and checks what came out.
-
-## Where to look next
-
-- [Running Goals](RUNNING_GOALS.md) — what a run actually does
-- [Model routing](MODEL_ROUTING.md) — which model does what, and why
-- [Recovery](RECOVERY.md) — what happens after a crash
-- `docs/ATLAS.md` — the full documentation map
+Consulte `docs/09-references/COMPATIBILITY_MATRIX.md` para os requisitos completos.

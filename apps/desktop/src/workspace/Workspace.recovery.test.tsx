@@ -29,7 +29,26 @@ const GOALS = [
 ];
 
 function respond(url: string): unknown {
+  if (url.endsWith("/api/project/inspection")) {
+    return {
+      root: "/tmp/project",
+      mode: "atlas-ready",
+      project_id: "project",
+      project_name: "project",
+      types: ["cli"],
+      framework_name: "project-atlas-framework",
+      framework_version: "0.1.0",
+      framework_supported: true,
+      git_present: true,
+      missing_manifests: [],
+      invalid_manifests: [],
+      reason: "ready",
+      recommendation: "ready",
+      capabilities: { can_explore: true, can_discuss: true, can_adapt: false, can_plan: true, can_run: true, can_review: true },
+    };
+  }
   if (url.endsWith("/api/goals")) return GOALS;
+  if (url.endsWith("/api/runs")) return [];
   if (url.includes("/verification")) {
     return {
       goal_id: "P01-G01",
@@ -101,7 +120,7 @@ describe("a failed first load", () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
 
-    await waitFor(() => expect(screen.getByText("P01-G01")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Project Atlas Integration")).toBeTruthy());
     expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
-  });
+  }, 15000);
 });

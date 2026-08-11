@@ -1,0 +1,16 @@
+schema_version: 1
+id: CONTEXT-atlas-flow-v2-foundation
+intent: atlas flow v2 foundation
+include:
+  - docs/03-implementation/ATLAS_FLOW_V2_FOUNDATION.md
+  - docs/01-architecture/CONTEXT_ENGINE.md
+  - docs/01-architecture/DOMAIN_MODEL.md
+optional:
+  - docs/07-decisions/ADR-015-ATLAS-FLOW-V2-FOUNDATION.md
+  - docs/08-rfcs/AF-EVO-001-ATLAS-FLOW-EVOLUTION.md
+exclude:
+  - apps/desktop
+  - backend/atlas_flow/execution
+budget:
+  target_tokens: 12000
+  max_tokens: 20000

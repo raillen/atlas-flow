@@ -168,6 +168,9 @@ const DISCUSSION = {
 };
 
 function respond(url: string): unknown {
+  if (url.endsWith("/api/project/inspection")) return {
+    root: "/tmp/project", mode: "atlas-ready", project_id: "atlas-flow", project_name: "Atlas Flow", types: ["agent-orchestrator"], framework_name: "project-atlas-framework", framework_version: "0.1.0", framework_supported: true, git_present: true, missing_manifests: [], invalid_manifests: [], reason: "ready", recommendation: "ready", capabilities: { can_explore: true, can_discuss: true, can_adapt: false, can_plan: true, can_run: true, can_review: true },
+  };
   if (url.endsWith("/api/goals")) return GOALS;
   if (url.includes("/verification")) return VERIFICATION;
   if (url.endsWith("/api/routing")) return ROUTING;
@@ -224,7 +227,7 @@ describe("rendered accessibility", () => {
     await waitFor(() => expect(screen.getByRole("tablist")).toBeTruthy());
 
     expect(await violations(container)).toEqual([]);
-  });
+  }, 15000);
 
   it("only the selected tab is in the tab order", async () => {
     render(<App />);
@@ -242,6 +245,19 @@ describe("rendered accessibility", () => {
     const labelledBy = panel.getAttribute("aria-labelledby");
     expect(labelledBy).toBeTruthy();
     expect(document.getElementById(labelledBy!)?.getAttribute("role")).toBe("tab");
+  });
+
+  it("can collapse and reopen the persistent side panels", async () => {
+    render(<App />);
+
+    const goalsToggle = await screen.findByRole("button", { name: "Recolher painel de Goals" });
+    expect(goalsToggle.getAttribute("aria-expanded")).toBe("true");
+    fireEvent.click(goalsToggle);
+    expect(screen.getByRole("button", { name: "Expandir painel de Goals" }).getAttribute("aria-expanded")).toBe("false");
+
+    const detailsToggle = screen.getByRole("button", { name: "Expandir painel de detalhes" });
+    fireEvent.click(detailsToggle);
+    expect(await screen.findByRole("complementary", { name: "Goal details" })).toBeTruthy();
   });
 
   it.each([

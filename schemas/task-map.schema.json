@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas-flow.dev/schemas/task-map.schema.json",
+  "title": "Atlas Flow task map v1",
+  "type": "object",
+  "required": ["schema_version", "id", "intent", "read"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "intent": { "type": "string", "minLength": 1 },
+    "risk": { "enum": ["low", "medium", "high", "critical"] },
+    "read": {
+      "type": "object",
+      "properties": { "required": { "type": "array", "items": { "type": "string" } }, "optional": { "type": "array", "items": { "type": "string" } } },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

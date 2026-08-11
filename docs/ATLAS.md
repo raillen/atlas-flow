@@ -2,6 +2,13 @@
 
 Canonical navigation surface for humans and agents.
 
+## Intent routers
+
+- `USER_ATLAS.md`
+- `DEVELOPER_ATLAS.md`
+- `AGENT_ATLAS.md`
+- `08-rfcs/AF-EVO-001-ATLAS-FLOW-EVOLUTION.md`
+
 ## 00 Product
 - `00-product/VISION.md`
 - `00-product/PRODUCT_REQUIREMENTS.md`
@@ -39,6 +46,7 @@ Canonical navigation surface for humans and agents.
 ## 02 UI/UX
 - `02-ui-ux/INFORMATION_ARCHITECTURE.md`
 - `02-ui-ux/DESIGN_SYSTEM.md`
+- `02-ui-ux/UX_FOUNDATION.md`
 - `02-ui-ux/DISCUSS.md`
 - `02-ui-ux/PLAN.md`
 - `02-ui-ux/BUILD.md`
@@ -55,6 +63,7 @@ Canonical navigation surface for humans and agents.
 - `03-implementation/STATE_MACHINES.md`
 - `03-implementation/COMMAND_CODE_INTEGRATION.md`
 - `03-implementation/PROJECT_ATLAS_INTEGRATION.md`
+- `03-implementation/ATLAS_FLOW_V2_FOUNDATION.md`
 - `03-implementation/CONFIGURATION.md`
 - `03-implementation/ERROR_HANDLING.md`
 - `03-implementation/PACKAGING.md`
@@ -84,9 +93,11 @@ Canonical navigation surface for humans and agents.
 - `06-user-guide/MODEL_ROUTING.md`
 - `06-user-guide/RECOVERY.md`
 - `06-user-guide/COMMAND_CODE_DEVELOPMENT.md`
+- `06-user-guide/ATLAS_CLI.md`
 
 ## 07 Decisions
 Accepted ADRs live in `07-decisions/`.
+- `07-decisions/ADR-016-ATLAS-FLOW-UX-FOUNDATION.md`
 
 ## 08 RFCs
 Future/experimental proposals live in `08-rfcs/`.

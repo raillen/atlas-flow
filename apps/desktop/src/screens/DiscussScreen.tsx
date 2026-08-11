@@ -1,24 +1,30 @@
-import type { FC } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Check,
+  FileText,
+  Image as ImageIcon,
+  MessageSquare,
+  Paperclip,
+  PanelRight,
+  PanelRightClose,
+  Plus,
+  Send,
+  Sparkles,
+  X,
+} from "lucide-react";
+import type { FC, RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgUiClient, type AgUiMessage } from "@atlas-flow/ag-ui-client";
 import {
   api,
   resolveBaseUrl,
   type DecisionCandidate,
   type DiscussionSession,
+  type MessageReference,
   type ProjectDraft,
+  type ProjectFileView,
 } from "../api";
 import { useAsync } from "../hooks/useAsync";
-import {
-  AsyncPanel,
-  buttonStyle,
-  card,
-  muted,
-  screen,
-  SectionHeading,
-  StatusBadge,
-} from "../components/Primitives";
-import { accent, surface, text, tone } from "../theme";
+import { AsyncPanel, StatusBadge } from "../components/Primitives";
 
 /** The socket lives wherever the backend does, which only the shell knows. */
 async function socketUrl(): Promise<string> {
@@ -38,13 +44,6 @@ export const DRAFT_DOMAINS: (keyof ProjectDraft)[] = [
   "roadmap",
 ];
 
-/**
- * How close a draft is to being finalizable, as a plain sentence.
- *
- * Finalization writes ADRs into `docs/`, and the backend refuses while any
- * domain is still short. Saying which ones is the difference between a button
- * that looks broken and one that explains itself.
- */
 export function describeDraft(draft: ProjectDraft | undefined): string {
   if (draft === undefined) return "No draft yet.";
   const missing = DRAFT_DOMAINS.filter((domain) => draft[domain] !== "sufficient");
@@ -52,11 +51,28 @@ export function describeDraft(draft: ProjectDraft | undefined): string {
   return `${missing.length} of ${DRAFT_DOMAINS.length} domains still need work: ${missing.join(", ")}`;
 }
 
+function isImagePath(path: string): boolean {
+  return /\.(png|jpe?g|gif|webp|svg)$/i.test(path);
+}
+
+function referenceFromFile(file: ProjectFileView): MessageReference {
+  return {
+    path: file.path,
+    kind: isImagePath(file.path) ? "image" : "file",
+    label: file.path.split("/").pop() ?? file.path,
+    mimeType: null,
+  };
+}
+
 export const DiscussScreen: FC = () => {
   const sessions = useAsync(() => api.discussions(), []);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
   const [draftText, setDraftText] = useState("");
+  const [references, setReferences] = useState<MessageReference[]>([]);
+  const [referencePickerOpen, setReferencePickerOpen] = useState(false);
+  const [referenceQuery, setReferenceQuery] = useState("");
+  const [contextOpen, setContextOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
   const [live, setLive] = useState<AgUiMessage[]>([]);
@@ -66,9 +82,11 @@ export const DiscussScreen: FC = () => {
     async () => (sessionId ? await api.discussion(sessionId) : null),
     [sessionId, reload],
   );
+  const files = useAsync(
+    () => (sessionId ? api.projectFiles() : Promise.resolve([] as ProjectFileView[])),
+    [sessionId],
+  );
 
-  // Pick up whichever session exists, rather than opening a new one on every
-  // visit: a discussion nobody can find again is a discussion nobody keeps.
   useEffect(() => {
     if (sessionId === null && sessions.data && sessions.data.length > 0) {
       setSessionId(sessions.data[0]);
@@ -80,8 +98,6 @@ export const DiscussScreen: FC = () => {
     const client = new AgUiClient();
     client.onStatus(setConnected);
     client.onMessage((message) => setLive((current) => [...current, message]));
-    // Connecting waits for the address, so a socket opened before the first
-    // request cannot quietly attach to the wrong port.
     let dropped = false;
     void socketUrl().then((url) => {
       if (!dropped) client.connect(sessionId, url);
@@ -94,9 +110,6 @@ export const DiscussScreen: FC = () => {
   }, [sessionId]);
 
   useEffect(() => {
-    // Assigning scrollTop rather than calling scrollTo: the method is
-    // absent in some environments, and a chat that throws while trying to
-    // scroll is worse than one that does not scroll.
     if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
   }, [session.data, live]);
 
@@ -114,187 +127,299 @@ export const DiscussScreen: FC = () => {
     void act(async () => {
       const created = await api.createDiscussion();
       setSessionId(created.sessionId);
+      setReferences([]);
       sessions.reload();
     });
 
   const send = () => {
     const content = draftText.trim();
     if (!content || sessionId === null) return;
+    const attached = [...references];
     setDraftText("");
-    void act(() => api.sendMessage(sessionId, content));
+    setReferences([]);
+    void act(() => api.sendMessage(sessionId, content, attached));
   };
 
   const propose = () => {
     const content = draftText.trim();
     if (!content || sessionId === null) return;
     setDraftText("");
+    setReferences([]);
     void act(() => api.proposeDecision(sessionId, content, content));
   };
 
+  const filteredFiles = useMemo(() => {
+    const query = referenceQuery.trim().toLowerCase();
+    const availableFiles = Array.isArray(files.data) ? files.data : [];
+    return availableFiles
+      .filter((file) => file.path.toLowerCase().includes(query))
+      .slice(0, 40);
+  }, [files.data, referenceQuery]);
+
+  const toggleReference = (file: ProjectFileView) => {
+    const reference = referenceFromFile(file);
+    setReferences((current) =>
+      current.some((item) => item.path === reference.path)
+        ? current.filter((item) => item.path !== reference.path)
+        : [...current, reference],
+    );
+  };
+
   return (
-    <div style={screen}>
-      <SectionHeading
-        actions={
-          <button type="button" style={buttonStyle} onClick={start}>
-            New discussion
+    <div className="chat-shell">
+      <header className="chat-header">
+        <div className="chat-title">
+          <MessageSquare size={15} strokeWidth={1.7} aria-hidden="true" />
+          <h2>{session.data?.title || "Project conversation"}</h2>
+        </div>
+        <div className="chat-header__actions">
+          <span className="connection-state" data-state={connected ? "connected" : "offline"}>
+            <span aria-hidden="true" /> {connected ? "Live" : "Offline"}
+          </span>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label={contextOpen ? "Hide discussion context" : "Show discussion context"}
+            aria-expanded={contextOpen}
+            title={contextOpen ? "Hide discussion context" : "Show discussion context"}
+            onClick={() => setContextOpen((value) => !value)}
+          >
+            {contextOpen ? <PanelRightClose size={16} strokeWidth={1.7} aria-hidden="true" /> : <PanelRight size={16} strokeWidth={1.7} aria-hidden="true" />}
           </button>
-        }
-      >
-        Discuss
-      </SectionHeading>
-      <p style={muted}>
-        Conversation is stored, not just streamed. Decisions accepted here become
-        ADRs and Decision Ledger entries in <code>docs/</code>.
-      </p>
+          <button type="button" className="button button--secondary button--icon" aria-label="New chat" title="New chat" onClick={start}>
+            <Plus size={15} strokeWidth={1.7} aria-hidden="true" />
+          </button>
+        </div>
+      </header>
 
       <AsyncPanel
         loading={sessions.loading}
         error={sessions.error}
         onRetry={sessions.reload}
         isEmpty={sessionId === null && (sessions.data?.length ?? 0) === 0}
-        emptyMessage="No discussions yet. Start one to begin."
+        emptyMessage="Start a conversation to shape the next piece of work."
       >
         {sessionId !== null && (
-          <AsyncPanel
-            loading={session.loading && !session.data}
-            error={session.error}
-            onRetry={session.reload}
-          >
+          <AsyncPanel loading={session.loading && !session.data} error={session.error} onRetry={session.reload}>
             {session.data && (
-              <DiscussionBody
-                session={session.data}
-                connected={connected}
-                feedRef={feedRef}
-                onAccept={(decisionId) =>
-                  void act(() => api.acceptDecision(session.data!.id, decisionId))
-                }
-              />
+              <div className={`chat-layout${contextOpen ? " chat-layout--context" : ""}`}>
+                <section className="chat-main" aria-label="Conversation">
+                  <ConversationFeed session={session.data} feedRef={feedRef} />
+                  <ChatComposer
+                    value={draftText}
+                    references={references}
+                    pickerOpen={referencePickerOpen}
+                    referenceQuery={referenceQuery}
+                    files={filteredFiles}
+                    filesLoading={files.loading}
+                    onChange={setDraftText}
+                    onSend={send}
+                    onPropose={propose}
+                    onTogglePicker={() => setReferencePickerOpen((value) => !value)}
+                    onQueryChange={setReferenceQuery}
+                    onToggleReference={toggleReference}
+                    onRemoveReference={(path) => setReferences((current) => current.filter((item) => item.path !== path))}
+                  />
+                </section>
+                {contextOpen && (
+                  <DiscussionContext
+                    session={session.data}
+                    onAccept={(decisionId) => void act(() => api.acceptDecision(session.data!.id, decisionId))}
+                  />
+                )}
+              </div>
             )}
           </AsyncPanel>
         )}
       </AsyncPanel>
 
-      {error && (
-        <p style={{ ...muted, color: text.danger }} role="alert">
-          {error}
-        </p>
-      )}
-
-      {sessionId !== null && (
-        <div style={{ display: "flex", gap: "0.4rem" }}>
-          <input
-            aria-label="Message"
-            value={draftText}
-            placeholder="Say something, or describe a decision"
-            onChange={(event) => setDraftText(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                send();
-              }
-            }}
-            style={{
-              flex: 1,
-              padding: "0.5rem 0.7rem",
-              borderRadius: 6,
-              border: `1px solid ${tone.neutral.border}`,
-              background: surface.card,
-              color: text.primary,
-              font: "inherit",
-            }}
-          />
-          <button
-            type="button"
-            style={{ ...buttonStyle, background: accent.base, color: accent.on }}
-            onClick={send}
-          >
-            Send
-          </button>
-          <button type="button" style={buttonStyle} onClick={propose}>
-            Propose decision
-          </button>
-        </div>
-      )}
+      {error && <p className="chat-error" role="alert">{error}</p>}
     </div>
   );
 };
 
-const DiscussionBody: FC<{
+const ConversationFeed: FC<{
   session: DiscussionSession;
-  connected: boolean;
-  feedRef: React.RefObject<HTMLDivElement | null>;
-  onAccept: (decisionId: string) => void;
-}> = ({ session, connected, feedRef, onAccept }) => (
-  <>
-    <div style={card}>
-      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-        <strong>{session.title || session.id}</strong>
-        <StatusBadge value={connected ? "RUNNING" : "PLANNED"} />
-        <span style={muted}>{connected ? "live" : "not streaming"}</span>
+  feedRef: RefObject<HTMLDivElement | null>;
+}> = ({ session, feedRef }) => (
+  <div ref={feedRef} className="chat-feed" role="log" aria-live="polite" aria-label="Conversation messages">
+    {session.messages.length === 0 ? (
+      <div className="chat-empty">
+        <div className="chat-empty__icon" aria-hidden="true"><Sparkles size={18} strokeWidth={1.6} /></div>
+        <h2>Start a conversation</h2>
+        <p>Define intent, ask a question, or attach a project reference.</p>
       </div>
-      <p style={{ ...muted, margin: "0.25rem 0 0" }}>{describeDraft(session.draft)}</p>
-    </div>
+    ) : (
+      session.messages.map((message) => (
+        <article key={message.id} className={`chat-message chat-message--${message.turnType === "message" ? "user" : "system"}`}>
+          <div className="chat-message__meta">
+            <strong>{message.turnType === "message" ? "You" : "Atlas"}</strong>
+            <time dateTime={message.timestamp}>{formatTime(message.timestamp)}</time>
+          </div>
+          <div className="chat-message__bubble">
+            <p>{message.content}</p>
+            {message.references?.length > 0 && <ReferenceList references={message.references} />}
+          </div>
+        </article>
+      ))
+    )}
+  </div>
+);
 
-    <section>
-      <SectionHeading>Conversation</SectionHeading>
-      <div
-        ref={feedRef}
-        role="log"
-        aria-live="polite"
-        aria-label="Discussion messages"
-        style={{
-          ...card,
-          maxHeight: 320,
-          overflowY: "auto",
-          display: "grid",
-          gap: "0.5rem",
-        }}
-      >
-        {session.messages.length === 0 ? (
-          <p style={muted}>Nothing said yet.</p>
-        ) : (
-          session.messages.map((message) => (
-            <div key={message.id}>
-              <span style={{ ...muted, marginRight: "0.5rem" }}>
-                {message.timestamp.slice(11, 19)}
-              </span>
-              {message.content}
-            </div>
-          ))
-        )}
+const ChatComposer: FC<{
+  value: string;
+  references: MessageReference[];
+  pickerOpen: boolean;
+  referenceQuery: string;
+  files: ProjectFileView[];
+  filesLoading: boolean;
+  onChange: (value: string) => void;
+  onSend: () => void;
+  onPropose: () => void;
+  onTogglePicker: () => void;
+  onQueryChange: (value: string) => void;
+  onToggleReference: (file: ProjectFileView) => void;
+  onRemoveReference: (path: string) => void;
+}> = ({
+  value,
+  references,
+  pickerOpen,
+  referenceQuery,
+  files,
+  filesLoading,
+  onChange,
+  onSend,
+  onPropose,
+  onTogglePicker,
+  onQueryChange,
+  onToggleReference,
+  onRemoveReference,
+}) => (
+  <form className="chat-composer" onSubmit={(event) => { event.preventDefault(); onSend(); }}>
+    {references.length > 0 && (
+      <div className="reference-strip" aria-label="Attached references">
+        {references.map((reference) => (
+          <ReferenceChip key={reference.path} reference={reference} onRemove={() => onRemoveReference(reference.path)} />
+        ))}
       </div>
+    )}
+
+    {pickerOpen && (
+      <div className="reference-picker" role="dialog" aria-label="Add project reference">
+        <div className="reference-picker__header">
+          <strong>Project references</strong>
+          <button type="button" className="icon-button" aria-label="Close reference picker" onClick={onTogglePicker}><X size={16} /></button>
+        </div>
+        <input
+          aria-label="Search project files"
+          value={referenceQuery}
+          placeholder="Search files and images…"
+          onChange={(event) => onQueryChange(event.target.value)}
+        />
+        <div className="reference-picker__list">
+          {filesLoading ? <span className="text-muted">Loading project files…</span> : files.map((file) => {
+            const selected = references.some((reference) => reference.path === file.path);
+            return (
+              <button type="button" key={file.path} className="reference-option" data-selected={selected} onClick={() => onToggleReference(file)}>
+                {isImagePath(file.path) ? <ImageIcon size={15} aria-hidden="true" /> : <FileText size={15} aria-hidden="true" />}
+                <code>{file.path}</code>
+                {selected && <Check size={15} aria-label="Selected" />}
+              </button>
+            );
+          })}
+          {!filesLoading && files.length === 0 && <span className="text-muted">No matching project files.</span>}
+        </div>
+      </div>
+    )}
+
+    <div className="chat-composer__input-row">
+      <button type="button" className="icon-button" aria-label="Add file or image reference" title="Add file or image reference" onClick={onTogglePicker}>
+        <Paperclip size={16} strokeWidth={1.7} />
+      </button>
+      <textarea
+        aria-label="Message"
+        rows={1}
+        value={value}
+        placeholder="Ask Atlas anything about this project…"
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            onSend();
+          }
+        }}
+      />
+      <button type="submit" className="send-button" disabled={!value.trim()} aria-label="Send message" title="Send message">
+        <Send size={15} strokeWidth={1.7} aria-hidden="true" />
+      </button>
+    </div>
+    <div className="chat-composer__footer">
+      <span>Shift + Enter for a new line</span>
+      <button type="button" className="composer-link" disabled={!value.trim()} onClick={onPropose}>Turn into decision</button>
+    </div>
+  </form>
+);
+
+const DiscussionContext: FC<{
+  session: DiscussionSession;
+  onAccept: (decisionId: string) => void;
+}> = ({ session, onAccept }) => (
+  <aside className="chat-context" aria-label="Discussion context">
+    <section className="context-card">
+      <div className="context-card__title"><span>Draft</span><StatusBadge value={session.draft ? "ACTIVE" : "PENDING"} /></div>
+      <strong>{draftProgressLabel(session.draft)}</strong>
+      <div className="draft-meter" aria-hidden="true"><span style={{ width: `${draftProgress(session.draft)}%` }} /></div>
     </section>
 
-    <section>
-      <SectionHeading>Decisions</SectionHeading>
+    <section className="context-card context-card--decisions">
+      <div className="context-card__title"><span>Decisions</span><span className="context-count">{session.decisions.length}</span></div>
       {session.decisions.length === 0 ? (
-        <p style={muted}>No decisions proposed yet.</p>
+        <p className="text-muted">No decisions yet.</p>
       ) : (
-        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "0.4rem" }}>
-          {session.decisions.map((decision) => (
-            <li key={decision.id} style={card}>
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                <StatusBadge value={decision.status.toUpperCase()} />
-                <strong>{decision.title}</strong>
-                {decision.requiresAdr && <span style={muted}>needs an ADR</span>}
-                {isPending(decision) && (
-                  <button
-                    type="button"
-                    style={{ ...buttonStyle, marginLeft: "auto" }}
-                    onClick={() => onAccept(decision.id)}
-                  >
-                    Accept
-                  </button>
-                )}
-              </div>
-              <p style={{ ...muted, margin: "0.25rem 0 0" }}>{decision.statement}</p>
-            </li>
-          ))}
+        <ul>
+          {session.decisions.map((decision) => <DecisionRow key={decision.id} decision={decision} onAccept={onAccept} />)}
         </ul>
       )}
     </section>
-  </>
+  </aside>
 );
+
+const DecisionRow: FC<{ decision: DecisionCandidate; onAccept: (id: string) => void }> = ({ decision, onAccept }) => (
+  <li>
+    <div className="decision-row__header"><StatusBadge value={decision.status.toUpperCase()} /><strong>{decision.title}</strong></div>
+    <p>{decision.statement}</p>
+    {isPending(decision) && <button type="button" className="button button--secondary button--small" onClick={() => onAccept(decision.id)}>Accept</button>}
+  </li>
+);
+
+const ReferenceList: FC<{ references: MessageReference[] }> = ({ references }) => (
+  <div className="message-references" aria-label="Message references">
+    {references.map((reference) => <ReferenceChip key={reference.path} reference={reference} />)}
+  </div>
+);
+
+const ReferenceChip: FC<{ reference: MessageReference; onRemove?: () => void }> = ({ reference, onRemove }) => (
+  <span className="reference-chip">
+    {reference.kind === "image" ? <ImageIcon size={14} aria-hidden="true" /> : <FileText size={14} aria-hidden="true" />}
+    <code>{reference.label || reference.path}</code>
+    {onRemove && <button type="button" className="reference-chip__remove" aria-label={`Remove ${reference.label || reference.path}`} onClick={onRemove}><X size={13} /></button>}
+  </span>
+);
+
+function formatTime(timestamp: string): string {
+  return new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function draftProgress(draft: ProjectDraft): number {
+  const complete = DRAFT_DOMAINS.filter((domain) => draft[domain] === "sufficient").length;
+  return Math.round((complete / DRAFT_DOMAINS.length) * 100);
+}
+
+function draftProgressLabel(draft: ProjectDraft): string {
+  const complete = DRAFT_DOMAINS.filter((domain) => draft[domain] === "sufficient").length;
+  if (complete === DRAFT_DOMAINS.length) return "Draft ready to finalize.";
+  return `${complete}/${DRAFT_DOMAINS.length} areas covered`;
+}
 
 /** Only a proposal can be accepted; anything else already has an answer. */
 export function isPending(decision: DecisionCandidate): boolean {

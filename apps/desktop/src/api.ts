@@ -81,6 +81,30 @@ export interface EvidenceView {
   attachedAt: string;
 }
 
+export interface PlanTaskView {
+  id: string;
+  objective: string;
+  dependencies: string[];
+  writeScope: string[];
+  gates: string[];
+  risk: string;
+  parallelizable: boolean;
+  capabilities: string[];
+}
+
+export interface PlanView {
+  id: string;
+  projectId: string;
+  goalId: string;
+  goalRevision: string;
+  state: string;
+  autonomy: string;
+  runner: string;
+  integrationTarget: string;
+  createdAt: string;
+  tasks: PlanTaskView[];
+}
+
 export interface RunView {
   id: string;
   goalId: string;
@@ -157,6 +181,16 @@ export interface DiscussMessage {
   timestamp: string;
   content: string;
   turnType: string;
+  references: MessageReference[];
+}
+
+export type MessageReferenceKind = "file" | "image";
+
+export interface MessageReference {
+  path: string;
+  kind: MessageReferenceKind;
+  label: string;
+  mimeType: string | null;
 }
 
 export interface DecisionCandidate {
@@ -201,13 +235,120 @@ export interface DocEntry {
   section: string;
 }
 
+export type ProjectMode =
+  | "atlas-ready"
+  | "atlas-needs-adaptation"
+  | "atlas-incompatible"
+  | "external";
+
+export interface ProjectCapabilities {
+  canExplore: boolean;
+  canDiscuss: boolean;
+  canAdapt: boolean;
+  canPlan: boolean;
+  canRun: boolean;
+  canReview: boolean;
+}
+
+export interface ProjectInspection {
+  root: string;
+  mode: ProjectMode;
+  projectId: string;
+  projectName: string;
+  types: string[];
+  frameworkName: string | null;
+  frameworkVersion: string | null;
+  frameworkSupported: boolean;
+  gitPresent: boolean;
+  missingManifests: string[];
+  invalidManifests: string[];
+  reason: string;
+  recommendation: string;
+  capabilities: ProjectCapabilities;
+}
+
 export interface ProjectInfo {
   id: string;
+  name?: string;
   types: string[];
   phases: number;
   agents: string[];
   skills: string[];
   runners: string[];
+  mode?: ProjectMode;
+  reason?: string;
+  recommendation?: string;
+}
+
+export interface ProjectFileView {
+  path: string;
+  kind: "text" | "binary";
+  size: number;
+}
+
+export interface ProjectFileContent {
+  path: string;
+  content: string;
+  truncated: boolean;
+}
+
+export interface AdaptationFileView {
+  path: string;
+  action: "create" | "conflict";
+  reason: string;
+}
+
+export interface AdaptationPreview {
+  ready: boolean;
+  files: AdaptationFileView[];
+  conflicts: string[];
+  limitations: string[];
+}
+
+export interface AdaptationApplyResult {
+  written: string[];
+  inspection: ProjectInspection;
+}
+
+export interface ConfigSourceView {
+  value: string;
+  scope: string;
+  environmentVariable: string | null;
+}
+
+export interface SettingView {
+  key: string;
+  value: unknown;
+  default: unknown;
+  source: ConfigSourceView;
+  restartRequired: boolean;
+  appliesTo: string;
+  description: string;
+  kind: string;
+}
+
+export interface ProviderView {
+  key: string;
+  provider: string;
+  commandCodeId: string;
+  priority: string;
+  availability: string;
+  credentialRef: string | null;
+  credentialConfigured: boolean;
+}
+
+export interface SettingsDocument {
+  settings: SettingView[];
+  providers: ProviderView[];
+  mcp: { enabled: boolean; servers: unknown[]; skipped: Record<string, unknown> };
+  diagnostics: Record<string, unknown>;
+  restartRequired: boolean;
+  restartReason: string | null;
+}
+
+export interface SettingsSaveResult extends SettingsDocument {
+  changed: string[];
+  writtenPaths: string[];
 }
 
 export class ApiError extends Error {
@@ -260,16 +401,37 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   project: () => request<ProjectInfo>("/api/project"),
+  inspection: () => request<ProjectInspection>("/api/project/inspection"),
+  projectFiles: () => request<ProjectFileView[]>("/api/project/files"),
+  projectFile: (path: string) =>
+    request<ProjectFileContent>(`/api/project/files/${path.split("/").map(encodeURIComponent).join("/")}`),
+  adaptationPreview: () =>
+    request<AdaptationPreview>("/api/project/adaptation/preview", { method: "POST" }),
+  applyAdaptation: (paths: string[]) =>
+    request<AdaptationApplyResult>("/api/project/adaptation/apply", {
+      method: "POST",
+      body: JSON.stringify({ paths }),
+    }),
   goals: () => request<GoalView[]>("/api/goals"),
   goal: (id: string) => request<GoalView>(`/api/goals/${id}`),
   verification: (id: string) =>
     request<GoalVerification>(`/api/goals/${id}/verification`),
   runs: () => request<RunView[]>("/api/runs"),
   run: (id: string) => request<RunDetail>(`/api/runs/${id}`),
-  startRun: (goalId: string, runner: string) =>
+  createPlan: (goalId: string, runner = "dummy", autonomy = "agentic") =>
+    request<PlanView>(`/api/goals/${goalId}/plans`, {
+      method: "POST",
+      body: JSON.stringify({ runner, autonomy }),
+    }),
+  plans: (goalId: string) =>
+    request<PlanView[]>(`/api/goals/${goalId}/plans`),
+  plan: (id: string) => request<PlanView>(`/api/plans/${id}`),
+  lockPlan: (id: string) =>
+    request<PlanView>(`/api/plans/${id}/lock`, { method: "POST" }),
+  startRun: (goalId: string, runner: string, planId?: string) =>
     request<RunView>("/api/runs", {
       method: "POST",
-      body: JSON.stringify({ goal_id: goalId, runner }),
+      body: JSON.stringify({ goal_id: goalId, runner, plan_id: planId }),
     }),
   cancelRun: (id: string) =>
     request<RunView>(`/api/runs/${id}/cancel`, { method: "POST" }),
@@ -281,10 +443,10 @@ export const api = {
     request<{ sessionId: string }>("/api/discussions", { method: "POST" }),
   discussion: (id: string) =>
     request<DiscussionSession>(`/api/discussions/${id}`),
-  sendMessage: (id: string, content: string) =>
+  sendMessage: (id: string, content: string, references: MessageReference[] = []) =>
     request<DiscussMessage>(`/api/discussions/${id}/messages`, {
       method: "POST",
-      body: JSON.stringify({ content, turn_type: "message" }),
+      body: JSON.stringify({ content, turn_type: "message", references }),
     }),
   proposeDecision: (id: string, title: string, statement: string) =>
     request<DecisionCandidate>(`/api/discussions/${id}/decisions`, {
@@ -299,4 +461,20 @@ export const api = {
   docs: () => request<DocEntry[]>("/api/docs"),
   doc: (path: string) =>
     request<{ path: string; content: string }>(`/api/docs/${path}`),
+  settings: () => request<SettingsDocument>("/api/settings"),
+  validateSettings: (scope: string, values: Record<string, unknown>) =>
+    request<SettingsDocument>("/api/settings/validate", {
+      method: "POST",
+      body: JSON.stringify({ scope, values }),
+    }),
+  saveSettings: (scope: string, values: Record<string, unknown>) =>
+    request<SettingsSaveResult>("/api/settings", {
+      method: "PUT",
+      body: JSON.stringify({ scope, values }),
+    }),
+  resetSettings: (scope: string, keys: string[]) =>
+    request<SettingsDocument>("/api/settings/reset", {
+      method: "POST",
+      body: JSON.stringify({ scope, keys }),
+    }),
 };

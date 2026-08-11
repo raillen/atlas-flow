@@ -1,0 +1,40 @@
+id: P11-G01
+phase: P11
+title: Atlas Flow v2 Foundation
+state: ACTIVE
+objective: Implement the deterministic foundation of AF-EVO-001 without breaking the v1 runtime.
+constraints:
+- Preserve Project Atlas and Git as canonical sources of truth
+- Keep generated indexes, caches and intelligence projections derived and rebuildable
+- Do not require embeddings, an external database or a provider-specific model
+- Preserve existing Goal, API, runner and desktop contracts
+- Update canonical documentation when behavior or architecture changes
+non_goals:
+- Symbol retrieval and AST-specific adapters
+- Remote providers, ML estimation and embedding-based retrieval
+- A full interactive documentation frontend
+dependencies:
+- P10-G01
+acceptance:
+- A versioned v2 manifest, document metadata, task map, context pack, graph and intelligence record can be validated
+- Registry and knowledge graph projections are generated deterministically from project files
+- Context planning returns required, optional, excluded and budgeted context in human and JSON formats
+- Changed files produce an explainable impact report
+- Task cost records append to a rebuildable ledger and aggregate into a project summary without false precision
+- A static documentation build respects public, internal and private visibility
+- CLI, tests and canonical documentation cover the implemented behavior
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence:
+- build: ruff check and mypy strict pass for the full 73-file backend — uv run --project backend --all-groups
+    ruff check .; uv run --project backend --all-groups python -m mypy
+- tests: 394 Python tests passed in a complete run, including the AF-EVO-001 foundation suite —
+    uv run --project backend --all-groups python -m pytest
+- documentation: docs, Goals, Command Code and Atlas v2 validation pass — sh scripts/validate_all.sh
+history:
+- '2026-08-11: created from AF-EVO-001 implementation roadmap; first vertical slice is active.'
+- '2026-08-11: build, tests and documentation evidence collected; review remains pending because
+  this slice has not received an independent review.'

@@ -36,6 +36,7 @@ run() {
 
 run "Docs validation"              $PYTHON "$ROOT/scripts/validate_docs.py"
 run "Goals validation"             $PYTHON "$ROOT/scripts/validate_goals.py"
+run "Atlas v2 validation"          $PYTHON -m atlas_flow.cli --root "$ROOT" validate --json
 # Invoked through sh rather than executed directly, so the check does not depend
 # on the executable bit surviving the checkout or the mount.
 run "Command Code discoverability" sh "$ROOT/scripts/validate_command_code.sh"

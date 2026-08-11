@@ -32,7 +32,7 @@ describe("stages", () => {
   it("runs in pipeline order", () => {
     // Five equal tabs said nothing about sequence, which is why nobody could
     // tell what to do next. The order is the message.
-    expect(STAGES).toEqual(["discuss", "plan", "build", "review", "docs"]);
+    expect(STAGES).toEqual(["attention", "define", "plan", "run", "review", "knowledge"]);
   });
 
   it("every stage says what it answers", () => {

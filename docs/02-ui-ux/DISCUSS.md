@@ -1,27 +1,25 @@
-# Discuss UX
+# Define UX
 
-Default: `Project Topics | Conversation | Project Draft`.
+Define é o workspace de definição de projeto, não um chat genérico.
 
-Conversation streams chat and explicit decision proposals.
-Topics show completeness/open questions.
-Draft is structured preview, not raw Markdown.
+A experiência persistida combina:
 
-Decision actions: Accept, Edit, Reject, Defer.
+- Conversation — mensagens reidratadas do backend;
+- Decisions — propostas com Accept, Edit, Reject, Defer e impacto de domínio;
+- Project Draft — completude de Product, Architecture, UX, Data, Security,
+  Quality, Operations, AI/orchestration e Roadmap;
+- Open questions, constraints e assumptions;
+- Project Atlas adaptation — inspeção, preview, confirmação e revalidação.
 
-Finalize shows readiness, blocking missing decisions and assumptions; user resolves or explicitly finalizes with documented assumptions.
+Mensagens não executam ações por inferência. Comandos determinísticos continuam
+disponíveis como atalho avançado; ações principais aparecem como controles
+contextuais.
 
-## What the screen actually does
+Finalization mostra readiness, decisões aceitas, gaps e os arquivos que serão
+escritos antes de chamar o endpoint. Em projeto externo, Discuss e exploração
+são permitidos, mas finalização e Plan/Run/Review ficam bloqueados até a
+adaptação autorizada.
 
-Until 2026-08-11 it did not talk to the backend at all. It opened a WebSocket,
-echoed what you typed back at you, and lost it: the Decision Ledger existed and
-was tested, and the screen in front of it wrote to nothing.
-
-It now uses the discussion API. A session is created or resumed through
-`/api/discussions`, messages are posted and come back stored, decisions are
-proposed and accepted against the real ledger, and the socket is kept for what
-it is good at — live updates from elsewhere — rather than as the only channel.
-
-The Project Draft is summarised as a sentence naming the domains still short of
-`sufficient`. Finalization writes ADRs into `docs/` and the backend refuses
-while any domain is incomplete; a button that fails without saying which domain
-looks broken.
+A sessão é criada ou retomada por `/api/discussions`; mensagens, decisões e
+drafts persistem em SQLite. O WebSocket serve para atualizações ao vivo, não é
+a única fonte da conversa.

@@ -1,0 +1,40 @@
+id: P12-G01
+phase: P12
+title: Atlas Flow UX Foundation
+state: ACTIVE
+objective: Transform the desktop workspace into a calm, chat-first professional interface with persistent project references.
+constraints:
+- Preserve Tauri 2 + React + TypeScript and the existing HTTP, WebSocket and AG-UI boundaries
+- Keep Project Atlas, Git and the backend as canonical sources of truth
+- Use progressive disclosure; advanced detail remains available without dominating the primary flow
+- Keep all critical interactions keyboard accessible and covered by automated accessibility tests
+- Defer GTK4/libadwaita and any native renderer rewrite to a future decision
+non_goals:
+- Full native GTK/libadwaita frontend
+- Provider-specific chat behavior or model names in the UI domain
+- Uploading arbitrary local files to remote providers
+- A visual clone of Codex, Antigravity or another product
+dependencies:
+- P10-G01
+acceptance:
+- The workspace uses a coherent compact visual system with semantic tokens, consistent iconography, light/dark themes and collapsible secondary panels
+- Discuss is a real conversation surface with readable message hierarchy, composer states and a contextual decision rail
+- Users can attach project-local text files and images as persisted message references
+- Reference paths are validated inside the opened project and traversal is rejected
+- Critical chat, reference, keyboard and accessibility behavior has automated coverage
+- UX principles, deferred GTK direction and reference contract are documented canonically
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence:
+- build: TypeScript build, ESLint, Ruff and mypy pass — frontend typecheck/lint plus the backend quality gates
+- tests: 128 frontend tests and 51 focused backend Discuss/API tests pass — Vitest and pytest focused suites
+- documentation: docs, Goals and Atlas v2 validation pass — sh scripts/validate_all.sh
+- review: pending independent review; this evidence does not claim completion
+history:
+- '2026-08-11: created from owner feedback about visual density, weak chat affordances and missing references.'
+- '2026-08-11: implemented compact dark workspace, real Discuss feed/composer, local file/image references and path validation.'
+- '2026-08-11: added a persisted light/dark renderer theme with WCAG contrast coverage for both palettes.'
+- '2026-08-11: reduced visual density with lighter typography, discreet status markers, collapsible shell panels and on-demand Discuss context.'

@@ -48,18 +48,10 @@ export const GoalSidebar: FC<{
         padding: space.snug,
       }}
     >
-      <p
-        style={{
-          margin: `0 0 ${space.snug}px`,
-          padding: `0 ${space.tight}px`,
-          color: text.faint,
-          fontSize: type.tiny,
-          textTransform: "uppercase",
-          letterSpacing: "0.04em",
-        }}
-      >
-        {progress.label}
-      </p>
+      <div className="goal-sidebar__header" title={progress.label}>
+        <span>Goals</span>
+        <span aria-label={progress.label}>{progress.done}/{progress.total}</span>
+      </div>
 
       {groupByPhase(goals).map(([phase, phaseGoals]) => (
         <div key={phase} style={{ marginBottom: space.base }}>
@@ -69,7 +61,7 @@ export const GoalSidebar: FC<{
               padding: `0 ${space.tight}px`,
               color: text.faint,
               fontSize: type.tiny,
-              fontWeight: 700,
+              fontWeight: 500,
             }}
           >
             {phase}

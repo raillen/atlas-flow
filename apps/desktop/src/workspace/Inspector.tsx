@@ -1,17 +1,12 @@
 import type { FC } from "react";
+import { PanelRightClose } from "lucide-react";
 import { api, type GoalView } from "../api";
 import { AsyncPanel, StatusBadge } from "../components/Primitives";
 import { useAsync } from "../hooks/useAsync";
 import { size, space, surface, text, type } from "../theme";
 
-/**
- * Everything known about the selected Goal, in one place.
- *
- * Properties scattered across several screens is the antipattern that makes a
- * dense tool unlearnable: you never know where to look, so you look
- * everywhere. Whatever the sidebar has selected, its detail is here.
- */
-export const Inspector: FC<{ goal: GoalView | null }> = ({ goal }) => {
+/** Details are available on demand, so the workspace can stay focused. */
+export const Inspector: FC<{ goal: GoalView | null; onClose: () => void }> = ({ goal, onClose }) => {
   const verification = useAsync(
     async () => (goal ? await api.verification(goal.id) : null),
     [goal?.id],
@@ -19,7 +14,8 @@ export const Inspector: FC<{ goal: GoalView | null }> = ({ goal }) => {
 
   return (
     <aside
-      aria-label="Inspector"
+      className="inspector-panel"
+      aria-label="Goal details"
       style={{
         width: size.inspector,
         flex: "0 0 auto",
@@ -30,30 +26,36 @@ export const Inspector: FC<{ goal: GoalView | null }> = ({ goal }) => {
         fontSize: type.ui,
       }}
     >
+      <header className="inspector-header">
+        <h2>Details</h2>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Recolher painel de detalhes"
+          title="Recolher painel de detalhes"
+          onClick={onClose}
+        >
+          <PanelRightClose size={15} strokeWidth={1.7} aria-hidden="true" />
+        </button>
+      </header>
+
       {goal === null ? (
-        <p style={{ color: text.muted, margin: 0 }}>
-          Select a Goal to see its gates and evidence.
-        </p>
+        <p className="text-muted" style={{ color: text.muted }}>No Goal selected.</p>
       ) : (
         <>
-          <h2 style={{ fontSize: type.heading, margin: `0 0 ${space.tight}px` }}>
-            {goal.id}
-          </h2>
-          <p style={{ margin: `0 0 ${space.base}px`, color: text.muted }}>
-            {goal.objective}
-          </p>
+          <section className="inspector-summary" aria-labelledby="selected-goal-title">
+            <div className="inspector-summary__title">
+              <strong id="selected-goal-title">{goal.id}</strong>
+              <StatusBadge value={goal.state} />
+            </div>
+            <p title={goal.objective}>{goal.objective}</p>
+          </section>
 
-          <Field label="State">
-            <StatusBadge value={goal.state} />
-          </Field>
-          <Field label="Acceptance">
-            {goal.acceptance.length} criteri{goal.acceptance.length === 1 ? "on" : "a"}
-          </Field>
-          {goal.dependencies.length > 0 && (
-            <Field label="Depends on">{goal.dependencies.join(", ")}</Field>
-          )}
+          <div className="inspector-meta">
+            <span>{goal.acceptance.length} criteria</span>
+            {goal.dependencies.length > 0 && <span>{goal.dependencies.length} dependencies</span>}
+          </div>
 
-          <h3 style={heading}>Gates</h3>
           <AsyncPanel
             loading={verification.loading && !verification.data}
             error={verification.error}
@@ -61,55 +63,44 @@ export const Inspector: FC<{ goal: GoalView | null }> = ({ goal }) => {
           >
             {verification.data && (
               <>
-                <ul style={list}>
-                  {verification.data.gates.map((gate) => (
-                    <li key={gate.gate} style={row}>
-                      <span style={{ minWidth: 96 }}>{gate.gate}</span>
-                      <StatusBadge value={gate.verdict} />
-                    </li>
-                  ))}
-                </ul>
-
-                <p
-                  style={{
-                    margin: `${space.snug}px 0 0`,
-                    color: verification.data.completable ? text.muted : text.danger,
-                    fontSize: type.small,
-                  }}
-                >
-                  {verification.data.completable
-                    ? "Every required gate has passing evidence."
-                    : verification.data.blocking}
-                </p>
-
-                <h3 style={heading}>Evidence</h3>
-                {verification.data.evidence.length === 0 ? (
-                  <p style={{ margin: 0, color: text.muted, fontSize: type.small }}>
-                    Nothing attached yet.
-                  </p>
-                ) : (
-                  <ul style={list}>
-                    {verification.data.evidence.map((item) => (
-                      <li
-                        key={item.id}
-                        style={{ ...row, alignItems: "flex-start", flexWrap: "wrap" }}
-                      >
-                        <StatusBadge value={item.verdict} />
-                        <span style={{ fontWeight: 600 }}>{item.gate}</span>
-                        <span
-                          style={{
-                            flexBasis: "100%",
-                            color: text.faint,
-                            fontSize: type.small,
-                            wordBreak: "break-word",
-                          }}
-                        >
-                          {item.uri || item.kind}
-                        </span>
+                <details className="inspector-details">
+                  <summary>
+                    <span>Gates</span>
+                    <span className="inspector-summary__count">{verification.data.gates.length}</span>
+                  </summary>
+                  <ul className="inspector-list">
+                    {verification.data.gates.map((gate) => (
+                      <li key={gate.gate}>
+                        <span>{gate.gate}</span>
+                        <StatusBadge value={gate.verdict} />
                       </li>
                     ))}
                   </ul>
-                )}
+                  <p className={verification.data.completable ? "text-muted" : "inspector-warning"}>
+                    {verification.data.completable
+                      ? "All required gates pass."
+                      : verification.data.blocking}
+                  </p>
+                </details>
+
+                <details className="inspector-details">
+                  <summary>
+                    <span>Evidence</span>
+                    <span className="inspector-summary__count">{verification.data.evidence.length}</span>
+                  </summary>
+                  {verification.data.evidence.length === 0 ? (
+                    <p className="text-muted">Nothing attached.</p>
+                  ) : (
+                    <ul className="inspector-list">
+                      {verification.data.evidence.map((item) => (
+                        <li key={item.id}>
+                          <StatusBadge value={item.verdict} />
+                          <span title={item.uri || item.kind}>{item.gate}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </details>
               </>
             )}
           </AsyncPanel>
@@ -117,33 +108,4 @@ export const Inspector: FC<{ goal: GoalView | null }> = ({ goal }) => {
       )}
     </aside>
   );
-};
-
-const Field: FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <div style={{ ...row, marginBottom: space.tight }}>
-    <span style={{ minWidth: 96, color: text.faint, fontSize: type.small }}>{label}</span>
-    <span>{children}</span>
-  </div>
-);
-
-const heading: React.CSSProperties = {
-  fontSize: type.tiny,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
-  color: text.faint,
-  margin: `${space.loose}px 0 ${space.snug}px`,
-};
-
-const list: React.CSSProperties = {
-  listStyle: "none",
-  padding: 0,
-  margin: 0,
-  display: "grid",
-  gap: space.tight,
-};
-
-const row: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: space.snug,
 };

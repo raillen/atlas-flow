@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas-flow.dev/schemas/document-metadata.schema.json",
+  "title": "Atlas Flow document metadata v1",
+  "type": "object",
+  "required": ["schema_version", "id", "title", "status", "visibility", "authority", "source"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["draft", "active", "review-needed", "deprecated", "archived"] },
+    "visibility": { "enum": ["public", "internal", "private"] },
+    "authority": { "enum": ["canonical", "derived", "informative"] },
+    "source": { "enum": ["human", "code", "generated", "external"] },
+    "estimated_tokens": { "type": "integer", "minimum": 0 },
+    "risk": { "enum": ["low", "medium", "high", "critical"] }
+  },
+  "additionalProperties": true
+}

@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { useCallback, useState } from "react";
-import { api, type GoalView, type TaskView } from "../api";
+import { api, type GoalView, type PlanView, type TaskView } from "../api";
 import { useAsync } from "../hooks/useAsync";
 import { TaskGraph } from "../components/TaskGraph";
 import {
@@ -14,13 +14,6 @@ import {
 } from "../components/Primitives";
 import { accent, surface, tone } from "../theme";
 
-/**
- * Lays the plan out in dependency layers.
- *
- * Layer 0 holds tasks with no dependencies; each later layer holds tasks whose
- * dependencies all sit in earlier layers. That is exactly the order the
- * scheduler releases work in, so the picture matches what will actually run.
- */
 export function layerTasks(tasks: TaskView[]): TaskView[][] {
   const byId = new Map(tasks.map((task) => [task.id, task]));
   const depth = new Map<string, number>();
@@ -52,13 +45,36 @@ export function layerTasks(tasks: TaskView[]): TaskView[][] {
   return layers.filter(Boolean);
 }
 
-const GoalRow: FC<{ goal: GoalView; onRun: (id: string) => void; busy: boolean }> = ({
-  goal,
-  onRun,
-  busy,
-}) => (
-  <li style={{ ...card, display: "flex", gap: "1rem", alignItems: "flex-start" }}>
-    <div style={{ flex: 1 }}>
+function taskViews(plan: PlanView): TaskView[] {
+  return plan.tasks.map((task) => ({
+    id: task.id,
+    objective: task.objective,
+    state: plan.state,
+    role: task.capabilities[0] ?? null,
+    risk: task.risk,
+    scope: task.writeScope,
+    dependencies: task.dependencies,
+  }));
+}
+
+const GoalRow: FC<{
+  goal: GoalView;
+  selected: boolean;
+  onSelect: () => void;
+}> = ({ goal, selected, onSelect }) => (
+  <li>
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onSelect}
+      style={{
+        ...card,
+        ...buttonStyle,
+        width: "100%",
+        textAlign: "left",
+        borderColor: selected ? accent.base : surface.border,
+      }}
+    >
       <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
         <strong>{goal.id}</strong>
         <span>{goal.title}</span>
@@ -69,14 +85,6 @@ const GoalRow: FC<{ goal: GoalView; onRun: (id: string) => void; busy: boolean }
         {goal.acceptance.length} acceptance criteria
         {goal.dependencies.length > 0 && ` · depends on ${goal.dependencies.join(", ")}`}
       </p>
-    </div>
-    <button
-      type="button"
-      style={buttonStyle}
-      disabled={busy}
-      onClick={() => onRun(goal.id)}
-    >
-      {busy ? "Starting…" : "Run goal"}
     </button>
   </li>
 );
@@ -85,37 +93,59 @@ export const PlanScreen: FC<{ onRunStarted: (runId: string) => void }> = ({
   onRunStarted,
 }) => {
   const goals = useAsync(() => api.goals(), []);
-  const [starting, setStarting] = useState<string | null>(null);
-  const [failure, setFailure] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-
-  const runGoal = useCallback(
-    async (goalId: string) => {
-      setStarting(goalId);
-      setFailure(null);
-      try {
-        const run = await api.startRun(goalId, "dummy");
-        onRunStarted(run.id);
-      } catch (cause) {
-        setFailure(cause instanceof Error ? cause.message : String(cause));
-      } finally {
-        setStarting(null);
-      }
-    },
-    [onRunStarted],
-  );
-
+  const [planId, setPlanId] = useState<string | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+  const selectedGoal = goals.data?.find((goal) => goal.id === selected) ?? null;
   const plan = useAsync(
-    async () => (selected ? layerTasks((await api.run(selected)).tasks) : []),
+    () => (planId ? api.plan(planId) : Promise.resolve(null)),
+    [planId],
+  );
+  const historicalPlans = useAsync(
+    () => (selected ? api.plans(selected) : Promise.resolve([])),
     [selected],
   );
+
+  const createPlan = useCallback(async () => {
+    if (!selected) return;
+    setFailure(null);
+    try {
+      const created = await api.createPlan(selected);
+      setPlanId(created.id);
+      historicalPlans.reload();
+    } catch (cause: unknown) {
+      setFailure(cause instanceof Error ? cause.message : String(cause));
+    }
+  }, [historicalPlans, selected]);
+
+  const lockPlan = useCallback(async () => {
+    if (!planId) return;
+    setFailure(null);
+    try {
+      await api.lockPlan(planId);
+      plan.reload();
+      historicalPlans.reload();
+    } catch (cause: unknown) {
+      setFailure(cause instanceof Error ? cause.message : String(cause));
+    }
+  }, [historicalPlans, plan, planId]);
+
+  const runPlan = useCallback(async () => {
+    if (!selected || !plan.data || plan.data.state !== "LOCKED") return;
+    setFailure(null);
+    try {
+      const run = await api.startRun(selected, plan.data.runner, plan.data.id);
+      onRunStarted(run.id);
+    } catch (cause: unknown) {
+      setFailure(cause instanceof Error ? cause.message : String(cause));
+    }
+  }, [onRunStarted, plan.data, selected]);
 
   return (
     <div style={screen}>
       <SectionHeading>Plan</SectionHeading>
       <p style={muted}>
-        Goals come from Git. Starting one decomposes it into a task per acceptance
-        criterion and schedules it.
+        Create a reviewable snapshot from the Goal, inspect its DAG and lock it before any agent starts.
       </p>
 
       {failure && (
@@ -129,74 +159,84 @@ export const PlanScreen: FC<{ onRunStarted: (runId: string) => void }> = ({
         error={goals.error}
         onRetry={goals.reload}
         isEmpty={goals.data?.length === 0}
-        emptyMessage="This project declares no Goals."
+        emptyMessage="This project declares no executable Goals."
       >
         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "0.5rem" }}>
           {goals.data?.map((goal) => (
-            <GoalRow
-              key={goal.id}
-              goal={goal}
-              busy={starting === goal.id}
-              onRun={runGoal}
-            />
+            <GoalRow key={goal.id} goal={goal} selected={selected === goal.id} onSelect={() => {
+              setSelected(goal.id);
+              setPlanId(null);
+            }} />
           ))}
         </ul>
       </AsyncPanel>
 
-      {selected && (
+      {selectedGoal && (
         <section>
-          <SectionHeading>Task graph</SectionHeading>
-          <AsyncPanel loading={plan.loading} error={plan.error} onRetry={plan.reload}>
-            <TaskGraph layers={plan.data ?? []} />
+          <SectionHeading
+            actions={
+              <button type="button" style={{ ...buttonStyle, background: accent.base, color: accent.on }} onClick={() => void createPlan()}>
+                Create plan
+              </button>
+            }
+          >
+            {selectedGoal.id} plan
+          </SectionHeading>
+          <p style={muted}>{selectedGoal.objective}</p>
+
+          <AsyncPanel loading={historicalPlans.loading} error={historicalPlans.error} onRetry={historicalPlans.reload}>
+            {historicalPlans.data && historicalPlans.data.length > 0 && (
+              <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
+                {historicalPlans.data.map((item) => (
+                  <button key={item.id} type="button" style={{ ...buttonStyle, borderColor: item.id === planId ? accent.base : surface.border }} onClick={() => setPlanId(item.id)}>
+                    {item.id} · {item.state}
+                  </button>
+                ))}
+              </div>
+            )}
           </AsyncPanel>
+
+          {planId && (
+            <AsyncPanel loading={plan.loading} error={plan.error} onRetry={plan.reload}>
+              {plan.data && <PlanReview plan={plan.data} onLock={() => void lockPlan()} onRun={() => void runPlan()} />}
+            </AsyncPanel>
+          )}
         </section>
       )}
-
-      <PlanRunPicker onSelect={setSelected} selected={selected} />
     </div>
   );
 };
 
-const PlanRunPicker: FC<{ selected: string | null; onSelect: (id: string) => void }> = ({
-  selected,
-  onSelect,
-}) => {
-  const runs = useAsync(() => api.runs(), []);
-
+const PlanReview: FC<{ plan: PlanView; onLock: () => void; onRun: () => void }> = ({ plan, onLock, onRun }) => {
+  const tasks = taskViews(plan);
   return (
-    <section>
-      <SectionHeading actions={<button type="button" style={buttonStyle} onClick={runs.reload}>Refresh</button>}>
-        Runs
-      </SectionHeading>
-      <AsyncPanel
-        loading={runs.loading}
-        error={runs.error}
-        onRetry={runs.reload}
-        isEmpty={runs.data?.length === 0}
-        emptyMessage="No run has been started yet."
-      >
-        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "0.4rem" }}>
-          {runs.data?.map((run) => (
-            <li key={run.id}>
-              <button
-                type="button"
-                aria-pressed={selected === run.id}
-                onClick={() => onSelect(run.id)}
-                style={{
-                  ...card,
-                  ...buttonStyle,
-                  width: "100%",
-                  textAlign: "left",
-                  borderColor: selected === run.id ? accent.base : surface.border,
-                }}
-              >
-                <strong>{run.goalId}</strong> <StatusBadge value={run.state} />
-                <span style={muted}> · {run.taskCount} tasks</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </AsyncPanel>
-    </section>
+    <>
+      <div style={{ ...card, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <StatusBadge value={plan.state} />
+        <span style={muted}>{tasks.length} tasks · {plan.autonomy} · runner {plan.runner}</span>
+        <span style={{ marginLeft: "auto", display: "flex", gap: "0.4rem" }}>
+          {plan.state === "DRAFT" && <button type="button" style={buttonStyle} onClick={onLock}>Lock plan</button>}
+          {plan.state === "LOCKED" && <button type="button" style={{ ...buttonStyle, background: accent.base, color: accent.on }} onClick={onRun}>Run locked plan</button>}
+        </span>
+      </div>
+      <SectionHeading>Dependency graph</SectionHeading>
+      <TaskGraph layers={layerTasks(tasks)} />
+      <SectionHeading>Task contract</SectionHeading>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "0.4rem" }}>
+        {plan.tasks.map((task) => (
+          <li key={task.id} style={card}>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <strong>{task.objective}</strong>
+              <StatusBadge value={task.risk} />
+            </div>
+            <p style={{ ...muted, margin: "0.25rem 0 0" }}>
+              {task.capabilities.join(", ") || "core implementation"} · {task.writeScope.join(", ") || "scope to be resolved by runner"}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 };
+
+export const planStateTone = (state: string) => tone[state === "LOCKED" ? "active" : "neutral"];
