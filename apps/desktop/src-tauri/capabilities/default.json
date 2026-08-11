@@ -1,11 +1,14 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "What the Atlas Flow window is allowed to ask the shell for.",
-  "windows": ["main"],
+  "description": "What the Atlas Flow window is allowed to ask the shell for. The folder dialog is granted; reading or writing files is not \u2014 the window picks a directory, the backend reads it.",
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-set-title",
-    "shell:allow-open"
+    "shell:allow-open",
+    "dialog:allow-open"
   ]
 }

@@ -115,35 +115,41 @@ def wait_for_backend(timeout: float) -> dict | list | None:
     return None
 
 
-def press_start(wid: str) -> bool:
-    """Reach the Project tab and activate Start, entirely by keyboard.
+def saw_request(line: str, timeout: float) -> bool:
+    """True once the backend's access log shows the window making that request."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if BACKEND_LOG.is_file():
+            log = BACKEND_LOG.read_text(encoding="utf-8", errors="replace")
+            if line in log:
+                return True
+        time.sleep(0.5)
+    return False
+
+
+def reached_the_last_stage(wid: str) -> bool:
+    """Drive the stage list by keyboard until the last stage actually loads.
 
     Keys go through XTEST to the focused window rather than `xdotool
     --window`, which sends an XSendEvent that WebKit ignores — the first
     version of this test pressed keys into a void and reported it as a missing
     backend.
 
-    Arrow keys walk the tablist; Tab then enters the panel. How many Tabs land
-    on Start depends on whether the panel above it is showing an error, so each
-    Tab is followed by Return and the loop stops when the backend answers.
-    Activating a Retry button by mistake costs nothing; guessing a fixed count
-    and calling a missed press a failing backend costs the truth.
+    How many Tabs land on the stage list depends on what precedes it in the
+    header, so this presses one at a time and checks after each. The check is
+    the point: Docs is the only stage that fetches /api/docs, so the backend's
+    access log says whether the keyboard really moved the window, rather than
+    the test asserting that it pressed some keys.
     """
     xdo("windowactivate", "--sync", wid)
     time.sleep(1.0)
-    xdo("key", "Tab")
-    time.sleep(0.6)
-    for _ in range(3):  # plan -> build -> review -> project
-        xdo("key", "Right")
-        time.sleep(0.9)
-    time.sleep(1.5)
 
-    for _ in range(4):
-        xdo("key", "Return")
-        if wait_for_backend(6) is not None:
-            return True
+    for _ in range(5):
         xdo("key", "Tab")
         time.sleep(0.5)
+        xdo("key", "End")
+        if saw_request("GET /api/docs", 4):
+            return True
     return False
 
 
@@ -153,6 +159,9 @@ def app(tmp_path: Path) -> Iterator[tuple[str, Path]]:
     bundle = _bundle()
     assert bundle is not None
     project = write_project(tmp_path / "quill", CLI_TOOL)
+    # Checked before launching, not after: the app starts its engine on its
+    # own, so afterwards a healthy port proves nothing about who opened it.
+    assert get("/healthz") is None, "something was already listening on the port"
     BACKEND_LOG.unlink(missing_ok=True)
     existing = open_windows()
 
@@ -165,7 +174,9 @@ def app(tmp_path: Path) -> Iterator[tuple[str, Path]]:
             "ATLAS_FLOW_API": BASE_URL,
             "ATLAS_FLOW_BACKEND_CMD": (
                 f"{python} -m uvicorn atlas_flow.api.app:create_app "
-                f"--factory --port {PORT} --log-level warning"
+                # info, not warning: the access log is how this test sees that the
+                # window itself reached the backend, rather than only Python.
+                f"--factory --port {PORT} --log-level info"
             ),
         },
         stdout=subprocess.DEVNULL,
@@ -188,12 +199,14 @@ def test_the_packaged_app_starts_a_backend_and_serves_the_right_project(
 ) -> None:
     """One walk through everything the three shipped defects broke."""
     wid, _ = app
-    assert get("/healthz") is None, "something was already listening on the port"
 
-    started = press_start(wid)
+    # Opening a project starts its engine: nothing here presses a button.
+    started = wait_for_backend(45)
+    assert started is not None, (
+        f"engine never came up on its own; see {screenshot(wid, 'no-backend')}"
+    )
 
     # It reported RUNNING with a dead backend, so the backend must answer.
-    assert started, f"backend never came up; see {screenshot(wid, 'no-backend')}"
     health = get("/healthz")
     assert health is not None and health["status"] == "ok"
 
@@ -213,3 +226,21 @@ def test_the_packaged_app_starts_a_backend_and_serves_the_right_project(
         assert "PYTHONHOME" not in BACKEND_LOG.read_text(
             encoding="utf-8", errors="replace"
         )
+
+    # The window has to reach the backend, not just Python.
+    #
+    # Everything above passed while the packaged window could not make a single
+    # request: its Content-Security-Policy pinned the backend to one port, so
+    # WebKit refused every fetch before a packet left the machine. From outside
+    # that is indistinguishable from a working app — the checks above all went
+    # through urllib, which no browser policy applies to.
+    assert saw_request("GET /api/goals", 20), (
+        f"the window never fetched /api/goals; see {screenshot(wid, 'no-fetch')}"
+    )
+
+    # Arrow keys moved focus only once, so reaching the far end of the stage
+    # list by keyboard has to be provable, not assumed.
+    assert reached_the_last_stage(wid), (
+        f"the keyboard never reached the last stage; see {screenshot(wid, 'no-walk')}"
+    )
+    assert get("/healthz") is not None, screenshot(wid, "died-while-walking")

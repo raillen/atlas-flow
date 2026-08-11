@@ -12,6 +12,42 @@ export const surface = {
   card: "#ffffff",
   border: "#e2e8f0",
   raised: "#f8fafc",
+  /** Chrome: the frame around the work, quieter than the work itself. */
+  chrome: "#f1f5f9",
+  /** A selected row in a list that stays selected across stages. */
+  selected: "#eef2ff",
+} as const;
+
+/**
+ * Spacing and sizes for a tool, not a page.
+ *
+ * A professional tool is read for hours and holds a lot at once, so its
+ * rhythm is tighter than a document's. These are the only sizes; picking a
+ * number inline is how a layout drifts.
+ */
+export const space = {
+  hair: 2,
+  tight: 4,
+  snug: 8,
+  base: 12,
+  loose: 16,
+  wide: 24,
+} as const;
+
+export const size = {
+  header: 44,
+  status: 32,
+  sidebar: 260,
+  inspector: 300,
+  /** Below this the inspector folds away; the work matters more than detail. */
+  inspectorBreakpoint: 1100,
+} as const;
+
+export const type = {
+  ui: "0.8125rem",
+  small: "0.75rem",
+  tiny: "0.6875rem",
+  heading: "0.9375rem",
 } as const;
 
 export const text = {

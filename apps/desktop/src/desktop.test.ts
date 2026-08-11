@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { desktop, isDesktop } from "./desktop";
-import { describeBackend } from "./screens/ProjectScreen";
+import { desktop, isDesktop, projectName } from "./desktop";
+import { describeEngine } from "./workspace/EngineStatus";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -50,32 +50,68 @@ describe("desktop bridge", () => {
   });
 });
 
-describe("describeBackend", () => {
-  it("says the shell manages nothing in a browser", () => {
-    expect(describeBackend(null)).toContain("browser");
+describe("describeEngine", () => {
+  it("says there is nothing to manage in a browser", () => {
+    expect(describeEngine(null)).toContain("Browser");
   });
 
-  it("names the command it would run when nothing is started", () => {
-    const text = describeBackend({
-      running: false,
-      url: "http://localhost:8000",
-      command: ["uv", "run", "uvicorn"],
-      projectRoot: "/srv/atlas",
-      logPath: "/tmp/atlas-flow-backend.log",
-    });
-
-    expect(text).toContain("uv run uvicorn");
+  it("names the address when the engine is up", () => {
+    expect(
+      describeEngine({
+        running: true,
+        url: "http://127.0.0.1:8123",
+        command: [],
+        projectRoot: "/srv/atlas",
+        logPath: "/tmp/atlas-flow-backend.log",
+      }),
+    ).toBe("Engine at http://127.0.0.1:8123");
   });
 
-  it("names the url when the backend is up", () => {
-    const text = describeBackend({
+  it("says so plainly when it is stopped", () => {
+    expect(
+      describeEngine({
+        running: false,
+        url: "http://127.0.0.1:8123",
+        command: ["uv", "run", "uvicorn"],
+        projectRoot: "/srv/atlas",
+        logPath: "/tmp/atlas-flow-backend.log",
+      }),
+    ).toBe("Engine stopped");
+  });
+});
+
+describe("projectName", () => {
+  it("uses the last segment, which is what people call a project", () => {
+    expect(projectName("/home/someone/code/atlas-flow")).toBe("atlas-flow");
+  });
+
+  it("survives a trailing slash", () => {
+    expect(projectName("/srv/atlas/")).toBe("atlas");
+  });
+
+  it("returns the path itself when there is no segment to take", () => {
+    expect(projectName("/")).toBe("/");
+    expect(projectName("")).toBe("");
+  });
+});
+
+describe("openProject", () => {
+  it("passes the path the shell needs", async () => {
+    const invoke = stubBridge({
       running: true,
       url: "http://localhost:8000",
       command: [],
-      projectRoot: "/srv/atlas",
-      logPath: "/tmp/atlas-flow-backend.log",
+      project_root: "/srv/other",
+      log_path: "/tmp/log",
     });
 
-    expect(text).toBe("Backend running at http://localhost:8000");
+    const status = await desktop.openProject("/srv/other");
+
+    expect(invoke).toHaveBeenCalledWith("open_project", { path: "/srv/other" });
+    expect(status?.projectRoot).toBe("/srv/other");
+  });
+
+  it("reports no recents outside the shell rather than throwing", async () => {
+    await expect(desktop.recentProjects()).resolves.toEqual([]);
   });
 });

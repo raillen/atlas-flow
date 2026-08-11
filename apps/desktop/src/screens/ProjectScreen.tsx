@@ -1,7 +1,6 @@
 import type { FC } from "react";
 import { useMemo, useState } from "react";
 import { api, type DocEntry } from "../api";
-import { desktop, isDesktop, type BackendStatus } from "../desktop";
 import { useAsync } from "../hooks/useAsync";
 import {
   AsyncPanel,
@@ -10,9 +9,8 @@ import {
   muted,
   screen,
   SectionHeading,
-  StatusBadge,
 } from "../components/Primitives";
-import { accent, text } from "../theme";
+import { accent } from "../theme";
 
 function groupBySection(entries: DocEntry[]): [string, DocEntry[]][] {
   const groups = new Map<string, DocEntry[]>();
@@ -24,74 +22,8 @@ function groupBySection(entries: DocEntry[]): [string, DocEntry[]][] {
   return [...groups.entries()];
 }
 
-/** What the shell panel says about a backend it may or may not have started. */
-export function describeBackend(status: BackendStatus | null): string {
-  if (status === null) return "Running in a browser — the shell manages nothing here.";
-  if (status.running) return `Backend running at ${status.url}`;
-  return `No backend started by this window. It would run: ${status.command.join(" ")}`;
-}
-
-const BackendPanel: FC = () => {
-  const [status, setStatus] = useState<BackendStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const state = useAsync(async () => await desktop.backendStatus(), []);
-
-  const current = status ?? state.data;
-
-  const act = async (action: () => Promise<BackendStatus | null>) => {
-    try {
-      setStatus(await action());
-      setError(null);
-    } catch (cause: unknown) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    }
-  };
-
-  return (
-    <section>
-      <SectionHeading>Backend</SectionHeading>
-      <div style={card}>
-        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <StatusBadge value={current?.running ? "RUNNING" : "STOPPED"} />
-          <span style={muted}>{describeBackend(current)}</span>
-        </div>
-        {current && (
-          <p style={{ ...muted, margin: "0.25rem 0 0" }}>
-            Project root: {current.projectRoot}
-            {current.logPath && ` · log: ${current.logPath}`}
-          </p>
-        )}
-        {error && (
-          <p style={{ ...muted, color: text.danger, margin: "0.25rem 0 0" }} role="alert">
-            {error}
-          </p>
-        )}
-        <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.5rem" }}>
-          <button
-            type="button"
-            style={buttonStyle}
-            disabled={current?.running === true}
-            onClick={() => void act(desktop.startBackend)}
-          >
-            Start
-          </button>
-          <button
-            type="button"
-            style={buttonStyle}
-            disabled={current?.running !== true}
-            onClick={() => void act(desktop.stopBackend)}
-          >
-            Stop
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-};
-
 export const ProjectScreen: FC = () => {
   const project = useAsync(() => api.project(), []);
-  const goals = useAsync(() => api.goals(), []);
   const docs = useAsync(() => api.docs(), []);
   const [openDoc, setOpenDoc] = useState<string | null>(null);
   const content = useAsync(
@@ -117,23 +49,6 @@ export const ProjectScreen: FC = () => {
           </div>
         )}
       </AsyncPanel>
-
-      {isDesktop() && <BackendPanel />}
-
-      <section>
-        <SectionHeading>Goals</SectionHeading>
-        <AsyncPanel loading={goals.loading} error={goals.error} onRetry={goals.reload}>
-          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "0.3rem" }}>
-            {goals.data?.map((goal) => (
-              <li key={goal.id} style={{ ...card, display: "flex", gap: "0.5rem" }}>
-                <StatusBadge value={goal.state} />
-                <strong style={{ minWidth: 80 }}>{goal.id}</strong>
-                <span>{goal.title}</span>
-              </li>
-            ))}
-          </ul>
-        </AsyncPanel>
-      </section>
 
       <section>
         <SectionHeading>Canonical documentation</SectionHeading>

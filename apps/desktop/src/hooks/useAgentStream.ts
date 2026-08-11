@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { AgUiClient, type AgUiMessage } from "@atlas-flow/ag-ui-client";
+import { resolveBaseUrl } from "../api";
 
-const WS_URL =
-  (import.meta.env.VITE_ATLAS_API ?? "http://localhost:8000").replace(/^http/, "ws");
+/** The socket lives wherever the backend does, which only the shell knows. */
+async function socketUrl(): Promise<string> {
+  return (await resolveBaseUrl()).replace(/^http/, "ws");
+}
 
 /** One thing the agent said, ran or changed, as it arrives over AG-UI. */
 export interface AgentActivity {
@@ -64,9 +67,15 @@ export function useAgentStream(sessionId: string, active: boolean, limit = 200) 
       if (entry === null) return;
       setActivity((current) => [...current, entry].slice(-limit));
     });
-    client.connect(sessionId, WS_URL);
+    // Connecting waits for the address, so a socket opened before the first
+    // request cannot quietly attach to the wrong port.
+    let dropped = false;
+    void socketUrl().then((url) => {
+      if (!dropped) client.connect(sessionId, url);
+    });
 
     return () => {
+      dropped = true;
       client.disconnect();
       setConnected(false);
     };

@@ -1,6 +1,33 @@
 /** Typed client for the Atlas Flow backend (docs/03-implementation/API_CONTRACTS.md). */
 
-const BASE_URL = import.meta.env.VITE_ATLAS_API ?? "http://localhost:8000";
+import { desktop } from "./desktop";
+
+/**
+ * Where the backend is, which the shell decides at runtime.
+ *
+ * It used to be baked in at build time, so a packaged app whose shell started
+ * a backend on any other port showed "Could not reach the backend" forever
+ * while a healthy backend sat there answering. The build-time value survives
+ * as the fallback for a browser, where there is no shell to ask.
+ *
+ * The shell is asked on the first request rather than at startup: the Tauri
+ * bridge is not on `globalThis` yet while this module is being evaluated, so
+ * asking then answered null and left every request pointed at the wrong port
+ * for the life of the window. An unanswered question is not cached — the next
+ * request asks again.
+ */
+const FALLBACK_URL = import.meta.env.VITE_ATLAS_API ?? "http://localhost:8000";
+let baseUrl = FALLBACK_URL;
+let asked = false;
+
+export async function resolveBaseUrl(): Promise<string> {
+  if (asked) return baseUrl;
+  const status = await desktop.backendStatus();
+  if (status === null) return baseUrl; // a browser: nothing to ask, ask again later
+  baseUrl = status.url.replace(/\/+$/, "");
+  asked = true;
+  return baseUrl;
+}
 
 export interface GoalView {
   id: string;
@@ -213,7 +240,7 @@ function toCamel(value: unknown): unknown {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${BASE_URL}${path}`, {
+  const response = await fetch(`${await resolveBaseUrl()}${path}`, {
     headers: { "Content-Type": "application/json" },
     ...init,
   });

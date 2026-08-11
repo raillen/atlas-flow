@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AgUiClient, type AgUiMessage } from "@atlas-flow/ag-ui-client";
 import {
   api,
+  resolveBaseUrl,
   type DecisionCandidate,
   type DiscussionSession,
   type ProjectDraft,
@@ -19,8 +20,10 @@ import {
 } from "../components/Primitives";
 import { accent, surface, text, tone } from "../theme";
 
-const WS_URL =
-  (import.meta.env.VITE_ATLAS_API ?? "http://localhost:8000").replace(/^http/, "ws");
+/** The socket lives wherever the backend does, which only the shell knows. */
+async function socketUrl(): Promise<string> {
+  return (await resolveBaseUrl()).replace(/^http/, "ws");
+}
 
 /** The nine domains a Project Draft tracks, in the order the Goal system lists them. */
 export const DRAFT_DOMAINS: (keyof ProjectDraft)[] = [
@@ -77,15 +80,24 @@ export const DiscussScreen: FC = () => {
     const client = new AgUiClient();
     client.onStatus(setConnected);
     client.onMessage((message) => setLive((current) => [...current, message]));
-    client.connect(sessionId, WS_URL);
+    // Connecting waits for the address, so a socket opened before the first
+    // request cannot quietly attach to the wrong port.
+    let dropped = false;
+    void socketUrl().then((url) => {
+      if (!dropped) client.connect(sessionId, url);
+    });
     return () => {
+      dropped = true;
       client.disconnect();
       setConnected(false);
     };
   }, [sessionId]);
 
   useEffect(() => {
-    feedRef.current?.scrollTo({ top: feedRef.current.scrollHeight });
+    // Assigning scrollTop rather than calling scrollTo: the method is
+    // absent in some environments, and a chat that throws while trying to
+    // scroll is worse than one that does not scroll.
+    if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
   }, [session.data, live]);
 
   const act = useCallback(async (work: () => Promise<unknown>) => {

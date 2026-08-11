@@ -238,27 +238,43 @@ fn is_alive(slot: &mut Option<Child>) -> bool {
     }
 }
 
-fn status_of(running: bool) -> BackendStatus {
+fn status_of(running: bool, root: &Path) -> BackendStatus {
     BackendStatus {
         running,
         url: backend_url(),
         command: backend_command(),
-        project_root: project_root_path().to_string_lossy().to_string(),
+        project_root: root.to_string_lossy().to_string(),
         log_path: backend_log_path().to_string_lossy().to_string(),
     }
 }
 
-#[tauri::command]
-fn backend_status(backend: State<'_, Backend>) -> BackendStatus {
-    let mut slot = backend.0.lock().expect("backend lock");
-    status_of(is_alive(&mut slot))
+/// The project this window is on: whatever was opened, else what the
+/// environment implies.
+fn current_root(opened: &State<'_, OpenProject>) -> PathBuf {
+    opened
+        .0
+        .lock()
+        .expect("project lock")
+        .clone()
+        .unwrap_or_else(project_root_path)
 }
 
 #[tauri::command]
-fn start_backend(backend: State<'_, Backend>) -> Result<BackendStatus, String> {
+fn backend_status(backend: State<'_, Backend>, opened: State<'_, OpenProject>) -> BackendStatus {
+    let root = current_root(&opened);
+    let mut slot = backend.0.lock().expect("backend lock");
+    status_of(is_alive(&mut slot), &root)
+}
+
+#[tauri::command]
+fn start_backend(
+    backend: State<'_, Backend>,
+    opened: State<'_, OpenProject>,
+) -> Result<BackendStatus, String> {
+    let root = current_root(&opened);
     let mut slot = backend.0.lock().expect("backend lock");
     if is_alive(&mut slot) {
-        return Ok(status_of(true));
+        return Ok(status_of(true, &root));
     }
 
     let argv = backend_command();
@@ -271,11 +287,10 @@ fn start_backend(backend: State<'_, Backend>) -> Result<BackendStatus, String> {
         .try_clone()
         .map_err(|error| format!("could not open {}: {error}", log.display()))?;
 
-    let root = project_root_path();
     if root.as_os_str().is_empty() {
         return Err(
-            "No project selected. Launch Atlas Flow from a project directory, or set \
-             ATLAS_FLOW_PROJECT_ROOT to one."
+            "No project open. Use Open project…, launch Atlas Flow from a project \
+             directory, or set ATLAS_FLOW_PROJECT_ROOT."
                 .to_string(),
         );
     }
@@ -291,34 +306,132 @@ fn start_backend(backend: State<'_, Backend>) -> Result<BackendStatus, String> {
     let child = spawn_and_confirm(&mut command, &log)?;
 
     *slot = Some(child);
-    Ok(status_of(true))
+    Ok(status_of(true, &root))
 }
 
 #[tauri::command]
-fn stop_backend(backend: State<'_, Backend>) -> Result<BackendStatus, String> {
+fn stop_backend(
+    backend: State<'_, Backend>,
+    opened: State<'_, OpenProject>,
+) -> Result<BackendStatus, String> {
+    let root = current_root(&opened);
     let mut slot = backend.0.lock().expect("backend lock");
     if let Some(mut child) = slot.take() {
         child.kill().map_err(|error| error.to_string())?;
         let _ = child.wait();
     }
-    Ok(status_of(false))
+    Ok(status_of(false, &root))
 }
 
 #[tauri::command]
-fn project_root() -> String {
-    project_root_path().to_string_lossy().to_string()
+fn project_root(opened: State<'_, OpenProject>) -> String {
+    current_root(&opened).to_string_lossy().to_string()
+}
+
+/// Where the list of recently opened projects lives.
+fn recents_path() -> PathBuf {
+    let base = env::var("XDG_CONFIG_HOME")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            PathBuf::from(env::var("HOME").unwrap_or_else(|_| ".".into())).join(".config")
+        });
+    base.join("atlas-flow").join("recent-projects")
+}
+
+/// A path is only offered again if it still holds a project.
+///
+/// A recents list that lists directories which have been moved, renamed or
+/// deleted teaches people not to trust it.
+fn is_project(path: &Path) -> bool {
+    path.join("PROJECT_MANIFEST.yaml").is_file()
+}
+
+fn read_recents() -> Vec<String> {
+    std::fs::read_to_string(recents_path())
+        .unwrap_or_default()
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .filter(|line| is_project(Path::new(line)))
+        .map(str::to_string)
+        .collect()
+}
+
+const MAX_RECENTS: usize = 10;
+
+fn remember_recent(root: &Path) {
+    let entry = root.to_string_lossy().to_string();
+    let mut recents = vec![entry.clone()];
+    recents.extend(read_recents().into_iter().filter(|item| *item != entry));
+    recents.truncate(MAX_RECENTS);
+
+    let path = recents_path();
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    let _ = std::fs::write(path, recents.join("\n"));
+}
+
+#[tauri::command]
+fn recent_projects() -> Vec<String> {
+    read_recents()
+}
+
+/// Open a project: stop whatever backend is running, point at the new root,
+/// start again.
+///
+/// One window, one project (ADR-013). The whole backend is bound to a project
+/// root — its database, worktrees and gate commands all live under it — so
+/// switching means restarting rather than re-scoping.
+#[tauri::command]
+fn open_project(
+    path: String,
+    backend: State<'_, Backend>,
+    opened: State<'_, OpenProject>,
+) -> Result<BackendStatus, String> {
+    let root = PathBuf::from(&path);
+    if !root.is_dir() {
+        return Err(format!("{path} is not a directory"));
+    }
+    if !is_project(&root) {
+        return Err(format!(
+            "{path} has no PROJECT_MANIFEST.yaml, so it is not a Project Atlas project"
+        ));
+    }
+
+    stop_running_backend(&backend);
+    *opened.0.lock().expect("project lock") = Some(root.clone());
+    remember_recent(&root);
+
+    start_backend(backend, opened)
+}
+
+/// The project this window is working on, once one has been opened.
+#[derive(Default)]
+struct OpenProject(Mutex<Option<PathBuf>>);
+
+fn stop_running_backend(backend: &State<'_, Backend>) {
+    let mut slot = backend.0.lock().expect("backend lock");
+    if let Some(mut child) = slot.take() {
+        let _ = child.kill();
+        let _ = child.wait();
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(Backend::default())
+        .manage(OpenProject::default())
         .invoke_handler(tauri::generate_handler![
             backend_status,
             start_backend,
             stop_backend,
-            project_root
+            project_root,
+            recent_projects,
+            open_project
         ])
         .build(tauri::generate_context!())
         .expect("error launching Atlas Flow");
@@ -347,6 +460,36 @@ mod tests {
     #[test]
     fn an_unset_command_falls_back_to_the_default() {
         assert_eq!(parse_backend_command(None), DEFAULT_BACKEND_COMMAND);
+    }
+
+    /// The backend port is configurable, so the CSP must not pin one.
+    ///
+    /// It did, and the effect was invisible from every angle we had been
+    /// looking: WebKit refused the request before a packet left the machine,
+    /// so the backend's own log was empty, a listener on the wrong port saw
+    /// nothing, and the window said "Could not reach the backend" beside a
+    /// status bar reporting a healthy engine. Only reading the CSP explained
+    /// it. Loopback with any port is the rule — never a remote host.
+    #[test]
+    fn the_csp_allows_a_backend_on_any_local_port() {
+        let conf = include_str!("../tauri.conf.json");
+        let csp = conf
+            .lines()
+            .find(|line| line.contains("connect-src"))
+            .expect("the configuration declares a connect-src");
+
+        for required in [
+            "http://127.0.0.1:*",
+            "ws://127.0.0.1:*",
+            "http://localhost:*",
+            "ws://localhost:*",
+        ] {
+            assert!(csp.contains(required), "connect-src is missing {required}");
+        }
+        assert!(
+            !csp.contains(":8000"),
+            "connect-src pins a port, so any other backend is blocked: {csp}"
+        );
     }
 
     #[test]

@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { STATE_TONES, accent, contrast, surface, text, tone, toneFor } from "./theme";
+import {
+  STATE_TONES,
+  accent,
+  contrast,
+  size,
+  space,
+  surface,
+  text,
+  tone,
+  toneFor,
+} from "./theme";
 
 // WCAG 2.2 AA. Everything the app renders in colour is normal-size text, so
 // the 3.0 large-text allowance is not claimed anywhere.
@@ -88,5 +98,36 @@ describe("focus indication", () => {
     const ring = "#1e40af";
     expect(contrast(ring, surface.page)).toBeGreaterThanOrEqual(NON_TEXT_MINIMUM);
     expect(contrast(ring, surface.raised)).toBeGreaterThanOrEqual(NON_TEXT_MINIMUM);
+  });
+});
+
+describe("density tokens", () => {
+  it("has one scale, in ascending order", () => {
+    // Inline numbers are how a layout drifts; a scale with a gap in it is how
+    // people start inventing their own.
+    const values = Object.values(space);
+    expect([...values].sort((a, b) => a - b)).toEqual(values);
+  });
+
+  it("leaves room for both panels on a normal window", () => {
+    // Sidebar and inspector must not squeeze the work into a column.
+    const smallest = 1280;
+    const centre = smallest - size.sidebar - size.inspector;
+    expect(centre).toBeGreaterThan(600);
+  });
+
+  it("folds the inspector before the centre gets narrower than the sidebar", () => {
+    const centreAtBreakpoint = size.inspectorBreakpoint - size.sidebar - size.inspector;
+    expect(centreAtBreakpoint).toBeGreaterThan(size.sidebar);
+  });
+
+  it("keeps chrome distinguishable from the work surface", () => {
+    expect(contrast(surface.chrome, surface.card)).toBeGreaterThan(1.02);
+    expect(contrast(text.primary, surface.chrome)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("keeps a selected row readable", () => {
+    expect(contrast(text.primary, surface.selected)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(text.muted, surface.selected)).toBeGreaterThanOrEqual(4.5);
   });
 });
