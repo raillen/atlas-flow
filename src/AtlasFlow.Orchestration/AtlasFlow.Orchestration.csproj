@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The engine: plan a DAG, resolve the workforce, route a model, run a task in
+    an isolated worktree, verify it, record the evidence.
+
+    Everything here takes a CancellationToken. Stopping a run is a product
+    feature, and a token that is accepted but not honoured is worse than one
+    that was never offered.
+  -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../AtlasFlow.Domain/AtlasFlow.Domain.csproj" />
+    <ProjectReference Include="../AtlasFlow.Protocols/AtlasFlow.Protocols.csproj" />
+    <ProjectReference Include="../AtlasFlow.Persistence/AtlasFlow.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>

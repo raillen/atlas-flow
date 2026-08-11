@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Goals, Decisions, Discuss threads, Projects: the vocabulary of the product.
+
+    This project references nothing. That is the constraint that keeps it a
+    domain model rather than a bag of DTOs shaped by whatever database or wire
+    format touched it last. If a type here needs SQLite or JSON-RPC to be
+    expressible, the type is wrong.
+  -->
+
+</Project>

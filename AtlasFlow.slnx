@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AtlasFlow.Domain/AtlasFlow.Domain.csproj" />
+    <Project Path="src/AtlasFlow.Persistence/AtlasFlow.Persistence.csproj" />
+    <Project Path="src/AtlasFlow.Protocols/AtlasFlow.Protocols.csproj" />
+    <Project Path="src/AtlasFlow.Orchestration/AtlasFlow.Orchestration.csproj" />
+    <Project Path="src/AtlasFlow.Application/AtlasFlow.Application.csproj" />
+    <Project Path="src/AtlasFlow.Desktop/AtlasFlow.Desktop.csproj" />
+    <Project Path="src/AtlasFlow.Cli/AtlasFlow.Cli.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AtlasFlow.Domain.Tests/AtlasFlow.Domain.Tests.csproj" />
+    <Project Path="tests/AtlasFlow.Persistence.Tests/AtlasFlow.Persistence.Tests.csproj" />
+    <Project Path="tests/AtlasFlow.Protocols.Tests/AtlasFlow.Protocols.Tests.csproj" />
+    <Project Path="tests/AtlasFlow.Orchestration.Tests/AtlasFlow.Orchestration.Tests.csproj" />
+    <Project Path="tests/AtlasFlow.Desktop.Tests/AtlasFlow.Desktop.Tests.csproj" />
+    <Project Path="tests/AtlasFlow.Integration.Tests/AtlasFlow.Integration.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Operational run state only. Git remains canonical (ADR-009): if this
+    database is deleted, no decision, Goal or document is lost.
+  -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../AtlasFlow.Domain/AtlasFlow.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

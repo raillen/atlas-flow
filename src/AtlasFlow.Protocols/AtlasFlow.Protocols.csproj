@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The three wire protocols, one folder each:
+
+      Acp/   Atlas Harness  -> coding agents      (JSON-RPC over child stdio)
+      Mcp/   agents/runtime -> external tools
+      AgUi/  orchestration  -> the user interface
+
+    They share a project because they share framing, cancellation and error
+    concerns, not because they are the same protocol. Split them when one grows
+    a dependency the other two must not carry.
+  -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../AtlasFlow.Domain/AtlasFlow.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

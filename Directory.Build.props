@@ -1,0 +1,53 @@
+<Project>
+
+  <!--
+    Settings every project in the repository inherits.
+
+    The point of putting them here rather than in each .csproj is that a new
+    project cannot quietly opt out of them by being created with the default
+    template. A warning that is an error in nine projects and a warning in the
+    tenth is not a rule, it is a suggestion.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      Warnings are errors. A nullable-reference warning left as a warning is a
+      NullReferenceException that has already been diagnosed and then ignored.
+      Suppress a specific rule with a justification at the site that needs it;
+      do not lower the bar for the whole repository.
+    -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <AnalysisMode>All</AnalysisMode>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      Deterministic builds so the same source produces the same bytes. The SBOM
+      and the SHA256SUMS list are only meaningful if a rebuild reproduces them.
+    -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Missing XML comment on a public member: not worth failing a build over. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Test code says `null!` deliberately and asserts on it. -->
+    <NoWarn>$(NoWarn);CS8618;CA1707</NoWarn>
+  </PropertyGroup>
+
+</Project>

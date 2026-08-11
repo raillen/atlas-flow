@@ -1,0 +1,87 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.{cs,csx}]
+indent_size = 4
+max_line_length = 120
+
+[*.{csproj,props,targets,axaml,xaml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+
+# --- Naming ---------------------------------------------------------------
+dotnet_naming_rule.private_fields_underscore.severity = error
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.underscore_camel.required_prefix = _
+dotnet_naming_style.underscore_camel.capitalization = camel_case
+
+dotnet_naming_rule.constants_pascal.severity = error
+dotnet_naming_rule.constants_pascal.symbols = constants
+dotnet_naming_rule.constants_pascal.style = pascal
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.required_modifiers = const
+dotnet_naming_style.pascal.capitalization = pascal_case
+
+# --- Style that is enforced, not suggested --------------------------------
+# `var` only when the type is already on the line. A reader should not have to
+# hover to learn what a variable is.
+csharp_style_var_when_type_is_apparent = true:warning
+csharp_style_var_elsewhere = false:warning
+
+csharp_prefer_braces = true:error
+csharp_style_namespace_declarations = file_scoped:error
+csharp_style_prefer_pattern_matching = true:warning
+csharp_style_throw_expression = true:warning
+csharp_prefer_simple_using_statement = true:warning
+
+dotnet_style_readonly_field = true:warning
+dotnet_style_require_accessibility_modifiers = always:error
+dotnet_style_qualification_for_field = false:warning
+dotnet_style_qualification_for_property = false:warning
+
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace:error
+
+# --- Analyzer severities that matter for this codebase --------------------
+# Atlas Flow spawns processes, reads files and awaits everything. These four
+# rules cover the mistakes that class of code actually makes.
+
+# Pass a CancellationToken. A DAG that cannot be cancelled cannot be stopped,
+# and stopping a run is a shipped feature.
+dotnet_diagnostic.CA2016.severity = error
+
+# ConfigureAwait: required in the libraries, meaningless in the Avalonia app.
+dotnet_diagnostic.CA2007.severity = error
+
+# Do not use Task.Result / .Wait() — deadlocks under a UI synchronisation
+# context, which is exactly where this code now runs.
+dotnet_diagnostic.CA1849.severity = error
+dotnet_diagnostic.VSTHRD002.severity = error
+
+# Dispose ownership. Every spawned Process and SqliteConnection is disposable.
+dotnet_diagnostic.CA2000.severity = error
+dotnet_diagnostic.CA1063.severity = error
+
+# Specify IFormatProvider / StringComparison: this app parses model names,
+# paths and agent output. Culture-dependent comparison is a real bug here.
+dotnet_diagnostic.CA1305.severity = error
+dotnet_diagnostic.CA1310.severity = error
+
+[src/AtlasFlow.Desktop/**/*.cs]
+# The UI layer is the one place that must stay on the UI thread after an await.
+dotnet_diagnostic.CA2007.severity = none

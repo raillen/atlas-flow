@@ -57,3 +57,16 @@ Thumbs.db
 secring.*
 *private*.asc
 .gnupg/
+
+# --- .NET ---
+bin/
+obj/
+*.user
+artifacts/
+[Dd]ebug/
+[Rr]elease/
+TestResults/
+*.trx
+*.coverage
+coverage.*.xml
+.vs/

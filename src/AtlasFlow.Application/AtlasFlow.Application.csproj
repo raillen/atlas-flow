@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Composition and use cases. This is what the Tauri build reached over HTTP to
+    talk to; the desktop app now references it directly and calls it in-process.
+
+    That deletion is the point of the port: no localhost port, no CORS, no
+    "backend failed to start" state to render, no second process to reap.
+  -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../AtlasFlow.Domain/AtlasFlow.Domain.csproj" />
+    <ProjectReference Include="../AtlasFlow.Orchestration/AtlasFlow.Orchestration.csproj" />
+    <ProjectReference Include="../AtlasFlow.Persistence/AtlasFlow.Persistence.csproj" />
+    <ProjectReference Include="../AtlasFlow.Protocols/AtlasFlow.Protocols.csproj" />
+  </ItemGroup>
+
+</Project>
