@@ -28,7 +28,7 @@ passing evidence for every gate it declares required.
 | P07 | Verification and Evidence | ACTIVE | review gate |
 | P08 | Routing, Budgets and Scorecards | ACTIVE | review gate |
 | P09 | Hardening | ACTIVE | non-Linux packaging, rendered-DOM a11y audit, review gate |
-| P10 | Beta and 1.0 Validation | ACTIVE | SBOM and checksums, Linux-only CI, review gate |
+| P10 | Beta and 1.0 Validation | ACTIVE | Linux-only CI, unsigned artefacts, review gate |
 
 The review gate is outstanding across the board because no independent review
 has been performed. It is deliberately not being self-certified.
@@ -80,7 +80,7 @@ can be marked DONE:
 1. **An independent review.** The `review` gate is required by all eleven Goals
    and is outstanding on all eleven. It is deliberately not self-certified — the
    author of the work cannot be its reviewer.
-2. **Release artefacts.** No SBOM and no checksums are produced (P10).
+2. **Signing.** An SBOM and checksums are produced; nothing is signed (P10).
 3. **Non-Linux support.** CI runs on Linux only; AppImage is unverified and
    Windows and macOS bundles are unconfigured (P06/P09).
 4. **Smaller gaps**, each recorded in its Goal: a rendered-DOM accessibility

@@ -54,6 +54,24 @@ require "$STAGE/data/usr/share/applications" "desktop entry"
 require "$STAGE/data/usr/share/icons/hicolor/128x128/apps" "icons"
 require "$STAGE/control/control" "control metadata"
 
+printf '\n=== Release artefacts ===\n'
+
+# Both are produced beside the package, so an artefact and the record of what
+# is inside it never drift apart.
+PYTHON="${ATLAS_PYTHON:-python3}"
+if ! "$PYTHON" "$ROOT/scripts/generate_sbom.py" "$BUNDLE_DIR/sbom.cyclonedx.json"; then
+  printf 'SBOM generation failed\n' >&2
+  FAILED=1
+fi
+
+if command -v sha256sum >/dev/null 2>&1; then
+  ( cd "$BUNDLE_DIR" && sha256sum ./*.deb ./sbom.cyclonedx.json > SHA256SUMS )
+  printf 'checksums: %s\n' "$BUNDLE_DIR/SHA256SUMS"
+else
+  printf 'sha256sum not available; no checksums written\n' >&2
+  FAILED=1
+fi
+
 if [ "$FAILED" -eq 0 ]; then
   printf '\nPackaging smoke test PASSED.\n'
 else

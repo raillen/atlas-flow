@@ -8,7 +8,7 @@ Generated: 2026-08-10
 |-------|---------|--------|
 | Python lint | `uv run --project backend ruff check .` | PASS |
 | Python types | `uv run --project backend mypy` | PASS (strict, 56 files) |
-| Python tests | `uv run --project backend pytest` | PASS — 291 tests |
+| Python tests | `uv run --project backend pytest` | PASS — 300 tests |
 | TypeScript build | `pnpm run typecheck` | PASS |
 | JS lint | `pnpm run lint` | PASS |
 | JS tests | `pnpm run test` | PASS — 46 tests |
@@ -16,7 +16,7 @@ Generated: 2026-08-10
 | Goal contracts | `python scripts/validate_goals.py` | PASS — 11 Goals, 0 DONE |
 | Command Code | `scripts/validate_command_code.sh` | PASS — 9 agents, 15 skills |
 | Desktop shell | `cargo check` in `apps/desktop/src-tauri` | PASS |
-| Packaging | `sh scripts/package_smoke.sh` | PASS — deb bundle with binary, desktop entry and icons |
+| Packaging | `sh scripts/package_smoke.sh` | PASS — deb bundle, CycloneDX SBOM (791 components), SHA256SUMS |
 
 Run everything with `scripts/validate_all.sh`.
 
@@ -43,6 +43,7 @@ Roughly 8,300 lines of source are covered by roughly 4,000 lines of tests.
 | Fault injection (real runs) | 9 | Timeout, process kill, malformed output, disconnect, conflict, recovery |
 | Performance budgets | 3 | Event append and polled endpoints, measured against the documented budgets |
 | Dogfooding | 14 | Three project categories built from scratch and run end to end, plus fresh install and restart |
+| Release artefacts | 9 | SBOM generation from all three lockfiles, ordering, completeness |
 | Desktop (TypeScript) | 46 | API client, Tauri bridge, agent stream, tab keyboard model, WCAG contrast |
 
 ## Defects this pass found and fixed
@@ -75,8 +76,7 @@ These are tracked in the Goal files, not hidden:
 - **No rendered-DOM accessibility audit.** Contrast and the keyboard model are checked as data and pure functions; there is no jsdom or axe pass over the component tree, and no screen-reader walkthrough (P09).
 - **ACP session resumption across process restarts** is not implemented; a restart starts a fresh session (P04).
 - **No independent review has been performed**, so the review gate is outstanding on every Goal (P00–P10).
-- **No SBOM or checksums** are produced for release artefacts (P10).
-- **CI runs on Linux only** (P09, P10).
+- **CI runs on Linux only**, and release artefacts are unsigned (P09, P10).
 
 ## How to run
 

@@ -47,6 +47,9 @@ history:
   including what is not covered.'
 - '2026-08-10: closed — User guide updated to match the runtime: opening another project,
   routing and budgets, and what recovery does.'
-- '2026-08-10: still blocking — Release gates: SBOM and checksums are not produced, CI runs
-  on Linux only, and no release Goal is DONE.'
 - '2026-08-10: still blocking — review gate: no independent review has been performed.'
+- '2026-08-10: closed — Release artefacts: scripts/package_smoke.sh writes a CycloneDX 1.5
+  SBOM generated from the three lockfiles (791 components across pypi, npm and cargo) and
+  SHA256SUMS beside the bundle.'
+- '2026-08-10: still blocking — Release gates: CI runs on Linux only, artefacts are unsigned,
+  and no release Goal is DONE. See docs/04-quality/RELEASE_GATES.md.'

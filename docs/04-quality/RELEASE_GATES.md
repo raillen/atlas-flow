@@ -15,12 +15,13 @@ so.
 | Installation tests | **PARTIAL** | `scripts/package_smoke.sh` verifies the `deb` bundle. AppImage, Windows and macOS are unverified. |
 | Project Atlas compatibility | **PASS** | Three project categories built and executed end to end; see [the compatibility matrix](../09-references/COMPATIBILITY_MATRIX.md). |
 | Updated documentation | **PASS** | `scripts/validate_docs.py` checks every internal link; canonical docs are updated with each change. |
-| SBOM and checksums | **FAIL** | Not produced. |
+| SBOM and checksums | **PASS** | `scripts/package_smoke.sh` writes a CycloneDX 1.5 SBOM (791 components across pypi, npm and cargo) and `SHA256SUMS` beside the bundle. |
 | Independent review | **FAIL** | Not performed. It is deliberately not self-certified — the `review` gate on every Goal stays open until someone other than the author signs it off. |
 
 ## The rule this table exists to protect
 
 A gate is not passed by writing that it is. `all_passed` exempts nothing:
 a gate that is hard to satisfy has to be declared optional in the Goal, not
-skipped at evaluation time. The same standard applies here — the three FAIL rows
-stay FAIL until the artefact exists.
+skipped at evaluation time. The same standard applies here — the FAIL rows stay
+FAIL until the artefact exists, and the PARTIAL rows say what is missing rather
+than rounding up.
