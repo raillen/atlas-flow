@@ -77,3 +77,8 @@ history:
 - '2026-08-11: review gate PASSED — self-review by the implementer, authorised by the owner;
   2 defects found and fixed, 1 checked and not reproduced — docs/07-decisions/reviews/2026-08-11-self-review.md'
 - '2026-08-11: moved to DONE — every required gate has passing evidence.'
+- '2026-08-11: closed — the Discuss screen talks to the backend. It used to open a WebSocket,
+  echo what you typed back at you and lose it: the Decision Ledger was implemented and tested
+  and the screen in front of it wrote to nothing. Sessions, messages, proposals and acceptances
+  now go through the discussion API, and the socket is kept for live updates rather than as
+  the only channel.'

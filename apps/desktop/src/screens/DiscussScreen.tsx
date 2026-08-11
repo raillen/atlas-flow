@@ -1,188 +1,290 @@
+import type { FC } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AgUiClient, type AgUiMessage } from "@atlas-flow/ag-ui-client";
-import { AtlasLogo } from "@atlas-flow/ui";
+import {
+  api,
+  type DecisionCandidate,
+  type DiscussionSession,
+  type ProjectDraft,
+} from "../api";
+import { useAsync } from "../hooks/useAsync";
+import {
+  AsyncPanel,
+  buttonStyle,
+  card,
+  muted,
+  screen,
+  SectionHeading,
+  StatusBadge,
+} from "../components/Primitives";
 import { accent, surface, text, tone } from "../theme";
 
-interface Props {
-  sessionId: string;
-  serverUrl: string;
+const WS_URL =
+  (import.meta.env.VITE_ATLAS_API ?? "http://localhost:8000").replace(/^http/, "ws");
+
+/** The nine domains a Project Draft tracks, in the order the Goal system lists them. */
+export const DRAFT_DOMAINS: (keyof ProjectDraft)[] = [
+  "product",
+  "architecture",
+  "ux",
+  "data",
+  "security",
+  "quality",
+  "operations",
+  "aiOrchestration",
+  "roadmap",
+];
+
+/**
+ * How close a draft is to being finalizable, as a plain sentence.
+ *
+ * Finalization writes ADRs into `docs/`, and the backend refuses while any
+ * domain is still short. Saying which ones is the difference between a button
+ * that looks broken and one that explains itself.
+ */
+export function describeDraft(draft: ProjectDraft | undefined): string {
+  if (draft === undefined) return "No draft yet.";
+  const missing = DRAFT_DOMAINS.filter((domain) => draft[domain] !== "sufficient");
+  if (missing.length === 0) return "Every domain is sufficient; the draft can be finalized.";
+  return `${missing.length} of ${DRAFT_DOMAINS.length} domains still need work: ${missing.join(", ")}`;
 }
 
-const containerStyle: React.CSSProperties = {
-  fontFamily: "system-ui, sans-serif",
-  maxWidth: 800,
-  margin: "0 auto",
-  padding: "1rem",
-  height: "100dvh",
-  display: "flex",
-  flexDirection: "column",
-};
-
-const headerStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "0.5rem",
-  paddingBottom: "0.75rem",
-  borderBottom: `1px solid ${surface.border}`,
-  marginBottom: "0.5rem",
-};
-
-const statusStyle = (connected: boolean): React.CSSProperties => ({
-  fontSize: "0.75rem",
-  color: connected ? tone.positive.fg : tone.negative.fg,
-  marginLeft: "auto",
-});
-
-const feedStyle: React.CSSProperties = {
-  flex: 1,
-  overflowY: "auto",
-  padding: "0.5rem 0",
-  display: "flex",
-  flexDirection: "column",
-  gap: "0.25rem",
-};
-
-const eventStyle: React.CSSProperties = {
-  padding: "0.25rem 0.5rem",
-  fontSize: "0.85rem",
-  borderBottom: `1px solid ${tone.neutral.bg}`,
-};
-
-const inputRowStyle: React.CSSProperties = {
-  display: "flex",
-  gap: "0.5rem",
-  paddingTop: "0.5rem",
-};
-
-const inputStyle: React.CSSProperties = {
-  flex: 1,
-  padding: "0.5rem",
-  border: `1px solid ${tone.neutral.border}`,
-  borderRadius: "6px",
-  fontSize: "0.9rem",
-};
-
-const buttonStyle: React.CSSProperties = {
-  padding: "0.5rem 1rem",
-  border: "none",
-  borderRadius: "6px",
-  background: accent.base,
-  color: "white",
-  cursor: "pointer",
-  fontWeight: 500,
-};
-
-const eventLabel: Record<string, string> = {
-  "atlas.discuss.message": "💬",
-  "atlas.decision.proposed": "📋",
-};
-
-export function DiscussScreen({ sessionId, serverUrl }: Props) {
-  const clientRef = useRef(new AgUiClient());
+export const DiscussScreen: FC = () => {
+  const sessions = useAsync(() => api.discussions(), []);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
+  const [draftText, setDraftText] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
-  const [events, setEvents] = useState<AgUiMessage[]>([]);
-  const [input, setInput] = useState("");
+  const [live, setLive] = useState<AgUiMessage[]>([]);
+  const feedRef = useRef<HTMLDivElement | null>(null);
 
-  const client = clientRef.current;
+  const session = useAsync(
+    async () => (sessionId ? await api.discussion(sessionId) : null),
+    [sessionId, reload],
+  );
+
+  // Pick up whichever session exists, rather than opening a new one on every
+  // visit: a discussion nobody can find again is a discussion nobody keeps.
+  useEffect(() => {
+    if (sessionId === null && sessions.data && sessions.data.length > 0) {
+      setSessionId(sessions.data[0]);
+    }
+  }, [sessions.data, sessionId]);
 
   useEffect(() => {
+    if (sessionId === null) return;
+    const client = new AgUiClient();
     client.onStatus(setConnected);
-    client.onMessage((msg) => setEvents((prev) => [...prev.slice(-199), msg]));
-    client.connect(sessionId, serverUrl);
-
-    const reconnectTimer = setInterval(() => {
-      if (!client.connected) client.connect(sessionId, serverUrl);
-    }, 3000);
-
+    client.onMessage((message) => setLive((current) => [...current, message]));
+    client.connect(sessionId, WS_URL);
     return () => {
-      clearInterval(reconnectTimer);
       client.disconnect();
+      setConnected(false);
     };
-  }, [sessionId, serverUrl, client]);
+  }, [sessionId]);
 
-  const handleSend = useCallback(() => {
-    const text = input.trim();
-    if (!text) return;
-    client.send({ kind: "message", content: text });
-    setInput("");
-  }, [input, client]);
+  useEffect(() => {
+    feedRef.current?.scrollTo({ top: feedRef.current.scrollHeight });
+  }, [session.data, live]);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-      }
-    },
-    [handleSend],
-  );
+  const act = useCallback(async (work: () => Promise<unknown>) => {
+    try {
+      await work();
+      setError(null);
+      setReload((value) => value + 1);
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }, []);
 
-  const proposeDecision = useCallback(() => {
-    const text = input.trim();
-    if (!text) return;
-    client.send({
-      kind: "decision_propose",
-      data: { title: text, statement: text, rationale: "", status: "PROPOSED" },
+  const start = () =>
+    void act(async () => {
+      const created = await api.createDiscussion();
+      setSessionId(created.sessionId);
+      sessions.reload();
     });
-    setInput("");
-  }, [input, client]);
+
+  const send = () => {
+    const content = draftText.trim();
+    if (!content || sessionId === null) return;
+    setDraftText("");
+    void act(() => api.sendMessage(sessionId, content));
+  };
+
+  const propose = () => {
+    const content = draftText.trim();
+    if (!content || sessionId === null) return;
+    setDraftText("");
+    void act(() => api.proposeDecision(sessionId, content, content));
+  };
 
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
-        <AtlasLogo size={28} />
-        <strong>Atlas Flow — Discuss</strong>
-        <span style={statusStyle(connected)}>
-          {connected ? "● connected" : "○ disconnected"}
-        </span>
-      </div>
+    <div style={screen}>
+      <SectionHeading
+        actions={
+          <button type="button" style={buttonStyle} onClick={start}>
+            New discussion
+          </button>
+        }
+      >
+        Discuss
+      </SectionHeading>
+      <p style={muted}>
+        Conversation is stored, not just streamed. Decisions accepted here become
+        ADRs and Decision Ledger entries in <code>docs/</code>.
+      </p>
 
-      <div style={feedStyle} role="log" aria-live="polite" aria-label="Discussion messages">
-        {events.length === 0 && (
-          <div style={{ color: text.faint, fontStyle: "italic", padding: "0.5rem" }}>
-            No messages yet. Start the conversation.
-          </div>
-        )}
-        {events.map((evt, i) => (
-          <div key={i} style={eventStyle}>
-            <span style={{ marginRight: "0.5rem" }} aria-hidden="true">
-              {eventLabel[evt.type] ?? "●"}
-            </span>
-            <span style={{ color: text.faint, fontSize: "0.75rem" }}>
-              {evt.type}
-            </span>{" "}
-            {typeof evt.payload.content === "string" && evt.payload.content}
-            {typeof evt.payload.title === "string" && (
-              <strong>{evt.payload.title}</strong>
+      <AsyncPanel
+        loading={sessions.loading}
+        error={sessions.error}
+        onRetry={sessions.reload}
+        isEmpty={sessionId === null && (sessions.data?.length ?? 0) === 0}
+        emptyMessage="No discussions yet. Start one to begin."
+      >
+        {sessionId !== null && (
+          <AsyncPanel
+            loading={session.loading && !session.data}
+            error={session.error}
+            onRetry={session.reload}
+          >
+            {session.data && (
+              <DiscussionBody
+                session={session.data}
+                connected={connected}
+                feedRef={feedRef}
+                onAccept={(decisionId) =>
+                  void act(() => api.acceptDecision(session.data!.id, decisionId))
+                }
+              />
             )}
-          </div>
-        ))}
-      </div>
+          </AsyncPanel>
+        )}
+      </AsyncPanel>
 
-      <div style={inputRowStyle}>
-        <label htmlFor="discuss-input" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}>
-          Type a message
-        </label>
-        <input
-          id="discuss-input"
-          style={inputStyle}
-          placeholder="Type a message or decision..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          aria-label="Message input"
-        />
-        <button style={buttonStyle} onClick={handleSend}>
-          Send
-        </button>
-        <button
-          style={{ ...buttonStyle, background: accent.base }}
-          onClick={proposeDecision}
-          title="Propose decision"
-        >
-          Decide
-        </button>
-      </div>
+      {error && (
+        <p style={{ ...muted, color: text.danger }} role="alert">
+          {error}
+        </p>
+      )}
+
+      {sessionId !== null && (
+        <div style={{ display: "flex", gap: "0.4rem" }}>
+          <input
+            aria-label="Message"
+            value={draftText}
+            placeholder="Say something, or describe a decision"
+            onChange={(event) => setDraftText(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                send();
+              }
+            }}
+            style={{
+              flex: 1,
+              padding: "0.5rem 0.7rem",
+              borderRadius: 6,
+              border: `1px solid ${tone.neutral.border}`,
+              background: surface.card,
+              color: text.primary,
+              font: "inherit",
+            }}
+          />
+          <button
+            type="button"
+            style={{ ...buttonStyle, background: accent.base, color: accent.on }}
+            onClick={send}
+          >
+            Send
+          </button>
+          <button type="button" style={buttonStyle} onClick={propose}>
+            Propose decision
+          </button>
+        </div>
+      )}
     </div>
   );
+};
+
+const DiscussionBody: FC<{
+  session: DiscussionSession;
+  connected: boolean;
+  feedRef: React.RefObject<HTMLDivElement | null>;
+  onAccept: (decisionId: string) => void;
+}> = ({ session, connected, feedRef, onAccept }) => (
+  <>
+    <div style={card}>
+      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+        <strong>{session.title || session.id}</strong>
+        <StatusBadge value={connected ? "RUNNING" : "PLANNED"} />
+        <span style={muted}>{connected ? "live" : "not streaming"}</span>
+      </div>
+      <p style={{ ...muted, margin: "0.25rem 0 0" }}>{describeDraft(session.draft)}</p>
+    </div>
+
+    <section>
+      <SectionHeading>Conversation</SectionHeading>
+      <div
+        ref={feedRef}
+        role="log"
+        aria-live="polite"
+        aria-label="Discussion messages"
+        style={{
+          ...card,
+          maxHeight: 320,
+          overflowY: "auto",
+          display: "grid",
+          gap: "0.5rem",
+        }}
+      >
+        {session.messages.length === 0 ? (
+          <p style={muted}>Nothing said yet.</p>
+        ) : (
+          session.messages.map((message) => (
+            <div key={message.id}>
+              <span style={{ ...muted, marginRight: "0.5rem" }}>
+                {message.timestamp.slice(11, 19)}
+              </span>
+              {message.content}
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+
+    <section>
+      <SectionHeading>Decisions</SectionHeading>
+      {session.decisions.length === 0 ? (
+        <p style={muted}>No decisions proposed yet.</p>
+      ) : (
+        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "0.4rem" }}>
+          {session.decisions.map((decision) => (
+            <li key={decision.id} style={card}>
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                <StatusBadge value={decision.status.toUpperCase()} />
+                <strong>{decision.title}</strong>
+                {decision.requiresAdr && <span style={muted}>needs an ADR</span>}
+                {isPending(decision) && (
+                  <button
+                    type="button"
+                    style={{ ...buttonStyle, marginLeft: "auto" }}
+                    onClick={() => onAccept(decision.id)}
+                  >
+                    Accept
+                  </button>
+                )}
+              </div>
+              <p style={{ ...muted, margin: "0.25rem 0 0" }}>{decision.statement}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  </>
+);
+
+/** Only a proposal can be accepted; anything else already has an answer. */
+export function isPending(decision: DecisionCandidate): boolean {
+  return decision.status.toUpperCase() === "PROPOSED";
 }

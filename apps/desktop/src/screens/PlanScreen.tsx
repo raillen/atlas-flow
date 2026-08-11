@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { useCallback, useState } from "react";
 import { api, type GoalView, type TaskView } from "../api";
 import { useAsync } from "../hooks/useAsync";
+import { TaskGraph } from "../components/TaskGraph";
 import {
   AsyncPanel,
   buttonStyle,
@@ -146,21 +147,7 @@ export const PlanScreen: FC<{ onRunStarted: (runId: string) => void }> = ({
         <section>
           <SectionHeading>Task graph</SectionHeading>
           <AsyncPanel loading={plan.loading} error={plan.error} onRetry={plan.reload}>
-            {plan.data?.map((layer, index) => (
-              <div key={index} style={{ marginTop: "0.5rem" }}>
-                <p style={muted}>Layer {index}</p>
-                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                  {layer.map((task) => (
-                    <div key={task.id} style={{ ...card, minWidth: 200 }}>
-                      <div style={{ display: "flex", gap: "0.5rem" }}>
-                        <StatusBadge value={task.state} />
-                      </div>
-                      <p style={{ margin: "0.25rem 0 0" }}>{task.objective}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+            <TaskGraph layers={plan.data ?? []} />
           </AsyncPanel>
         </section>
       )}

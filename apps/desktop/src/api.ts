@@ -125,6 +125,49 @@ export interface RouteDecisionView {
   fallbackAttempts: number;
 }
 
+export interface DiscussMessage {
+  id: string;
+  timestamp: string;
+  content: string;
+  turnType: string;
+}
+
+export interface DecisionCandidate {
+  id: string;
+  title: string;
+  statement: string;
+  rationale: string;
+  status: string;
+  affectedDomains: string[];
+  requiresAdr: boolean;
+  timestamp: string;
+}
+
+/** How complete each domain of the Project Draft is. */
+export type Completeness = "unknown" | "partial" | "sufficient";
+
+export interface ProjectDraft {
+  product: Completeness;
+  architecture: Completeness;
+  ux: Completeness;
+  data: Completeness;
+  security: Completeness;
+  quality: Completeness;
+  operations: Completeness;
+  aiOrchestration: Completeness;
+  roadmap: Completeness;
+}
+
+export interface DiscussionSession {
+  id: string;
+  projectId: string;
+  title: string;
+  messages: DiscussMessage[];
+  decisions: DecisionCandidate[];
+  draft: ProjectDraft;
+  startedAt: string;
+}
+
 export interface DocEntry {
   path: string;
   title: string;
@@ -206,6 +249,26 @@ export const api = {
   routing: () => request<RoutingView>("/api/routing"),
   runRouting: (id: string) =>
     request<RouteDecisionView[]>(`/api/runs/${id}/routing`),
+  discussions: () => request<string[]>("/api/discussions"),
+  createDiscussion: () =>
+    request<{ sessionId: string }>("/api/discussions", { method: "POST" }),
+  discussion: (id: string) =>
+    request<DiscussionSession>(`/api/discussions/${id}`),
+  sendMessage: (id: string, content: string) =>
+    request<DiscussMessage>(`/api/discussions/${id}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ content, turn_type: "message" }),
+    }),
+  proposeDecision: (id: string, title: string, statement: string) =>
+    request<DecisionCandidate>(`/api/discussions/${id}/decisions`, {
+      method: "POST",
+      body: JSON.stringify({ title, statement, rationale: "" }),
+    }),
+  acceptDecision: (id: string, decisionId: string) =>
+    request<DecisionCandidate>(
+      `/api/discussions/${id}/decisions/${decisionId}/accept`,
+      { method: "POST" },
+    ),
   docs: () => request<DocEntry[]>("/api/docs"),
   doc: (path: string) =>
     request<{ path: string; content: string }>(`/api/docs/${path}`),

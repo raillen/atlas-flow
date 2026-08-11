@@ -11,7 +11,7 @@ Generated: 2026-08-10
 | Python tests | `uv run --project backend pytest` | PASS — 356 tests |
 | TypeScript build | `pnpm run typecheck` | PASS |
 | JS lint | `pnpm run lint` | PASS |
-| JS tests | `pnpm run test` | PASS — 63 tests, including an axe-core DOM audit |
+| JS tests | `pnpm run test` | PASS — 78 tests, including an axe-core DOM audit |
 | Docs links | `python scripts/validate_docs.py` | PASS |
 | Goal contracts | `python scripts/validate_goals.py` | PASS — 11 Goals, 11 DONE with evidence |
 | Command Code | `scripts/validate_command_code.sh` | PASS — 9 agents, 15 skills |
@@ -110,6 +110,9 @@ Three defects reached a build that twelve gates called green, and a fourth got p
 34. **`Harness._active_tasks` was declared and never filled**, so every `cancel_task` returned `False` — the mechanism that made cancellation impossible even once something did call it.
 35. **The task state machine could not express cancellation.** `PLANNED` had no path to `CANCELLED`, so stopping a run before its tasks started required marking them `READY` first — a lie the machine forced on the caller — and `BLOCKED` was a dead end nothing could leave.
 36. **Only the `build` gate ever got evidence during a run.** Nothing produced `tests` or `documentation`, so a Goal that Atlas Flow planned and executed could never become completable on its own; a human had to attach the rest. Planning and execution worked and verification did not close.
+
+37. **The Discuss screen never talked to the backend.** It opened a WebSocket, echoed what you typed back at you and lost it — the Decision Ledger was implemented and tested, and the screen in front of it wrote to nothing.
+38. **The Plan showed dependency layers as flat lists**, not a graph. It is drawn now, with a stage list beside it as a peer rather than a fallback.
 
 ## Known gaps
 

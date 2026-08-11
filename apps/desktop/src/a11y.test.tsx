@@ -13,6 +13,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import axe from "axe-core";
 
 import { App } from "./App";
+import { DiscussScreen } from "./screens/DiscussScreen";
 import { PlanScreen } from "./screens/PlanScreen";
 import { BuildScreen } from "./screens/BuildScreen";
 import { ReviewScreen } from "./screens/ReviewScreen";
@@ -139,6 +140,33 @@ const PROJECT = {
 
 const DOCS = [{ path: "01-architecture/GOAL_ENGINE.md", title: "Goal Engine", section: "Architecture" }];
 
+const DISCUSSION = {
+  id: "session-1",
+  project_id: "atlas-flow",
+  title: "Kickoff",
+  messages: [
+    { id: "m1", timestamp: "2026-08-11T00:00:00Z", content: "Hello", turn_type: "message" },
+  ],
+  decisions: [
+    {
+      id: "d1",
+      title: "Use SQLite",
+      statement: "Operational state goes in SQLite",
+      rationale: "",
+      status: "PROPOSED",
+      affected_domains: [],
+      requires_adr: true,
+      timestamp: "2026-08-11T00:00:01Z",
+    },
+  ],
+  draft: {
+    product: "sufficient", architecture: "partial", ux: "unknown", data: "unknown",
+    security: "unknown", quality: "unknown", operations: "unknown",
+    ai_orchestration: "unknown", roadmap: "unknown",
+  },
+  started_at: "2026-08-11T00:00:00Z",
+};
+
 function respond(url: string): unknown {
   if (url.endsWith("/api/goals")) return GOALS;
   if (url.includes("/verification")) return VERIFICATION;
@@ -146,6 +174,8 @@ function respond(url: string): unknown {
   if (url.endsWith("/api/runs")) return [RUN];
   if (url.includes("/api/runs/")) return RUN_DETAIL;
   if (url.endsWith("/api/project")) return PROJECT;
+  if (url.endsWith("/api/discussions")) return ["session-1"];
+  if (url.includes("/api/discussions/")) return DISCUSSION;
   if (url.endsWith("/api/docs")) return DOCS;
   if (url.includes("/api/docs/")) return { path: DOCS[0].path, content: "# Goal Engine\n" };
   return {};
@@ -215,6 +245,7 @@ describe("rendered accessibility", () => {
   });
 
   it.each([
+    ["Discuss", <DiscussScreen key="discuss" />],
     ["Plan", <PlanScreen key="plan" onRunStarted={() => {}} />],
     ["Build", <BuildScreen key="build" runId="run-1" />],
     ["Review", <ReviewScreen key="review" />],

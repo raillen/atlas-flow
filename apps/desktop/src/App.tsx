@@ -145,12 +145,7 @@ export function App() {
         aria-labelledby={`tab-${tab}`}
         style={{ flex: 1, overflowY: "auto" }}
       >
-        {tab === "discuss" && (
-          <DiscussScreen
-            sessionId={crypto.randomUUID().slice(0, 8)}
-            serverUrl="ws://localhost:8000"
-          />
-        )}
+        {tab === "discuss" && <DiscussScreen />}
         {tab === "plan" && <PlanScreen onRunStarted={onRunStarted} />}
         {tab === "build" && <BuildScreen runId={activeRunId} />}
         {tab === "review" && <ReviewScreen />}

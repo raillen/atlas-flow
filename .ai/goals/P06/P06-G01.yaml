@@ -134,3 +134,6 @@ history:
   synchronously inside the key handler, onto a tab whose tabIndex was still -1 and under a
   panel being replaced; it moves in an effect after the render now. jsdom does not reproduce
   it, which is precisely why the packaged smoke test earns its keep.'
+- '2026-08-11: closed — the Plan DAG is drawn: one column per dependency layer with real edges,
+  plus a stage list carrying the same information as a peer rather than a fallback, because
+  a drawing alone is unreadable to a screen reader.'
