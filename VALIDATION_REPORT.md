@@ -15,7 +15,7 @@ Generated: 2026-08-10
 | Docs links | `python scripts/validate_docs.py` | PASS |
 | Goal contracts | `python scripts/validate_goals.py` | PASS — 11 Goals, 0 DONE |
 | Command Code | `scripts/validate_command_code.sh` | PASS — 9 agents, 15 skills |
-| Desktop shell | `cargo check` in `apps/desktop/src-tauri` | PASS |
+| Desktop shell | `cargo fmt --check` and `cargo clippy -- -D warnings` | PASS |
 | Packaging | `sh scripts/package_smoke.sh` | PASS — deb bundle, CycloneDX SBOM (791 components), SHA256SUMS |
 
 Run everything with `scripts/validate_all.sh`.

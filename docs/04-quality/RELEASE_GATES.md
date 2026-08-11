@@ -7,7 +7,7 @@ so.
 | Gate | Status | Evidence |
 | --- | --- | --- |
 | Release Goals DONE with evidence | **FAIL** | 0 of 11 Goals are DONE. `scripts/validate_goals.py` refuses a DONE Goal without passing evidence for every required gate. |
-| CI green on supported platforms | **PARTIAL** | Linux only. `foundation-ci.yml` runs lint, types, tests and the validators. |
+| CI green on supported platforms | **PARTIAL** | Linux only. `foundation-ci.yml` runs Python lint/types/tests, TypeScript lint/types/tests, `cargo fmt` and `clippy -D warnings` on the desktop shell, and the Project Atlas validators. |
 | Protocol contracts green | **PASS** | ACP against a live fixture agent, AG-UI envelopes, and the REST surface are covered by tests. |
 | No critical or high security findings | **PASS** | Five findings from this pass are closed; see [Security Testing](SECURITY_TESTING.md). No independent review has been performed. |
 | Performance within accepted variance | **PASS** | Measured and asserted in `tests/integration/test_performance.py`; see [Performance Budgets](PERFORMANCE_BUDGETS.md). |

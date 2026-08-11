@@ -49,10 +49,11 @@ fn backend_url() -> String {
 
 fn backend_command() -> Vec<String> {
     match env::var("ATLAS_FLOW_BACKEND_CMD") {
-        Ok(raw) if !raw.trim().is_empty() => {
-            raw.split_whitespace().map(str::to_string).collect()
-        }
-        _ => DEFAULT_BACKEND_COMMAND.iter().map(|s| s.to_string()).collect(),
+        Ok(raw) if !raw.trim().is_empty() => raw.split_whitespace().map(str::to_string).collect(),
+        _ => DEFAULT_BACKEND_COMMAND
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
     }
 }
 
@@ -163,13 +164,13 @@ pub fn run() {
         // A backend this shell started is this shell's responsibility. Leaving
         // it holding the port after the window closes is how the next launch
         // fails for no visible reason.
-        if let RunEvent::Exit = event {
-            if let Some(backend) = handle.try_state::<Backend>() {
-                let mut slot = backend.0.lock().expect("backend lock");
-                if let Some(mut child) = slot.take() {
-                    let _ = child.kill();
-                    let _ = child.wait();
-                }
+        if let RunEvent::Exit = event
+            && let Some(backend) = handle.try_state::<Backend>()
+        {
+            let mut slot = backend.0.lock().expect("backend lock");
+            if let Some(mut child) = slot.take() {
+                let _ = child.kill();
+                let _ = child.wait();
             }
         }
     });
