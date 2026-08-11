@@ -27,17 +27,17 @@ passing evidence for every gate it declares required.
 | P06 | Desktop Modes | ACTIVE | review gate |
 | P07 | Verification and Evidence | ACTIVE | review gate |
 | P08 | Routing, Budgets and Scorecards | ACTIVE | review gate |
-| P09 | Hardening | ACTIVE | screen-reader walkthrough, review gate |
+| P09 | Hardening | ACTIVE | review gate |
 | P10 | Beta and 1.0 Validation | ACTIVE | no signing key, review gate |
 
 Two independent reviews were performed on 2026-08-11 by a different model, as
 required by the model-diversity rule: the author of the work cannot be its
 reviewer. The first failed all eleven Goals; the second moved them to PARTIAL.
 
-Both rounds of findings are now closed except three, each recorded in the
-affected Goal's history: no hosted macOS/Windows CI result yet, no project
-signing key, and no screen-reader walkthrough. Closing findings does not move
-the gate — that takes another review.
+Both rounds of findings are now closed, except that no project signing key
+exists. macOS/Windows support and the manual screen-reader walkthrough were
+scoped out by the owner and are recorded as non-goals on the Goals they
+affected. Closing findings does not move the gate — that takes another review.
 
 ## What works end to end
 
@@ -85,13 +85,13 @@ can be marked DONE:
 
 1. **A project signing key.** The mechanism works and verifies itself; no key
    exists to sign with, so released artefacts are still effectively unsigned (P10).
-2. **A hosted CI result for macOS and Windows.** The matrix exists; it reports
-   on the next push (P09, P10).
-3. **A screen-reader walkthrough.** The axe/DOM suite now passes 11 tests, but
-   no screen-reader walkthrough was evidenced (P09).
-4. **Another independent review.** Every local gate passes and both rounds of
-   findings are closed except the three above, so the work is ready to be
-   looked at again — by a different model, not by the one that wrote it.
+2. **Another independent review.** Every local gate passes and both rounds of
+   findings are closed, so the work is ready to be looked at again — by a
+   different model, not by the one that wrote it.
+
+Deferred by owner decision on 2026-08-11, and recorded as non-goals rather than
+quietly dropped: macOS and Windows support (P06, P09, P10), and the manual
+screen-reader walkthrough (P09). The supported platform is Linux on desktop.
 
 See [Release Gates](docs/04-quality/RELEASE_GATES.md) for the gate-by-gate
 status.

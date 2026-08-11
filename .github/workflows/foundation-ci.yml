@@ -12,12 +12,8 @@ concurrency:
 
 jobs:
   python:
-    name: Python / ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+    name: Python
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
@@ -51,12 +47,8 @@ jobs:
         run: uv run --project backend pytest
 
   javascript:
-    name: JavaScript / ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+    name: JavaScript
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
@@ -81,12 +73,8 @@ jobs:
         run: pnpm run test
 
   desktop-shell:
-    name: Desktop shell / ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+    name: Desktop shell
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: apps/desktop/src-tauri
@@ -100,7 +88,6 @@ jobs:
       # Tauri links against the system webview. Without these the crate cannot
       # be compiled at all, which is how it went a whole phase unbuilt.
       - name: System dependencies
-        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
@@ -114,7 +101,6 @@ jobs:
       # The frontend build output is a compile-time input to the crate.
       - name: Frontend placeholder
         run: mkdir -p apps/desktop/dist && touch apps/desktop/dist/index.html
-        shell: bash
         working-directory: .
 
       - name: Rustfmt

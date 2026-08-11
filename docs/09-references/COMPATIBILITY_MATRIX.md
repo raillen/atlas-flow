@@ -2,6 +2,16 @@
 
 What Atlas Flow can open, and what it requires of the project it opens.
 
+## Host platform
+
+| Platform | Support |
+| --- | --- |
+| Linux desktop, x86_64 | Supported, built and tested |
+| macOS, Windows | Out of scope (owner decision, 2026-08-11) |
+
+The backend is portable Python and would very likely run elsewhere; the point
+is that nobody has built or tested it there, so nothing claims it.
+
 ## Framework versions
 
 | project-atlas-framework | Support |

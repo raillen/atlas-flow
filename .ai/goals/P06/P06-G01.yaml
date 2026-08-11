@@ -7,7 +7,8 @@ constraints:
 - Follow Project Atlas authority order
 - Do not silently weaken acceptance
 - Update canonical documentation when behavior/architecture changes
-non_goals: []
+non_goals:
+- macOS and Windows support (owner decision, 2026-08-11)
 dependencies:
 - P02-G01
 - P05-G01
@@ -82,3 +83,11 @@ history:
 - '2026-08-11: re-review finding closed — the AppImage builds and is verified. APPIMAGE_EXTRACT_AND_RUN=1
   removes the FUSE requirement that made it unbuildable; the smoke test unpacks it and checks
   the executable is inside.'
+- '2026-08-11: scope amended by the project owner — supported platform is Linux on desktop.
+  macOS and Windows are out of scope for now, so ''supported platform'' in this Goal''s acceptance
+  means Linux x86_64. This is an amendment, not a gate being skipped: the criterion is unchanged,
+  what changed is which platforms it ranges over.'
+- '2026-08-11: fixed — the AppImage build failed for a second reason once it ran unattended:
+  linuxdeploy ships a `strip` older than the .relr.dyn relocation sections current toolchains
+  emit, so it failed on every system library it copied. NO_STRIP=1 is exported alongside APPIMAGE_EXTRACT_AND_RUN=1;
+  the full build now runs end to end with no manual step.'

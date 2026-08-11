@@ -3,6 +3,12 @@
 The desktop client is a Tauri 2 shell around the React app in
 `apps/desktop/src`, configured in `apps/desktop/src-tauri/tauri.conf.json`.
 
+**Supported platform: Linux on desktop, x86_64.** macOS and Windows are out of
+scope by an owner decision on 2026-08-11 and are recorded as non-goals on P06,
+P09 and P10. Nothing here claims a platform it does not build and test — the
+ICO and ICNS renderers still exist in `scripts/generate_icons.py` behind
+`--all-platforms`, but no such icon is shipped and no such target is declared.
+
 ## What the shell owns
 
 Orchestration lives in the Python backend. The shell owns the three things a
@@ -74,12 +80,18 @@ and the record of what is inside it never drift apart:
 
 ## AppImage
 
-`linuxdeploy` is itself an AppImage, and mounting one needs FUSE, which build
-machines and CI runners frequently lack. `APPIMAGE_EXTRACT_AND_RUN=1` makes it
-extract instead; the packaging script exports it, which is the whole reason
-this bundle went from unbuildable to verified. The check is that the AppImage
-*unpacks into a tree containing the executable* — a file with the right
-extension proves nothing.
+Two things in `linuxdeploy` — not in the application — stood between this
+repository and an AppImage. The packaging script exports both fixes:
+
+- `APPIMAGE_EXTRACT_AND_RUN=1`, because `linuxdeploy` is itself an AppImage and
+  mounting one needs FUSE, which build machines and CI runners frequently lack.
+- `NO_STRIP=1`, because the `strip` it ships is older than the `.relr.dyn`
+  relocation sections current toolchains emit and fails on every system library
+  it copies with `unknown type [0x13]`. Not stripping costs bundle size and
+  nothing else.
+
+The check is that the AppImage *unpacks into a tree containing the executable* —
+a file with the right extension proves nothing.
 
 ## Verified
 
@@ -91,9 +103,6 @@ extension proves nothing.
 
 ## Not yet done
 
-- **Windows and macOS bundles.** Targets and icons are configured and the crate
-  builds and tests on both in CI, but no installer has been produced or
-  smoke-tested there.
 - **Shipping the Python backend inside the bundle.** The packaged app expects a
   backend it can start from the project directory; it does not carry its own
   interpreter. This is the main open question for 1.0.

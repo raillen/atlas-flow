@@ -17,8 +17,8 @@ Generated: 2026-08-10
 | Command Code | `scripts/validate_command_code.sh` | PASS — 9 agents, 15 skills |
 | Desktop shell | `cargo fmt`, `clippy -D warnings`, `cargo test` | PASS — 9 tests |
 | Dependency audit | `sh scripts/audit_dependencies.sh` | PASS — no vulnerabilities; 17 unmaintained-crate warnings from Tauri's GTK3 chain |
-| Every gate at once | `sh scripts/bootstrap.sh && sh scripts/run_gates.sh` | PASS |
 | Packaging | `sh scripts/package_smoke.sh` | PASS — deb and AppImage, CycloneDX SBOM (840 components), SHA256SUMS, GPG signature |
+| Every gate at once | `sh scripts/bootstrap.sh && sh scripts/run_gates.sh` | PASS — 12 gates |
 
 Run everything with `scripts/validate_all.sh`.
 
@@ -93,7 +93,8 @@ These are tracked in the Goal files, not hidden:
 
 - **Models are reached only through Command Code.** There is no provider SDK and there will not be one (ADR-012). If `cmd` is absent, discovery degrades to the policy roster and the CLI and ACP runners are the only paths that perform work.
 - **Adaptive scoring is post-MVP.** The scorecard is fed and persisted, but routing order is still the deterministic policy order; it does not yet reorder candidates by observed success (RFC-001).
-- **Windows and macOS installers are unbuilt.** The targets and icons are configured and the crate builds and tests on both in CI, but no installer has been produced there (P06, P09).
+- **macOS and Windows are out of scope** by an owner decision on 2026-08-11, recorded as non-goals on P06, P09 and P10. The supported platform is Linux on desktop, x86_64.
+- **The screen-reader walkthrough is deferred** by the same decision. The automated rendered-DOM audit stays required and passing (P09).
 - **No screen-reader walkthrough.** Automated rules catch structure, not whether the result is comprehensible when read aloud (P09).
 - **No project signing key exists.** The signing mechanism works and verifies itself, but with no key the artefacts are effectively unsigned (P10).
 - **17 unmaintained-crate warnings** from the gtk-rs GTK3 bindings Tauri 2 depends on. Reported by the audit rather than swallowed; nothing can be done from this repository.

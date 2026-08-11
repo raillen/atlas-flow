@@ -69,7 +69,9 @@ looking at nothing.
 
 ## Not yet done
 
-- **No screen-reader walkthrough** has been performed. Automated rules catch
-  structure, not whether the result is comprehensible when read aloud.
+- **No screen-reader walkthrough.** Deferred by owner decision on 2026-08-11,
+  not declared unnecessary: automated rules catch structure, not whether the
+  result is comprehensible when read aloud. It stays recorded as outstanding on
+  P09.
 - **The Plan DAG has no textual alternative yet** beyond the task list it is
   derived from.

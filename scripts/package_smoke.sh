@@ -18,10 +18,18 @@ export CARGO_TARGET_DIR
 BUNDLE_DIR="$CARGO_TARGET_DIR/release/bundle/deb"
 APPIMAGE_DIR="$CARGO_TARGET_DIR/release/bundle/appimage"
 
-# linuxdeploy is itself an AppImage, and mounting one needs FUSE. Extracting
-# instead works on machines and CI runners that have no FUSE at all, which is
-# what made this bundle unverifiable before.
+# Two things stand between this repository and an AppImage, both in linuxdeploy
+# rather than in the application:
+#
+#   - linuxdeploy is itself an AppImage, and mounting one needs FUSE, which
+#     build machines and CI runners frequently lack. Extracting instead works
+#     everywhere.
+#   - the `strip` it ships is older than the `.relr.dyn` relocation sections
+#     current toolchains emit, so it fails on every system library it copies
+#     with "unknown type [0x13]". Not stripping costs bundle size and nothing
+#     else.
 export APPIMAGE_EXTRACT_AND_RUN=1
+export NO_STRIP=1
 
 VERIFY_ONLY=0
 [ "${1:-}" = "--verify-only" ] && VERIFY_ONLY=1

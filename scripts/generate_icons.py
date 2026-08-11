@@ -3,16 +3,21 @@
 
 Written by hand rather than pulled from a design tool so the repository can
 regenerate them with no dependency and no binary blob whose provenance nobody
-can check. PNG, ICO and ICNS are all containers around the same rendered
-frames, so one renderer serves all three: Linux wants PNGs, Windows an ICO,
-macOS an ICNS.
+can check.
 
-    python scripts/generate_icons.py
+Atlas Flow supports Linux, so only PNGs are written by default. The ICO and
+ICNS renderers are kept and reachable with --all-platforms: they work, and
+throwing away working code to express a scope decision would mean writing it
+again if the scope ever widens. What the repository must not do is *ship* an
+icon for a platform it does not build or test.
+
+    python scripts/generate_icons.py [--all-platforms]
 """
 
 from __future__ import annotations
 
 import struct
+import sys
 import zlib
 from pathlib import Path
 
@@ -120,6 +125,7 @@ def render_icns(sizes: tuple[int, ...]) -> bytes:
 
 
 def main() -> int:
+    all_platforms = "--all-platforms" in sys.argv
     OUT.mkdir(parents=True, exist_ok=True)
     written: list[tuple[str, int]] = []
 
@@ -133,13 +139,14 @@ def main() -> int:
         (OUT / name).write_bytes(payload)
         written.append((name, len(payload)))
 
-    ico = render_ico((16, 32, 48, 64, 128, 256))
-    (OUT / "icon.ico").write_bytes(ico)
-    written.append(("icon.ico", len(ico)))
+    if all_platforms:
+        ico = render_ico((16, 32, 48, 64, 128, 256))
+        (OUT / "icon.ico").write_bytes(ico)
+        written.append(("icon.ico", len(ico)))
 
-    icns = render_icns((32, 128, 256, 512))
-    (OUT / "icon.icns").write_bytes(icns)
-    written.append(("icon.icns", len(icns)))
+        icns = render_icns((32, 128, 256, 512))
+        (OUT / "icon.icns").write_bytes(icns)
+        written.append(("icon.icns", len(icns)))
 
     for name, size in written:
         print(f"  {name:18} {size:>8} bytes")
