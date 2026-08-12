@@ -1,8 +1,11 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
 using YamlDotNet.RepresentationModel;
 
 namespace AtlasFlow.Orchestration;
 
-/// <summary>One YAML manifest, read defensively.</summary>
+/// <summary>One JSON or YAML manifest, read defensively.</summary>
 /// <remarks>
 /// Inspection runs against an arbitrary directory the user pointed at, so
 /// every read here assumes the file may be absent, unreadable, malformed, or
@@ -13,10 +16,12 @@ namespace AtlasFlow.Orchestration;
 internal sealed record Manifest
 {
     private readonly YamlMappingNode? _root;
+    private readonly JsonObject? _jsonRoot;
 
-    private Manifest(YamlMappingNode? root, string? error)
+    private Manifest(YamlMappingNode? root, JsonObject? jsonRoot, string? error)
     {
         _root = root;
+        _jsonRoot = jsonRoot;
         Error = error;
     }
 
@@ -36,7 +41,12 @@ internal sealed record Manifest
         }
         catch (Exception exc) when (exc is IOException or UnauthorizedAccessException)
         {
-            return new Manifest(null, $"Could not read {name}: {exc.Message}");
+            return new Manifest(null, null, $"Could not read {name}: {exc.Message}");
+        }
+
+        if (string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase))
+        {
+            return ReadJson(name, text);
         }
 
         YamlStream stream = new();
@@ -46,36 +56,77 @@ internal sealed record Manifest
         }
         catch (YamlDotNet.Core.YamlException exc)
         {
-            return new Manifest(null, $"Could not read {name}: {exc.Message}");
+            return new Manifest(null, null, $"Could not read {name}: {exc.Message}");
         }
 
         if (stream.Documents.Count == 0 || stream.Documents[0].RootNode is not YamlMappingNode mapping)
         {
-            return new Manifest(null, $"{name} must contain a mapping.");
+            return new Manifest(null, null, $"{name} must contain a mapping.");
         }
 
-        return new Manifest(mapping, null);
+        return new Manifest(mapping, null, null);
+    }
+
+    private static Manifest ReadJson(string name, string text)
+    {
+        try
+        {
+            JsonNode? node = JsonNode.Parse(
+                text,
+                documentOptions: new JsonDocumentOptions { MaxDepth = 64 });
+
+            return node is JsonObject mapping
+                ? new Manifest(null, mapping, null)
+                : new Manifest(null, null, $"{name} must contain a mapping.");
+        }
+        catch (JsonException exc)
+        {
+            return new Manifest(null, null, $"Could not read {name}: {exc.Message}");
+        }
     }
 
     /// <summary>A nested mapping, or <c>null</c> if the key is absent or not one.</summary>
-    internal Manifest? Section(string key) =>
-        _root is not null && _root.Children.TryGetValue(new YamlScalarNode(key), out YamlNode? node)
-        && node is YamlMappingNode mapping
-            ? new Manifest(mapping, null)
-            : null;
+    internal Manifest? Section(string key)
+    {
+        if (_root is not null
+            && _root.Children.TryGetValue(new YamlScalarNode(key), out YamlNode? yamlNode)
+            && yamlNode is YamlMappingNode yamlMapping)
+        {
+            return new Manifest(yamlMapping, null, null);
+        }
+
+        return _jsonRoot is not null
+            && _jsonRoot.TryGetPropertyValue(key, out JsonNode? jsonNode)
+            && jsonNode is JsonObject jsonMapping
+                ? new Manifest(null, jsonMapping, null)
+                : null;
+    }
 
     /// <summary>A scalar, trimmed, or <c>null</c> when absent or empty.</summary>
     internal string? Text(string key)
     {
-        if (_root is null
-            || !_root.Children.TryGetValue(new YamlScalarNode(key), out YamlNode? node)
-            || node is not YamlScalarNode scalar
-            || string.IsNullOrWhiteSpace(scalar.Value))
+        if (_root is not null)
+        {
+            if (!_root.Children.TryGetValue(new YamlScalarNode(key), out YamlNode? node)
+                || node is not YamlScalarNode scalar
+                || string.IsNullOrWhiteSpace(scalar.Value))
+            {
+                return null;
+            }
+
+            return scalar.Value.Trim();
+        }
+
+        if (_jsonRoot is null
+            || !_jsonRoot.TryGetPropertyValue(key, out JsonNode? jsonNode)
+            || jsonNode is not JsonValue jsonValue
+            || !jsonValue.TryGetValue<string>(out string? value)
+            || string.IsNullOrWhiteSpace(value))
         {
             return null;
         }
 
-        return scalar.Value.Trim();
+        return value.Trim();
     }
 
     /// <summary>How many entries a sequence has, whatever shape they are.</summary>
@@ -87,31 +138,62 @@ internal sealed record Manifest
     /// </remarks>
     internal int SequenceLength(string key) =>
         _root is not null
-        && _root.Children.TryGetValue(new YamlScalarNode(key), out YamlNode? node)
-        && node is YamlSequenceNode sequence
-            ? sequence.Children.Count
-            : 0;
+            ? _root.Children.TryGetValue(new YamlScalarNode(key), out YamlNode? node)
+              && node is YamlSequenceNode sequence
+                ? sequence.Children.Count
+                : 0
+            : _jsonRoot is not null
+              && _jsonRoot.TryGetPropertyValue(key, out JsonNode? jsonNode)
+              && jsonNode is JsonArray jsonSequence
+                ? jsonSequence.Count
+                : 0;
 
     /// <summary>A scalar or a sequence of them, as a list. Never null.</summary>
     internal IReadOnlyList<string> Strings(string key)
     {
-        if (_root is null || !_root.Children.TryGetValue(new YamlScalarNode(key), out YamlNode? node))
+        if (_root is not null)
+        {
+            if (!_root.Children.TryGetValue(new YamlScalarNode(key), out YamlNode? node))
+            {
+                return [];
+            }
+
+            return node switch
+            {
+                YamlScalarNode scalar when !string.IsNullOrWhiteSpace(scalar.Value) => [scalar.Value.Trim()],
+                YamlSequenceNode sequence =>
+                [
+                    .. sequence.Children
+                        .OfType<YamlScalarNode>()
+                        .Select(item => item.Value?.Trim())
+                        .Where(value => !string.IsNullOrEmpty(value))
+                        .Select(value => value!),
+                ],
+                _ => [],
+            };
+        }
+
+        if (_jsonRoot is null
+            || !_jsonRoot.TryGetPropertyValue(key, out JsonNode? jsonNode))
         {
             return [];
         }
 
-        return node switch
+        if (jsonNode is JsonValue jsonScalar
+            && jsonScalar.TryGetValue<string>(out string? scalarValue)
+            && !string.IsNullOrWhiteSpace(scalarValue))
         {
-            YamlScalarNode scalar when !string.IsNullOrWhiteSpace(scalar.Value) => [scalar.Value.Trim()],
-            YamlSequenceNode sequence =>
-            [
-                .. sequence.Children
-                    .OfType<YamlScalarNode>()
-                    .Select(item => item.Value?.Trim())
+            return [scalarValue.Trim()];
+        }
+
+        return jsonNode is JsonArray jsonSequence
+            ? [
+                .. jsonSequence
+                    .OfType<JsonValue>()
+                    .Select(item => item.TryGetValue<string>(out string? value) ? value?.Trim() : null)
                     .Where(value => !string.IsNullOrEmpty(value))
                     .Select(value => value!),
-            ],
-            _ => [],
-        };
+            ]
+            : [];
     }
 }

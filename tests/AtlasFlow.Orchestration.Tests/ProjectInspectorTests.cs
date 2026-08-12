@@ -50,6 +50,22 @@ public sealed class ProjectInspectorTests : IDisposable
                 - csharp
             """);
 
+    private void WriteV2Manifest(string version = "0.2.0") =>
+        Write("atlas.json", $$"""
+            {
+              "version": 2,
+              "framework": {
+                "name": "project-atlas-framework",
+                "version": "{{version}}"
+              },
+              "project": {
+                "id": "demo-project-v2",
+                "name": "Demo Project v2",
+                "type": ["csharp", "desktop"]
+              }
+            }
+            """);
+
     /// <summary>Everything a ready project must have, none of it meaningful.</summary>
     private void WriteCompleteAtlas()
     {
@@ -65,6 +81,22 @@ public sealed class ProjectInspectorTests : IDisposable
         Write(".ai/orchestration/autonomy-policy.yaml", "default: agentic");
         Write(".ai/orchestration/orchestrator.yaml", "version: 1");
         Write(".ai/orchestration/fallbacks.yaml", "version: 1");
+        MakeDirectory(".ai/goals");
+    }
+
+    private void WriteCompleteAtlasV2()
+    {
+        WriteV2Manifest();
+        Write("ENTRYPOINT.md", "# Entry");
+        Write("PROJECT_STATE.md", "# State");
+        Write("docs/ATLAS.md", "# Atlas");
+        Write(".ai/agents/manifest.json", "{\"agents\": []}");
+        Write(".ai/skills/manifest.json", "{\"skills\": []}");
+        Write(".ai/recipes/manifest.json", "{\"recipes\": []}");
+        Write(".ai/orchestration/model-policy.json", "{\"version\": 2}");
+        Write(".ai/orchestration/orchestrator.json", "{\"version\": 2}");
+        Write(".ai/orchestration/fallbacks.json", "{\"version\": 2}");
+        Write(".atlas/history/project-intelligence.json", "{\"tasks\": []}");
         MakeDirectory(".ai/goals");
     }
 
@@ -130,6 +162,47 @@ public sealed class ProjectInspectorTests : IDisposable
         Assert.Equal(ProjectMode.AtlasIncompatible, inspection.Mode);
         Assert.False(inspection.IsFrameworkSupported);
         Assert.Contains("0.1.x", inspection.Reason, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ACompleteV2ProjectWithJsonManifestsIsReady()
+    {
+        WriteCompleteAtlasV2();
+        MakeDirectory(".git");
+
+        ProjectInspection inspection = ProjectInspector.Inspect(_root);
+
+        Assert.Equal(ProjectMode.AtlasReady, inspection.Mode);
+        Assert.Equal("0.2.0", inspection.FrameworkVersion);
+        Assert.True(inspection.IsFrameworkSupported);
+        Assert.True(inspection.Capabilities.CanRun);
+        Assert.Equal("demo-project-v2", inspection.ProjectId);
+        Assert.Equal(["csharp", "desktop"], inspection.Types);
+    }
+
+    [Fact]
+    public void AnInvalidV2ManifestIsReportedWithoutFallingBackToLegacyYaml()
+    {
+        Write("atlas.json", "{\"framework\": [}");
+        Write("PROJECT_MANIFEST.yaml", "framework:\n  name: project-atlas-framework\n  version: 0.1.0");
+
+        ProjectInspection inspection = ProjectInspector.Inspect(_root);
+
+        Assert.Equal(ProjectMode.AtlasNeedsAdaptation, inspection.Mode);
+        Assert.Contains("atlas.json", inspection.InvalidManifests);
+        Assert.DoesNotContain("PROJECT_MANIFEST.yaml", inspection.InvalidManifests);
+    }
+
+    [Fact]
+    public void AVersionMismatchInV2NamesTheV2SupportWindow()
+    {
+        WriteV2Manifest(version: "0.3.0");
+
+        ProjectInspection inspection = ProjectInspector.Inspect(_root);
+
+        Assert.Equal(ProjectMode.AtlasIncompatible, inspection.Mode);
+        Assert.False(inspection.IsFrameworkSupported);
+        Assert.Contains("0.2.x", inspection.Reason, StringComparison.Ordinal);
     }
 
     [Fact]

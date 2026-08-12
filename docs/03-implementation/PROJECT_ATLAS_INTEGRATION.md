@@ -28,3 +28,26 @@ limitations remain visible for manual resolution.
 Canonical writes go through validated Project Atlas services/commands preserving
 authority and Goal locks. No incompatible or destructive auto-migration is
 performed without authorization.
+
+## Framework v0.2 compatibility
+
+The runtime now reads both the current v0.1 YAML layout and the v0.2 JSON
+layout. When `atlas.json` is present it is the selected project manifest; the
+legacy `PROJECT_MANIFEST.yaml` is not used as a fallback for an invalid v2
+manifest. This prevents a partially migrated project from appearing healthy
+by accident.
+
+The v0.2 reader recognizes:
+
+- `atlas.json` and JSON agent, skill, recipe and orchestration manifests;
+- `.atlas/history/project-intelligence.json` as a required project resource;
+- `.ai/goals/**/*.goal.json` alongside the existing YAML Goal files;
+- the v0.2 Goal states (`DRAFT`, `LOCKED`, `EXECUTING`, `VERIFYING` and
+  `REVIEWING`) and the `project_intelligence` gate;
+- `documentation_impact` as the v0.2 spelling of the documentation gate.
+
+This is a read boundary, not a migration. The project remains on its current
+canonical format until a separate migration Goal defines validation,
+conflict handling, atomic writes and rollback evidence. Runtime context
+compilation, bounded LPC/PCA retrieval and Project Intelligence task reports
+remain planned integration slices rather than implicit behavior.

@@ -80,6 +80,8 @@ public sealed class GoalLoader
 
     private static IEnumerable<string> GoalFiles(string directory) =>
         Directory.EnumerateFiles(directory, "*.yaml", SearchOption.AllDirectories)
+                 .Concat(Directory.EnumerateFiles(directory, "*.goal.json", SearchOption.AllDirectories))
+                 .Distinct(StringComparer.Ordinal)
                  .OrderBy(path => path, StringComparer.Ordinal);
 
     private static Goal ReadOne(string path)
@@ -114,29 +116,42 @@ public sealed class GoalLoader
     }
 
     /// <summary>
-    /// Reads the four gates, defaulting an absent one to required.
+    /// Reads the gates, defaulting an absent one to required.
     /// </summary>
     /// <remarks>
-    /// Absent means required, never optional. A Goal file that forgets to
-    /// declare its review gate must not thereby be allowed to close without a
-    /// review — the safe reading of silence is the strict one.
+    /// The four legacy gates default to required. The v0.2
+    /// <c>project_intelligence</c> gate is optional when absent, preserving
+    /// the meaning of existing Goal files while making an explicit v0.2
+    /// declaration enforceable.
     /// </remarks>
     private static GoalGates ReadGates(Manifest? gates) => new()
     {
         Build = Requirement(gates?.Text("build")),
         Tests = Requirement(gates?.Text("tests")),
         Review = Requirement(gates?.Text("review")),
-        Documentation = Requirement(gates?.Text("documentation")),
+        Documentation = Requirement(gates?.Text("documentation") ?? gates?.Text("documentation_impact")),
+        ProjectIntelligence = Requirement(
+            gates?.Text("project_intelligence"),
+            absent: GateRequirement.Optional),
     };
 
-    private static GateRequirement Requirement(string? declared) =>
-        string.Equals(declared, "optional", StringComparison.OrdinalIgnoreCase)
-            ? GateRequirement.Optional
-            : GateRequirement.Required;
+    private static GateRequirement Requirement(
+        string? declared,
+        GateRequirement absent = GateRequirement.Required) =>
+        declared is null
+            ? absent
+            : string.Equals(declared, "optional", StringComparison.OrdinalIgnoreCase)
+                ? GateRequirement.Optional
+                : GateRequirement.Required;
 
     private static GoalState ParseState(string? declared, string path) => declared switch
     {
+        "DRAFT" => GoalState.Draft,
         "PLANNED" => GoalState.Planned,
+        "LOCKED" => GoalState.Locked,
+        "EXECUTING" => GoalState.Executing,
+        "VERIFYING" => GoalState.Verifying,
+        "REVIEWING" => GoalState.Reviewing,
         "READY" => GoalState.Ready,
         "ACTIVE" => GoalState.Active,
         "BLOCKED" => GoalState.Blocked,

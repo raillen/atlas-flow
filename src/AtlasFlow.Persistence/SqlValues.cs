@@ -196,6 +196,7 @@ internal static class SqlValues
         GateKind.Tests => "tests",
         GateKind.Review => "review",
         GateKind.Documentation => "documentation",
+        GateKind.ProjectIntelligence => "project_intelligence",
         _ => throw Unmapped(gate),
     };
 
@@ -205,6 +206,8 @@ internal static class SqlValues
         "tests" => GateKind.Tests,
         "review" => GateKind.Review,
         "documentation" => GateKind.Documentation,
+        "documentation_impact" => GateKind.Documentation,
+        "project_intelligence" => GateKind.ProjectIntelligence,
         _ => throw Unreadable(nameof(GateKind), text),
     };
 

@@ -25,7 +25,7 @@ public static class ProjectInspector
 {
     private const string SupportedFramework = "project-atlas-framework";
 
-    private static readonly string[] RequiredManifests =
+    private static readonly string[] _legacyRequiredManifests =
     [
         "PROJECT_MANIFEST.yaml",
         "ENTRYPOINT.md",
@@ -41,10 +41,25 @@ public static class ProjectInspector
         ".ai/orchestration/fallbacks.yaml",
     ];
 
-    private static readonly string[] RequiredDirectories = [".ai/goals"];
+    private static readonly string[] _v2RequiredManifests =
+    [
+        "atlas.json",
+        "ENTRYPOINT.md",
+        "PROJECT_STATE.md",
+        "docs/ATLAS.md",
+        ".ai/agents/manifest.json",
+        ".ai/skills/manifest.json",
+        ".ai/recipes/manifest.json",
+        ".ai/orchestration/model-policy.json",
+        ".ai/orchestration/orchestrator.json",
+        ".ai/orchestration/fallbacks.json",
+        ".atlas/history/project-intelligence.json",
+    ];
+
+    private static readonly string[] _requiredDirectories = [".ai/goals"];
 
     /// <summary>Files whose presence names a project's technology.</summary>
-    private static readonly (string File, string Type)[] TypeSignals =
+    private static readonly (string File, string Type)[] _typeSignals =
     [
         ("pyproject.toml", "python"),
         ("package.json", "javascript/typescript"),
@@ -83,7 +98,7 @@ public static class ProjectInspector
             ProjectMode.External,
             reason: "This directory does not declare Project Atlas manifests.",
             recommendation: "Inspect the project, then preview an adaptation to Project Atlas.",
-            missing: RequiredManifests);
+            missing: context.RequiredManifests);
     }
 
     private static ProjectInspection? UnreadableManifest(Context context) =>
@@ -92,7 +107,7 @@ public static class ProjectInspector
                 ProjectMode.AtlasNeedsAdaptation,
                 reason: error,
                 recommendation: "Repair or replace the invalid Project Atlas manifest after reviewing a preview.",
-                invalid: ["PROJECT_MANIFEST.yaml"])
+                invalid: [context.ManifestRelativePath])
             : null;
 
     private static ProjectInspection? WrongFramework(Context context) =>
@@ -102,30 +117,30 @@ public static class ProjectInspector
                 ProjectMode.AtlasIncompatible,
                 reason: $"This project declares {context.FrameworkName ?? "no framework"}, not {SupportedFramework}.",
                 recommendation: "Review the compatibility report and adapt deliberately; automatic conversion is disabled.",
-                invalid: ["PROJECT_MANIFEST.yaml"]);
+                invalid: [context.ManifestRelativePath]);
 
     private static ProjectInspection? UnsupportedVersion(Context context) =>
-        IsSupported(context.FrameworkVersion)
+        IsSupported(context.FrameworkVersion, context.IsV2)
             ? null
             : context.Build(
                 ProjectMode.AtlasIncompatible,
                 reason: $"Framework version {context.FrameworkVersion ?? "unknown"} is not supported; "
-                        + "Atlas Flow currently supports 0.1.x.",
+                        + $"Atlas Flow currently supports {(context.IsV2 ? "0.2.x" : "0.1.x")}.",
                 recommendation: "Inspect and review an explicit framework migration before execution.",
-                invalid: ["PROJECT_MANIFEST.yaml"],
+                invalid: [context.ManifestRelativePath],
                 frameworkSupported: false);
 
     private static ProjectInspection? IncompleteManifests(Context context)
     {
         List<string> missing =
         [
-            .. RequiredManifests.Where(relative => !File.Exists(Path.Combine(context.Root, relative))),
-            .. RequiredDirectories.Where(relative => !Directory.Exists(Path.Combine(context.Root, relative))),
+            .. context.RequiredManifests.Where(relative => !File.Exists(Path.Combine(context.Root, relative))),
+            .. _requiredDirectories.Where(relative => !Directory.Exists(Path.Combine(context.Root, relative))),
         ];
 
         List<string> invalid =
         [
-            .. RequiredManifests
+            .. context.RequiredManifests
                 .Where(relative => !missing.Contains(relative))
                 .Where(relative => IsUnusable(Path.Combine(context.Root, relative))),
         ];
@@ -155,14 +170,14 @@ public static class ProjectInspector
 
     /// <summary>Whether a required manifest is present but useless.</summary>
     /// <remarks>
-    /// A YAML file has to parse as a mapping; anything else has to be non-empty.
+    /// A structured manifest has to parse as a mapping; anything else has to be non-empty.
     /// An empty <c>ENTRYPOINT.md</c> satisfies "the file exists" and satisfies
     /// nothing else.
     /// </remarks>
     private static bool IsUnusable(string path)
     {
         string extension = Path.GetExtension(path);
-        if (extension is ".yaml" or ".yml")
+        if (extension is ".yaml" or ".yml" or ".json")
         {
             return !Manifest.Read(path).IsValid;
         }
@@ -177,7 +192,7 @@ public static class ProjectInspector
         }
     }
 
-    private static bool IsSupported(string? version)
+    private static bool IsSupported(string? version, bool isV2)
     {
         if (version is null)
         {
@@ -185,14 +200,15 @@ public static class ProjectInspector
         }
 
         string[] parts = version.Split('.');
+        int expectedMinor = isV2 ? 2 : 1;
         return parts.Length >= 2
             && int.TryParse(parts[0], out int major)
             && int.TryParse(parts[1], out int minor)
-            && (major, minor) == (0, 1);
+            && (major, minor) == (0, expectedMinor);
     }
 
     private static IReadOnlyList<string> DetectTypes(string root) =>
-        [.. TypeSignals.Where(signal => File.Exists(Path.Combine(root, signal.File))).Select(signal => signal.Type)];
+        [.. _typeSignals.Where(signal => File.Exists(Path.Combine(root, signal.File))).Select(signal => signal.Type)];
 
     /// <summary>
     /// What every check already knows, so no check re-reads the manifest.
@@ -203,7 +219,13 @@ public static class ProjectInspector
 
         internal bool IsGitPresent { get; } = isGitPresent;
 
-        internal string ManifestPath { get; } = Path.Combine(root, "PROJECT_MANIFEST.yaml");
+        internal bool IsV2 { get; } = File.Exists(Path.Combine(root, "atlas.json"));
+
+        internal string ManifestRelativePath => IsV2 ? "atlas.json" : "PROJECT_MANIFEST.yaml";
+
+        internal string ManifestPath => Path.Combine(Root, ManifestRelativePath);
+
+        internal IReadOnlyList<string> RequiredManifests => IsV2 ? _v2RequiredManifests : _legacyRequiredManifests;
 
         private Manifest? _manifest;
 

@@ -7,7 +7,12 @@ namespace AtlasFlow.Domain.Goals;
 /// </remarks>
 public enum GoalState
 {
+    Draft,
     Planned,
+    Locked,
+    Executing,
+    Verifying,
+    Reviewing,
     Ready,
     Active,
     Blocked,
@@ -22,16 +27,17 @@ public enum GateRequirement
     Required,
 }
 
-/// <summary>The four gates every Goal declares.</summary>
+/// <summary>The gates a Goal may declare.</summary>
 public enum GateKind
 {
     Build,
     Tests,
     Review,
     Documentation,
+    ProjectIntelligence,
 }
 
-/// <summary>What each of a Goal's four gates requires.</summary>
+/// <summary>What each of a Goal's gates requires.</summary>
 public sealed record GoalGates
 {
     public required GateRequirement Build { get; init; }
@@ -42,12 +48,22 @@ public sealed record GoalGates
 
     public required GateRequirement Documentation { get; init; }
 
+    /// <summary>
+    /// Whether the Goal's task report must be recorded in Project Intelligence.
+    /// </summary>
+    /// <remarks>
+    /// This is optional by default so v0.1 Goals retain their existing
+    /// semantics while the v0.2 contract is read during the migration period.
+    /// </remarks>
+    public GateRequirement ProjectIntelligence { get; init; } = GateRequirement.Optional;
+
     public GateRequirement For(GateKind gate) => gate switch
     {
         GateKind.Build => Build,
         GateKind.Tests => Tests,
         GateKind.Review => Review,
         GateKind.Documentation => Documentation,
+        GateKind.ProjectIntelligence => ProjectIntelligence,
         _ => throw new ArgumentOutOfRangeException(nameof(gate)),
     };
 
