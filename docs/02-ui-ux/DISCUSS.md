@@ -35,8 +35,8 @@ Referências são informadas como caminhos relativos ao projeto e ficam na
 mensagem atual até o envio. O ViewModel não acessa o filesystem nem decide se o
 caminho é seguro; IDiscussionService.AppendMessageAsync continua responsável
 por validar traversal, existência e tipo antes da persistência. Quando esse
-serviço não está registrado no runtime C#, a tela mostra a indisponibilidade
-explicitamente e mantém o composer inerte.
+serviço está registrado no runtime C#, a tela reidrata o histórico e mantém a
+indisponibilidade explícita apenas quando a inicialização falha.
 
 O picker nativo de arquivos ainda é uma etapa posterior. Esta fatia já fixa o
 contrato visual e de estado para arquivos e imagens sem inventar uma validação
@@ -46,3 +46,5 @@ O Decision Rail já projeta as decisões da discussão e mantém a progressão
 explícita: a pessoa propõe, seleciona e aceita uma decisão, e só então pode
 solicitar a finalização no ledger. Cada ação aguarda a confirmação de
 IDiscussionService; erro ou rejeição preserva o formulário para correção.
+Finalizar escreve o ledger em `docs/01-architecture/DECISION_LEDGER.md` e os
+ADRs solicitados em `docs/07-decisions`, depois bloqueia a discussão no SQLite.

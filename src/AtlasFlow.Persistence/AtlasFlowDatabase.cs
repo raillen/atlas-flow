@@ -24,7 +24,7 @@ public sealed class AtlasFlowDatabase : IAsyncDisposable
     /// <summary>An in-memory database that several connections can share.</summary>
     public const string SharedMemory = "file::memory:?cache=shared";
 
-    private const int SchemaVersion = 4;
+    private const int SchemaVersion = 5;
 
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly string _connectionString;
@@ -85,6 +85,14 @@ public sealed class AtlasFlowDatabase : IAsyncDisposable
                 await RunAsync(connection, "PRAGMA foreign_keys=ON;", cancellationToken).ConfigureAwait(false);
                 await RunAsync(connection, DatabaseSchema.Sql, cancellationToken).ConfigureAwait(false);
                 await EnsurePlanContextColumnAsync(connection, cancellationToken).ConfigureAwait(false);
+                await EnsureDiscussionSchemaAsync(connection, cancellationToken).ConfigureAwait(false);
+                await RunAsync(
+                    connection,
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_messages_discussion ON discussion_messages(discussion_id);
+                    CREATE INDEX IF NOT EXISTS idx_decisions_discussion ON decisions(discussion_id);
+                    """,
+                    cancellationToken).ConfigureAwait(false);
                 await RunAsync(
                     connection,
                     $"INSERT OR IGNORE INTO schema_version (version) VALUES ({SchemaVersion});",
@@ -292,6 +300,201 @@ public sealed class AtlasFlowDatabase : IAsyncDisposable
             connection,
             "ALTER TABLE plans ADD COLUMN context TEXT;",
             cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task EnsureDiscussionSchemaAsync(
+        SqliteConnection connection,
+        CancellationToken cancellationToken)
+    {
+        const string Epoch = "1970-01-01T00:00:00.0000000+00:00";
+
+        HashSet<string> discussionColumns = await ColumnsAsync(
+            connection,
+            "discussions",
+            cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync(
+            connection,
+            discussionColumns,
+            "discussions",
+            "completeness",
+            "TEXT NOT NULL DEFAULT 'unknown'",
+            cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync(
+            connection,
+            discussionColumns,
+            "discussions",
+            "created_at",
+            $"TEXT NOT NULL DEFAULT '{Epoch}'",
+            cancellationToken).ConfigureAwait(false);
+        if (discussionColumns.Contains("started_at"))
+        {
+            await RunAsync(
+                connection,
+                "UPDATE discussions SET created_at = started_at WHERE started_at IS NOT NULL;",
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        HashSet<string> messageColumns = await ColumnsAsync(
+            connection,
+            "discussion_messages",
+            cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync(
+            connection,
+            messageColumns,
+            "discussion_messages",
+            "discussion_id",
+            "TEXT",
+            cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync(
+            connection,
+            messageColumns,
+            "discussion_messages",
+            "author",
+            "TEXT NOT NULL DEFAULT 'user'",
+            cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync(
+            connection,
+            messageColumns,
+            "discussion_messages",
+            "turn_type",
+            "TEXT NOT NULL DEFAULT 'message'",
+            cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync(
+            connection,
+            messageColumns,
+            "discussion_messages",
+            "created_at",
+            $"TEXT NOT NULL DEFAULT '{Epoch}'",
+            cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync(
+            connection,
+            messageColumns,
+            "discussion_messages",
+            "references_json",
+            "TEXT NOT NULL DEFAULT '[]'",
+            cancellationToken).ConfigureAwait(false);
+        if (messageColumns.Contains("session_id"))
+        {
+            await RunAsync(
+                connection,
+                "UPDATE discussion_messages SET discussion_id = session_id WHERE discussion_id IS NULL;",
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        if (messageColumns.Contains("timestamp"))
+        {
+            await RunAsync(
+                connection,
+                "UPDATE discussion_messages SET created_at = timestamp WHERE timestamp IS NOT NULL;",
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        HashSet<string> decisionColumns = await ColumnsAsync(
+            connection,
+            "decisions",
+            cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync(
+            connection,
+            decisionColumns,
+            "decisions",
+            "discussion_id",
+            "TEXT",
+            cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync(
+            connection,
+            decisionColumns,
+            "decisions",
+            "state",
+            "TEXT NOT NULL DEFAULT 'proposed'",
+            cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync(
+            connection,
+            decisionColumns,
+            "decisions",
+            "affected_domains",
+            "TEXT NOT NULL DEFAULT '[]'",
+            cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync(
+            connection,
+            decisionColumns,
+            "decisions",
+            "requires_adr",
+            "INTEGER NOT NULL DEFAULT 0",
+            cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync(
+            connection,
+            decisionColumns,
+            "decisions",
+            "created_at",
+            $"TEXT NOT NULL DEFAULT '{Epoch}'",
+            cancellationToken).ConfigureAwait(false);
+        if (decisionColumns.Contains("session_id"))
+        {
+            await RunAsync(
+                connection,
+                "UPDATE decisions SET discussion_id = session_id WHERE discussion_id IS NULL;",
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        if (decisionColumns.Contains("status"))
+        {
+            await RunAsync(
+                connection,
+                "UPDATE decisions SET state = lower(status) WHERE status IS NOT NULL;",
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        if (decisionColumns.Contains("timestamp"))
+        {
+            await RunAsync(
+                connection,
+                "UPDATE decisions SET created_at = timestamp WHERE timestamp IS NOT NULL;",
+                cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private static async Task<HashSet<string>> ColumnsAsync(
+        SqliteConnection connection,
+        string table,
+        CancellationToken cancellationToken)
+    {
+        SqliteCommand command = connection.CreateCommand();
+        await using (command.ConfigureAwait(false))
+        {
+            command.CommandText = $"PRAGMA table_info({table});";
+            SqliteDataReader reader =
+                await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            await using (reader.ConfigureAwait(false))
+            {
+                HashSet<string> columns = new(StringComparer.Ordinal);
+                while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    columns.Add(reader.GetString(1));
+                }
+
+                return columns;
+            }
+        }
+    }
+
+    private static async Task EnsureColumnAsync(
+        SqliteConnection connection,
+        HashSet<string> columns,
+        string table,
+        string column,
+        string definition,
+        CancellationToken cancellationToken)
+    {
+        if (columns.Contains(column))
+        {
+            return;
+        }
+
+        await RunAsync(
+            connection,
+            $"ALTER TABLE {table} ADD COLUMN {column} {definition};",
+            cancellationToken).ConfigureAwait(false);
+        columns.Add(column);
     }
 
     private static SqliteCommand Build(

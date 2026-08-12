@@ -68,6 +68,7 @@ public sealed class VerticalSliceTests
         Assert.NotNull(provider.GetService<IGoalService>());
         Assert.NotNull(provider.GetService<IContextService>());
         Assert.NotNull(provider.GetService<IProjectIntelligenceService>());
+        Assert.NotNull(provider.GetService<IDiscussionService>());
     }
 
     [Fact]
@@ -122,7 +123,6 @@ public sealed class VerticalSliceTests
         // answered plausibly would be believed.
         await using ServiceProvider provider = Open(RepositoryRoot());
 
-        Assert.Null(provider.GetService<IDiscussionService>());
         Assert.Null(provider.GetService<IRoutingService>());
         Assert.Null(provider.GetService<ISettingsService>());
         Assert.Null(provider.GetService<IDocumentationService>());

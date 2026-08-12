@@ -1,6 +1,6 @@
 namespace AtlasFlow.Persistence;
 
-/// <summary>The operational schema, version 4.</summary>
+/// <summary>The operational schema, version 5.</summary>
 /// <remarks>
 /// The base schema is idempotent. Incremental changes that cannot be expressed
 /// with <c>IF NOT EXISTS</c> are applied by
@@ -96,6 +96,36 @@ internal static class DatabaseSchema
             created_at TEXT NOT NULL,
             context TEXT,
             tasks TEXT NOT NULL DEFAULT '[]'
+        );
+
+        CREATE TABLE IF NOT EXISTS discussions (
+            id TEXT PRIMARY KEY,
+            completeness TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS discussion_messages (
+            id TEXT PRIMARY KEY,
+            discussion_id TEXT NOT NULL,
+            author TEXT NOT NULL,
+            turn_type TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            references_json TEXT NOT NULL DEFAULT '[]',
+            FOREIGN KEY (discussion_id) REFERENCES discussions(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS decisions (
+            id TEXT PRIMARY KEY,
+            discussion_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            statement TEXT NOT NULL,
+            rationale TEXT NOT NULL,
+            state TEXT NOT NULL,
+            affected_domains TEXT NOT NULL DEFAULT '[]',
+            requires_adr INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (discussion_id) REFERENCES discussions(id)
         );
 
         CREATE INDEX IF NOT EXISTS idx_evidence_goal ON evidence(goal_id);

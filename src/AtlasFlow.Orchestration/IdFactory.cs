@@ -22,6 +22,8 @@ public static class IdFactory
 
     public static DecisionId NewDecision() => new(Next("dec"));
 
+    public static string NewMessageId() => Next("msg");
+
     public static EvidenceId NewEvidence() => new(Next("ev"));
 
     public static string NewEventId() => Next("evt");

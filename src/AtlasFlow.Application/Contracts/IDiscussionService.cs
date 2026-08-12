@@ -74,3 +74,14 @@ public sealed record ProposeDecisionRequest
 
     public bool RequiresAdr { get; init; }
 }
+
+/// <summary>A discussion transition was requested from an invalid state.</summary>
+public sealed class DiscussionStateException : Exception
+{
+    public DiscussionStateException() { }
+
+    public DiscussionStateException(string message) : base(message) { }
+
+    public DiscussionStateException(string message, Exception innerException)
+        : base(message, innerException) { }
+}

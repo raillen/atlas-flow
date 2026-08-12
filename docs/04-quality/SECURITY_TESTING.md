@@ -11,7 +11,7 @@ one place to test.
 
 | Control | Choke point | Tests |
 | --- | --- | --- |
-| Path traversal | `SecurityGuard.validate_path`, used by `GET /api/docs/{path}` | `test_api.py`, `test_faults_security.py` |
+| Path traversal | `SecurityGuard.validate_path` and `DiscussionService.ValidateReferences`, used by project reads and Discuss references | `test_api.py`, `test_faults_security.py`, `DiscussionSliceTests` |
 | Secret leakage | `SecurityGuard.redact_secrets`, applied to every `RunnerResult` and every normalized ACP update | `test_faults_security.py`, `test_acp_events.py` |
 | Destructive Git | `SecurityGuard.validate_git_command`, called by `run_git` — the single entry point for every git call in the runtime | `test_faults_security.py` |
 | Permission bypass | ACP `session/request_permission`, denied by default | `test_acp.py` |
@@ -81,6 +81,11 @@ over the digest list rather than each artefact — that is what a verifier
 checks, and it cannot be sidestepped by swapping a file the list already names.
 The packaging script verifies its own signature before reporting success, and
 prints `unsigned` when no key is configured rather than staying quiet about it.
+
+The C# Discuss boundary also refuses absolute paths, `..` traversal, missing
+files, unsupported image extensions and symbolic-link paths before persisting a
+message reference. Finalization writes only fixed project-relative ledger/ADR
+targets and rejects symbolic-link directories at that write boundary.
 
 ## Not yet covered
 

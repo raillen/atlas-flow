@@ -75,9 +75,10 @@ The selected decision is persisted with a new Plan snapshot. Plan/Run also
 update the compact Project Intelligence history; retrieval, context garbage
 collection and provider-level usage measurement remain separate slices.
 
-The operational SQLite schema is currently version 4. Existing databases are
-upgraded on startup with the nullable `plans.context` column, so v1 plan rows
-remain readable with no context decision.
+The operational SQLite schema is currently version 5. Existing databases are
+upgraded on startup with the nullable `plans.context` column and the Discuss
+tables, so v1 plan rows remain readable with no context decision and existing
+runtime databases gain rehydratable discussions idempotently.
 
 The attempt cap is unconditional, since attempts are always countable. Tokens
 and cost are enforced only for usage a runner actually reports; a run whose

@@ -122,11 +122,11 @@ public sealed partial class App : Avalonia.Application
 
 Written and building: the contracts, domain types and
 `AtlasFlowServices.AddAtlasFlow` wiring. Project inspection, Goals, planning,
-the first run slice, bounded context planning and Project Intelligence are
-registered with real implementations. New plan snapshots persist their
+the first run slice, bounded context planning, Project Intelligence and Discuss
+are registered with real implementations. New plan snapshots persist their
 bounded context decision; Plan/Run updates one compact intelligence report
 without blocking the operational run when the derived history projection is
-unavailable. Discuss, routing, settings and documentation remain deliberately
+unavailable. Routing, settings and documentation remain deliberately
 unregistered until their implementations are ported; the host then fails at
 the missing capability boundary rather than receiving a plausible stub.
 
@@ -136,6 +136,8 @@ budget and strategy. `PlanViewModel` consumes that decision and projects it into
 the Plan inspector and context rail without exposing retrieval payloads. The
 Project Intelligence contract records compact task reports and recomputes
 aggregates with explicit measurement provenance; the desktop shows only this
-summary and keeps unavailable cost measurements honest. These boundaries are
-ready for the desktop to consume while retrieval, Discuss and provider
-integration continue independently.
+summary and keeps unavailable cost measurements honest. Discuss rehydrates its
+thread from SQLite, validates project-relative references at the application
+boundary, and writes accepted decisions to the Git ledger during finalization.
+These boundaries are ready for the desktop to consume while retrieval and
+provider integration continue independently.

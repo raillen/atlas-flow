@@ -70,7 +70,8 @@ do projeto. O registry, o grafo, o site e `project-summary.json` são derivados.
 uma projeção durable versionada; SQLite continua operacional e não substitui
 decisões, Goals ou documentação canônica. A coluna `plans.context` usa uma
 migração incremental de schema (v3 → v4) e continua opcional para snapshots
-antigos.
+antigos; o schema v5 adiciona as tabelas operacionais de Discuss sem substituir
+a autoridade do ledger em Git.
 
 ## Compatibilidade
 

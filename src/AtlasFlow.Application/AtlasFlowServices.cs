@@ -23,9 +23,9 @@ namespace AtlasFlow.Application;
 /// </para>
 /// <para>
 /// Project inspection, Goals, bounded context planning, Project Intelligence,
-/// Plans and the first Run slice are registered here. Remaining services stay
-/// unregistered so a host fails at the boundary that asks for an unported
-/// capability rather than receiving a plausible stub.
+/// Discuss, Plans and the first Run slice are registered here. Remaining
+/// services stay unregistered so a host fails at the boundary that asks for an
+/// unported capability rather than receiving a plausible stub.
 /// </para>
 /// </remarks>
 public static class AtlasFlowServices
@@ -79,6 +79,7 @@ public static class AtlasFlowServices
         services.AddSingleton<RunRepository>();
         services.AddSingleton<PlanRepository>();
         services.AddSingleton<EvidenceRepository>();
+        services.AddSingleton<DiscussionRepository>();
 
         // The no-op runner is the only one ported. It is not a placeholder:
         // it is how the scheduler, the state machine and the event stream are
@@ -87,12 +88,12 @@ public static class AtlasFlowServices
 
         services.AddSingleton<IPlanService, PlanService>();
         services.AddSingleton<IRunService, RunService>();
+        services.AddSingleton<IDiscussionService, DiscussionService>();
 
         // Not ported. Left unregistered on purpose: resolving one fails where
         // it is asked for, naming the service, instead of handing back a stub
         // that answers plausibly and is believed.
         //
-        //   IDiscussionService     conversations and the decision ledger
         //   IRoutingService        which model each role resolved to
         //   ISettingsService       configuration
         //   IDocumentationService  the canonical docs

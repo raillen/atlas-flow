@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
 
+using AtlasFlow.Domain.Discuss;
 using AtlasFlow.Domain.Execution;
 using AtlasFlow.Domain.Goals;
 using AtlasFlow.Domain.Planning;
@@ -122,6 +123,74 @@ internal static class SqlValues
         "LOCKED" => PlanState.Locked,
         "CONSUMED" => PlanState.Consumed,
         _ => throw Unreadable(nameof(PlanState), text),
+    };
+
+    internal static string Text(TurnType type) => type switch
+    {
+        TurnType.Message => "message",
+        TurnType.Question => "question",
+        TurnType.Answer => "answer",
+        TurnType.Summary => "summary",
+        _ => throw Unmapped(type),
+    };
+
+    internal static TurnType TurnTypeOf(string text) => text switch
+    {
+        "message" => TurnType.Message,
+        "question" => TurnType.Question,
+        "answer" => TurnType.Answer,
+        "summary" => TurnType.Summary,
+        _ => throw Unreadable(nameof(TurnType), text),
+    };
+
+    internal static string Text(ReferenceKind kind) => kind switch
+    {
+        ReferenceKind.File => "file",
+        ReferenceKind.Image => "image",
+        _ => throw Unmapped(kind),
+    };
+
+    internal static ReferenceKind ReferenceKindOf(string text) => text switch
+    {
+        "file" => ReferenceKind.File,
+        "image" => ReferenceKind.Image,
+        _ => throw Unreadable(nameof(ReferenceKind), text),
+    };
+
+    internal static string Text(DecisionState state) => state switch
+    {
+        DecisionState.Proposed => "proposed",
+        DecisionState.Accepted => "accepted",
+        DecisionState.Rejected => "rejected",
+        DecisionState.Superseded => "superseded",
+        _ => throw Unmapped(state),
+    };
+
+    internal static DecisionState DecisionStateOf(string text) => text switch
+    {
+        "proposed" => DecisionState.Proposed,
+        "accepted" => DecisionState.Accepted,
+        "rejected" => DecisionState.Rejected,
+        "superseded" => DecisionState.Superseded,
+        _ => throw Unreadable(nameof(DecisionState), text),
+    };
+
+    internal static string Text(Completeness completeness) => completeness switch
+    {
+        Completeness.Unknown => "unknown",
+        Completeness.Partial => "partial",
+        Completeness.Sufficient => "sufficient",
+        Completeness.Locked => "locked",
+        _ => throw Unmapped(completeness),
+    };
+
+    internal static Completeness CompletenessOf(string text) => text switch
+    {
+        "unknown" => Completeness.Unknown,
+        "partial" => Completeness.Partial,
+        "sufficient" => Completeness.Sufficient,
+        "locked" => Completeness.Locked,
+        _ => throw Unreadable(nameof(Completeness), text),
     };
 
     // --- value objects ---------------------------------------------------

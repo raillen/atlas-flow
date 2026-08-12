@@ -30,10 +30,10 @@ unobserved cost are not presented as if they were available to the frontend.
 
 The Define stage now has a contract-first Discuss surface with a rehydratable
 thread, composer, Decision Rail for proposal/accept/finalize commands and
-project-relative file/image references.
-IDiscussionService is still intentionally unregistered in this C# runtime, so
-the UI reports that boundary explicitly; reference validation and persistence
-remain application responsibilities.
+project-relative file/image references. `IDiscussionService` is registered with
+SQLite-backed rehydration, reference validation and explicit decision state
+transitions. Finalization writes the accepted decisions to the canonical Git
+ledger and optional ADR files before locking the discussion.
 
 ## How to read the Goal states
 
