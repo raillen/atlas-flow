@@ -1,0 +1,31 @@
+id: P17-G01
+phase: P17
+title: Project Lifecycle, Verification and Evidence
+state: PLANNED
+objective: Complete the safe project lifecycle from inspection and authorized adaptation through Goal verification, readiness and durable evidence.
+constraints:
+- Adaptation is preview → explicit authorization → apply → re-inspect.
+- Existing canonical files are never overwritten by adaptation.
+- Goal closure requires passing evidence for every required gate and never comes from a database flag.
+- Stale Goal revisions and external projects fail closed.
+non_goals:
+- Automatic Goal invention or completion.
+- Destructive project migration without an explicit future decision.
+dependencies:
+- P13-G01
+- P14-G01
+acceptance:
+- IProjectService preview/apply adaptation is implemented with path, conflict and overwrite protections.
+- IGoalService verification returns gate verdicts, evidence and an actionable blocking reason.
+- Evidence is persisted with stable identifiers, digests where applicable and Goal revision provenance.
+- Discussion Project Draft tracks the required domains, readiness gaps and finalization refusal when incomplete.
+- Run completion records verification outcomes without asserting success from the runner alone.
+- Recovery and integration tests cover stale revisions, rejected adaptation, missing evidence and partial writes.
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history:
+- '2026-08-12: created from the unsupported ProjectService adaptation and GoalService verification paths and the remaining P02 readiness semantics.'

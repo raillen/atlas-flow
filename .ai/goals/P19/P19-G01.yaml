@@ -1,0 +1,30 @@
+id: P19-G01
+phase: P19
+title: Routing, Settings and Usage Intelligence
+state: PLANNED
+objective: Implement model/role routing, layered settings and honest usage/budget intelligence without coupling the product to a provider.
+constraints:
+- Credential values never enter Git, SQLite events, logs or UI contracts.
+- Routing decisions are explainable, bounded and persisted as operational observations.
+- Unknown or unmeasured cost remains unknown; estimates are labelled as such.
+- Environment settings have precedence and cannot be silently overridden by project files.
+non_goals:
+- Hard-coding a preferred provider or model in agent/domain definitions.
+- Adaptive ML routing before deterministic scorecards are reliable.
+dependencies:
+- P18-G01
+acceptance:
+- IRoutingService discovers configured agents/models, resolves role routes and explains each selection.
+- ISettingsService validates layered defaults, project, user and environment settings and exposes restart requirements.
+- Retry, fallback, attempt, token and direct-cost budgets are enforced at runtime with bounded escalation.
+- Usage observations update a durable scorecard with measurement provenance.
+- Settings UI and diagnostics expose references/configuration state without revealing credentials.
+- Tests cover missing binaries, invalid settings, environment overrides, budget exhaustion and unmeasured usage.
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history:
+- '2026-08-12: created because IRoutingService and ISettingsService remain unregistered and the C# runtime has no provider invocation/scorecard path.'

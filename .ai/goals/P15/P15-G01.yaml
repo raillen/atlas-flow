@@ -1,0 +1,29 @@
+id: P15-G01
+phase: P15
+title: Documentation and Knowledge Service
+state: PLANNED
+objective: Make canonical Project Atlas documentation browsable, validated and publishable through the Application contract and the Avalonia Knowledge surface.
+constraints:
+- Markdown and metadata in Git remain canonical.
+- Reads are bounded and confined to the opened project and allowed visibility.
+- Public builds must never include internal or private documents.
+- Writes require an explicit preview and authorization flow.
+non_goals:
+- A CMS or remote documentation service.
+- Editing arbitrary files from the Knowledge surface.
+dependencies:
+- P14-G01
+acceptance:
+- IDocumentationService is implemented and registered with safe listing and bounded content reads.
+- Documentation validation reports broken links, invalid metadata, stale indexes and visibility violations.
+- Static builds produce deterministic public, internal and private outputs with a searchable index.
+- The Knowledge stage shows loading, empty, error, visibility and stale-index states.
+- Headless tests cover traversal, binary/oversized content, visibility filtering and keyboard navigation.
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history:
+- '2026-08-12: created because IDocumentationService and the Knowledge surface remain unregistered/placeholder in the C# port.'

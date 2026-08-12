@@ -1,0 +1,31 @@
+id: P14-G01
+phase: P14
+title: Project Atlas v2 Schemas and Knowledge Core
+state: PLANNED
+objective: Implement the deterministic Project Atlas v2 schema, registry and knowledge-graph projections that the runtime can validate and rebuild.
+constraints:
+- Project Atlas Framework remains the authority for manifests, registries, Goals and protocol semantics.
+- Generated indexes are rebuildable projections and never replace canonical files.
+- Visibility, provenance and unknown-field preservation are explicit.
+- No provider, embedding or remote database is required for the MVP.
+non_goals:
+- AST or symbol retrieval adapters.
+- A full interactive documentation frontend.
+- Automatic migration that overwrites existing project files.
+dependencies:
+- P13-G01
+acceptance:
+- Versioned atlas.json, document metadata, Goal, task-map and context-pack schemas validate with actionable diagnostics.
+- Registry and knowledge-graph projections are generated deterministically from canonical project files.
+- Public, internal and private visibility is enforced in generated projections.
+- Rebuilding projections after deleting derived state produces equivalent output.
+- Golden fixtures cover v0.1 compatibility, v0.2 JSON projects, malformed schemas and unknown fields.
+- The Application contracts expose validation results without leaking parser or storage types into the Desktop.
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history:
+- '2026-08-12: created from the unfinished AF-EVO-001 schema, registry and graph foundation.'

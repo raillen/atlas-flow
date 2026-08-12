@@ -1,0 +1,31 @@
+id: P24-G01
+phase: P24
+title: Packaging, Compatibility and 1.0 Dogfooding
+state: PLANNED
+objective: Produce a verifiable release and validate the integrated product on real project categories and supported platforms.
+constraints:
+- Linux x86_64 is the current development platform; Windows is a release target reopened by ADR-018 and must not be claimed before testing.
+- macOS remains out of scope.
+- Release artifacts are built from a clean checkout and signed only when the configured key is verifiable.
+- Installation and recovery must leave the user project clean except for explicitly authorized canonical files.
+non_goals:
+- Publishing an unsigned artifact as trusted.
+- Supporting arbitrary packaging targets without a compatibility decision.
+dependencies:
+- P22-G01
+- P23-G01
+acceptance:
+- Linux deb/Flatpak and Windows MSI packaging paths are implemented and smoke-tested on their target platforms.
+- NativeAOT publish, application launch, icons, license, SBOM, checksums and signature verification pass from clean sources.
+- Fresh install, project-open, upgrade, crash recovery and uninstall walkthroughs pass.
+- At least three materially different project categories build and execute end to end.
+- Compatibility matrix, known limitations and rollback/recovery instructions are current.
+- A release review confirms no gate is satisfied by historical Python/Tauri evidence.
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history:
+- '2026-08-12: created from the unverified C# packaging, platform, compatibility and dogfooding gates.'

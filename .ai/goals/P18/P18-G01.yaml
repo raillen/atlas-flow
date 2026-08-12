@@ -1,0 +1,32 @@
+id: P18-G01
+phase: P18
+title: Agent Runners and Tool Protocols
+state: PLANNED
+objective: Replace the NoOp-only execution path with registered ACP and generic CLI runners plus a secure stdio MCP boundary.
+constraints:
+- Agents remain replaceable roles; canonical definitions never embed provider or model names.
+- ACP permission requests deny by default and every decision is evidence.
+- CLI commands use argv without a shell and have bounded cancellation/timeouts.
+- MCP servers are explicit declarations with environment references, never literal secrets.
+non_goals:
+- HTTP/SSE MCP transports.
+- Rebuilding a coding-agent loop inside Atlas Flow.
+- Silent fallback from a missing configured runner to NoOp.
+dependencies:
+- P17-G01
+acceptance:
+- ACP is integrated as an ITaskRunner with capability negotiation, session persistence, load/resume and normalized updates.
+- Generic CLI execution records command, exit status, output redaction, changed paths and failure evidence.
+- Selected runner tasks execute in isolated worktrees and integrate only through validated, conflict-aware commands.
+- MCP stdio registry enforces enabled state, role allowlists, read-only planning and secret-reference rules.
+- Permission denial, malformed output, disconnect, timeout and stale-session fallback are covered by integration tests.
+- Runner selection is explicit in the plan and the UI explains unavailable capabilities.
+- No raw provider stream or secret crosses the Application/Domain contract.
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history:
+- '2026-08-12: created because ACP transport is ported but only NoOpTaskRunner is registered and MCP is not ported in C#.'

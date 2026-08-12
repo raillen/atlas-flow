@@ -1,0 +1,31 @@
+id: P13-G01
+phase: P13
+title: C# Port Quality Baseline
+state: PLANNED
+objective: Reestablish reproducible quality, CI, evidence and review gates for the C# runtime without carrying evidence from the deleted Python/Tauri stack.
+constraints:
+- Treat Git and Goal files as canonical evidence.
+- Keep Linux x86_64 as the development platform; Windows validation is a later release obligation.
+- Do not weaken a gate because an equivalent tool changed during the port.
+- Keep validation scripts runnable from a clean checkout.
+non_goals:
+- Implementing product features that belong to later Goals.
+- Marking legacy P00-P10 Goals DONE without new C# evidence.
+dependencies:
+- P11-G01
+- P12-G01
+acceptance:
+- CI builds, tests, formats and audits every C# project from a clean checkout.
+- Release Gates and compatibility documentation describe only verifiable C# behavior.
+- A portable Goal validator checks required evidence and rejects passing claims with failing verdicts.
+- Dependency auditing fails closed on high or critical advisories and unreachable advisory sources.
+- An independent review of the C# branch is recorded with findings and remediation evidence.
+- The ported P00-P12 acceptance surface has a traceable evidence map without duplicating historical claims.
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history:
+- '2026-08-12: created to re-earn the project gates after ADR-017 replaced the runtime and invalidated the previous stack evidence.'

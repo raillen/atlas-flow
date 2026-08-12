@@ -138,9 +138,10 @@ needed roughly 250 MB and a Python interpreter present on the machine.
 - **Windows. Nothing at all.** No build, no publish, no launch, no MSI — and none is scheduled while development is Linux-first.
 - **`deb`, Flatpak and MSI packaging.** No package has been produced.
 - **SBOM, checksums and signature** against a .NET artefact.
-- **End-to-end behaviour with the application adapter.** Current Desktop tests
-  exercise the safe unavailable snapshot; no real Goal, Discuss or Run flow is
-  connected yet.
+- **Packaged end-to-end behaviour with the application adapter.** The
+  composition root now registers real Discuss, Plan and Run services and the
+  integration suite exercises them, but a packaged desktop walkthrough is
+  still required by P24.
 
 ## Not yet done
 

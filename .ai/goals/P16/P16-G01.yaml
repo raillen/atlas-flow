@@ -1,0 +1,30 @@
+id: P16-G01
+phase: P16
+title: Context Retrieval and Impact Engine
+state: PLANNED
+objective: Turn the bounded LPC/PCA context decision into deterministic retrieval, context packs and explainable change-impact reports.
+constraints:
+- Context budgets are hard limits, not suggestions.
+- Retrieval starts from AGENTS.md, docs/ATLAS.md, task maps and context packs when available.
+- Every included and excluded item carries a reason and provenance.
+- Never load the whole repository by default.
+non_goals:
+- Embeddings, hosted vector databases or provider-specific retrieval.
+- AST/symbol retrieval, which is tracked as optional post-MVP work.
+dependencies:
+- P14-G01
+acceptance:
+- Context planning returns required, optional, excluded and budgeted items in domain and JSON projections.
+- Retrieval respects token/file/count budgets and reports its stopping condition.
+- Changed files produce an explainable impact report linked to documents, Goals, tasks and affected domains.
+- Context packs and task maps are validated before use and stale derived indexes are detected.
+- Cache invalidation is deterministic and never serves data from a different project root.
+- Unit, golden and integration tests cover empty, malformed, oversized and changed-project fixtures.
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history:
+- '2026-08-12: created to continue the current bounded ContextPlan slice toward usable retrieval and impact analysis.'

@@ -66,6 +66,7 @@ Canonical navigation surface for humans and agents.
 - `03-implementation/COMMAND_CODE_INTEGRATION.md`
 - `03-implementation/PROJECT_ATLAS_INTEGRATION.md`
 - `03-implementation/ATLAS_FLOW_V2_FOUNDATION.md`
+- `03-implementation/REMAINING_GOALS.md`
 - `03-implementation/CONFIGURATION.md`
 - `03-implementation/ERROR_HANDLING.md`
 - `03-implementation/PACKAGING.md`

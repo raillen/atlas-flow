@@ -4,11 +4,11 @@ title: Atlas Flow UX Foundation
 state: ACTIVE
 objective: Transform the desktop workspace into a calm, chat-first professional interface with persistent project references.
 constraints:
-- Preserve Tauri 2 + React + TypeScript and the existing HTTP, WebSocket and AG-UI boundaries
+- Preserve Avalonia 12 and the direct in-process Application contract from ADR-017/ADR-018
 - Keep Project Atlas, Git and the backend as canonical sources of truth
 - Use progressive disclosure; advanced detail remains available without dominating the primary flow
 - Keep all critical interactions keyboard accessible and covered by automated accessibility tests
-- Defer GTK4/libadwaita and any native renderer rewrite to a future decision
+- Defer GTK4/libadwaita and any renderer rewrite to a future decision
 non_goals:
 - Full native GTK/libadwaita frontend
 - Provider-specific chat behavior or model names in the UI domain
@@ -29,9 +29,9 @@ gates:
   review: required
   documentation: required
 evidence:
-- build: TypeScript build, ESLint, Ruff and mypy pass — frontend typecheck/lint plus the backend quality gates
-- tests: 128 frontend tests and 51 focused backend Discuss/API tests pass — Vitest and pytest focused suites
-- documentation: docs, Goals and Atlas v2 validation pass — sh scripts/validate_all.sh
+- build: C# solution build passes with 0 warnings and 0 errors — dotnet build AtlasFlow.slnx --no-restore
+- tests: 32 integration, 26 Desktop, 23 Persistence, 29 Protocols and 22 Orchestration tests pass — dotnet test AtlasFlow.slnx --no-build --no-restore
+- documentation: docs and Goal validation pass — python3 scripts/validate_docs.py; uv run --project reference/python-backend python scripts/validate_goals.py
 - review: pending independent review; this evidence does not claim completion
 history:
 - '2026-08-11: created from owner feedback about visual density, weak chat affordances and missing references.'
@@ -41,3 +41,4 @@ history:
 - '2026-08-12: ported the Define Discuss surface to Avalonia with a contract-first thread, composer, decision summary and project-relative file/image references.'
 - '2026-08-12: added the contract-confirmed Decision Rail for proposing, accepting and finalizing discussion decisions with progressive disclosure.'
 - '2026-08-12: completed the C# Discuss application slice with SQLite rehydration, path/reference validation, explicit proposal/acceptance transitions and Git ledger/ADR finalization; independent review remains pending.'
+- '2026-08-12: amended the implementation direction from Tauri/React to Avalonia/direct Application contracts after ADR-017 and ADR-018; remaining surface work is tracked in P21-G01.'

@@ -142,9 +142,9 @@ mudança é discutida antes de editar `Application/Contracts`.
 A fundação implementada contém fallback indisponível, adapter de aplicação
 real, ViewModels de workspace, Plan e Run, tema semântico claro/escuro e App
 Shell. O Define agora tem uma superfície Discuss baseada no contrato público,
-com thread, composer e referências de arquivo/imagem aguardando o serviço de
-aplicação. O fluxo de Plan já carrega histórico, cria rascunhos e bloqueia
+com thread, composer, referências de arquivo/imagem, Decision Rail e ledger
+persistente. O fluxo de Plan já carrega histórico, cria rascunhos e bloqueia
 snapshots; o fluxo de Run inicia somente snapshots bloqueados e expõe fila,
-progresso, timeline durável e cancelamento cooperativo. A UI ainda não afirma
-integração com settings, e Discuss permanece explicitamente indisponível até
-que sua implementação seja registrada no composition root.
+progresso, timeline durável e cancelamento cooperativo. Settings, Knowledge,
+Review, Project e eventos AG-UI ainda são Goals planejados; o CLI permanece uma
+superfície mínima até P23.

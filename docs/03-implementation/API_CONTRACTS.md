@@ -1,5 +1,10 @@
 # API Contracts
 
+> **Historical reference.** The C# desktop uses the in-process contracts under
+> `src/AtlasFlow.Application/Contracts`; there is no REST server in this port.
+> The route list below preserves the previous protocol mapping and is not a
+> claim that these HTTP endpoints are currently available.
+
 The local backend serves the desktop client over HTTP plus one WebSocket. JSON
 uses `snake_case`; the client converts fields to `camelCase` at its boundary.
 Errors use `{"detail": "..."}`. `404` means missing resource; `409` means the

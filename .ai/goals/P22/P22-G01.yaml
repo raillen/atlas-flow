@@ -1,0 +1,30 @@
+id: P22-G01
+phase: P22
+title: Runtime Hardening, Recovery and Accessibility
+state: PLANNED
+objective: Make the integrated runtime reliable under failure, measurable under load and honest about native accessibility support before release claims.
+constraints:
+- Fail closed when operational and canonical state cannot be reconciled.
+- Security controls live at choke points and receive negative regression tests.
+- Linux is the development/test platform; Windows-specific accessibility is validated when Windows work begins.
+- Do not turn deferred manual checks into false automated evidence.
+non_goals:
+- macOS support, which remains out of scope by owner decision.
+- Claiming WCAG/AT-SPI/UIA compliance without the corresponding evidence.
+dependencies:
+- P21-G01
+acceptance:
+- Numbered SQLite migrations support upgrade, rollback/recovery policy and idempotent startup without discarding operational state.
+- Fault injection covers contention, cancellation during writes, provider rate limits, stale Goal revisions and interrupted processes.
+- Security tests cover traversal, symlinks, secrets, permissions, destructive commands, malformed protocols and dependency advisories.
+- Cold start, project-open readiness, UI frame rate and large-transcript behavior have measured budgets.
+- Native accessibility covers live-region equivalent, reduced motion, text scaling and a documented screen-reader walkthrough.
+- Recovery, performance and accessibility results are reproducible in CI or explicitly marked manual with owner/evidence.
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history:
+- '2026-08-12: created from the remaining release-gate gaps in reliability, accessibility, performance, migrations and security testing.'

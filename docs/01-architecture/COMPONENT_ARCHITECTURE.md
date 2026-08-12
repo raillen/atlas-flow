@@ -1,7 +1,12 @@
 # Component Architecture
 
 ## Backend
-`project`, `discuss`, `decisions`, `goals`, `planner`, `context`, `workforce`, `routing`, `harness`, `runners.acp`, `runners.cli`, `execution`, `verification`, `events`, `persistence`, `api`, `security`.
+
+The current port is C#/.NET. Its implemented modules are `project`, `discuss`,
+`goals`, `planner`, `context`, `intelligence`, `execution`, `events`,
+`persistence`, `protocols` and `security`. Planned modules are tracked in
+[Remaining Goals](../03-implementation/REMAINING_GOALS.md): documentation,
+verification, runners, routing, settings, AG-UI and CLI.
 
 ## Frontend
 `app-shell`, `discuss`, `plan`, `build`, `review`, `project`, `graph`, `chat`, `terminal`, `diff`, `settings`, `shared-ui`.

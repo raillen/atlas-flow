@@ -1,0 +1,32 @@
+id: P20-G01
+phase: P20
+title: AG-UI Runtime Events and Live Discuss
+state: PLANNED
+objective: Provide a typed, replayable runtime-event projection for the Desktop and complete Discuss with live assistant turns and Project Draft updates.
+constraints:
+- AG-UI events are projections of domain state, never raw provider payloads.
+- Durable events and ephemeral narration have separate retention rules.
+- Replay precedes live delivery and ordering is explicit.
+- Assistant actions require explicit commands, permissions and cancellation.
+non_goals:
+- A second HTTP backend inside the native application.
+- Persisting every thought or terminal chunk as canonical history.
+- Provider-specific chat UX.
+dependencies:
+- P17-G01
+- P19-G01
+acceptance:
+- Typed AG-UI-compatible envelopes cover Goal, task, runner, evidence, routing, Discuss and cancellation lifecycle events.
+- Late subscribers receive a durable replay before live events without duplicate or reordered state.
+- Discuss can receive an assistant turn through the selected runner, persist the outcome and update Project Draft explicitly.
+- Cancellation, disconnect, backpressure and subscriber disposal are safe and tested.
+- Desktop ViewModels consume the event contract without sockets, tables or provider envelopes.
+- Event redaction and retention rules are documented and verified.
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history:
+- '2026-08-12: created because the current UI uses direct service/watch calls while AG-UI and live Discuss remain pending.'

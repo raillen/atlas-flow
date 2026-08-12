@@ -1,0 +1,31 @@
+id: P23-G01
+phase: P23
+title: C# CLI and Developer Automation
+state: PLANNED
+objective: Expose the same safe runtime capabilities to people, agents and CI through a JSON-capable C# CLI.
+constraints:
+- CLI calls Application contracts instead of duplicating domain semantics.
+- Human diagnostics go to stderr and automation output uses stable JSON on stdout.
+- Mutations require explicit flags/commands and respect the same authorization boundaries as Desktop.
+- No command executes project code implicitly.
+non_goals:
+- Reintroducing the deleted REST server.
+- A second implementation of planning, routing or verification rules.
+dependencies:
+- P15-G01
+- P16-G01
+- P19-G01
+acceptance:
+- '`init`, `validate`, `graph`, `context`, `impact`, `docs`, `cost` and `intelligence` commands are implemented or explicitly rejected with actionable diagnostics.'
+- JSON output is versioned, deterministic and suitable for Command Code/CI consumption.
+- CLI project-root, path, secret and write boundaries match the Desktop services.
+- CLI integration tests cover clean projects, invalid manifests, external projects, failed writes and cancellation.
+- User and agent documentation contains runnable examples and exit-code semantics.
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history:
+- '2026-08-12: created because AtlasFlow.Cli currently registers only an empty RootCommand while the documented command surface is still target behavior.'

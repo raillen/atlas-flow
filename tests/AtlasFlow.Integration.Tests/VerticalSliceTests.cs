@@ -150,10 +150,13 @@ public sealed class VerticalSliceTests
 
         IReadOnlyList<Goal> loaded = await goals.ListAsync(CancellationToken.None);
 
-        // Thirteen phases live under .ai/goals in this repository.
-        Assert.Equal(13, loaded.Count);
+        // P00-P12 are the historical C# port goals; P13-P25 are the
+        // decomposed remaining roadmap saved in this branch.
+        Assert.Equal(26, loaded.Count);
         Assert.All(loaded, goal => Assert.False(string.IsNullOrWhiteSpace(goal.Title)));
         Assert.All(loaded, goal => Assert.NotEmpty(goal.Gates.Required()));
+        Assert.Contains(loaded, goal => goal.Id == new GoalId("P13-G01"));
+        Assert.Contains(loaded, goal => goal.Id == new GoalId("P25-G01"));
     }
 
     [Fact]
@@ -170,16 +173,24 @@ public sealed class VerticalSliceTests
     }
 
     [Fact]
-    public async Task EveryGoalOnThisBranchIsActive()
+    public async Task HistoricalGoalsRemainActiveAndPlannedGoalsAreNotClaimedComplete()
     {
-        // The port moved all thirteen from DONE to ACTIVE: their build and
-        // tests evidence was produced on a runtime this branch deletes.
+        // The port moved the historical goals from DONE to ACTIVE: their build
+        // and tests evidence was produced on a runtime this branch deletes.
         await using ServiceProvider provider = Open(RepositoryRoot());
         IGoalService goals = provider.GetRequiredService<IGoalService>();
 
         IReadOnlyList<Goal> loaded = await goals.ListAsync(CancellationToken.None);
 
-        Assert.All(loaded, goal => Assert.Equal(GoalState.Active, goal.State));
+        string[] historicalPhases =
+        ["P00", "P01", "P02", "P03", "P04", "P05", "P06", "P07", "P08", "P09", "P10", "P11", "P12"];
+        Assert.All(
+            loaded.Where(goal => historicalPhases.Contains(goal.Phase, StringComparer.Ordinal)),
+            goal => Assert.Equal(GoalState.Active, goal.State));
+        Assert.All(
+            loaded.Where(goal => goal.Phase is "P13" or "P14" or "P15" or "P16" or "P17" or "P18" or "P19" or "P20" or "P21" or "P22" or "P23" or "P24"),
+            goal => Assert.Equal(GoalState.Planned, goal.State));
+        Assert.Equal(GoalState.Planned, loaded.Single(goal => goal.Id == new GoalId("P25-G01")).State);
     }
 
     [Fact]

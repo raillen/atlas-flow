@@ -1,0 +1,33 @@
+id: P21-G01
+phase: P21
+title: Desktop Product Surfaces
+state: PLANNED
+objective: Finish the Avalonia workspace so every enabled stage has a truthful, keyboard-accessible surface backed by the Application contracts.
+constraints:
+- Preserve Avalonia 12, compiled bindings and the direct in-process application seam from ADR-017/018.
+- Use progressive disclosure and keep Git/Project Atlas authority outside the renderer.
+- Capabilities, errors and unavailable features must be visible with an actionable reason.
+- No visual clone or provider-specific UI.
+non_goals:
+- Replacing Avalonia with GTK, webview or another renderer.
+- Optimistic mutation of canonical state.
+dependencies:
+- P15-G01
+- P17-G01
+- P19-G01
+- P20-G01
+acceptance:
+- Define, Plan and Run use the real services/events with no misleading unavailable copy in the normal composition root.
+- Knowledge, Project, Review and Settings stages have real loading, empty, error, capability and confirmation states.
+- Build exposes task graph, agent/runner status, terminal/diff summaries and evidence without raw provider details.
+- Project supports inspection, adaptation preview/approval and re-inspection.
+- Review supports Goal gates, evidence, blocking reasons and explicit completion review.
+- Headless tests cover keyboard flow, focus, compiled bindings, automation names and critical mutation confirmation.
+gates:
+  build: required
+  tests: required
+  review: required
+  documentation: required
+evidence: []
+history:
+- '2026-08-12: created from the current shell, which has real Define/Plan/Run surfaces but placeholder Knowledge/Review/Project/Settings and pending AG-UI status.'

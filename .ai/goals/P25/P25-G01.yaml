@@ -1,0 +1,29 @@
+id: P25-G01
+phase: P25
+title: Advanced Retrieval and Intelligence Extensions
+state: PLANNED
+objective: Evaluate post-MVP capabilities that increase context quality and project insight without entering the 1.0 critical path prematurely.
+constraints:
+- This Goal is an explicitly deferred backlog item and is not on the 1.0 critical path.
+- Every extension needs a measured benefit against context quality, latency and maintenance cost.
+- Canonical project truth and privacy boundaries remain unchanged.
+non_goals:
+- Blocking the 1.0 release on embeddings or AST support.
+- Building a generic analytics platform because the data is available.
+dependencies:
+- P16-G01
+- P24-G01
+acceptance:
+- A decision record compares AST/symbol retrieval, delta context, embeddings and lexical retrieval with measured fixtures.
+- Cost/debt/usage intelligence exposes uncertainty and retention controls before adding new telemetry.
+- A documentation dashboard has a concrete user workflow, scope budget and privacy review before implementation.
+- HTTP/SSE MCP and adaptive routing remain separate ADR-backed options unless a user need promotes them.
+- The owner explicitly promotes, splits or discards each candidate before code is scheduled.
+gates:
+  build: optional
+  tests: optional
+  review: required
+  documentation: required
+evidence: []
+history:
+- '2026-08-12: created as an explicit post-MVP parking lot so AF-EVO-001 optional phases remain visible without expanding the 1.0 critical path.'

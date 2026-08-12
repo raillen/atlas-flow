@@ -14,7 +14,7 @@
 
 **Project:** Atlas Flow
 **Framework:** Project Atlas Framework 0.1.0 (runtime with v0.2 JSON, LPC/PCA and Project Intelligence compatibility)
-**Status:** 11 of 13 Goals DONE; P11 and P12 active
+**Status:** C# port foundation active; P11/P12 active and P13–P25 planned; P25 is deferred
 **Current phase:** P12 active — UX foundation
 
 The C# runtime now exposes bounded context planning, persists the selected
@@ -109,11 +109,11 @@ actually reports, and unmeasured spend is reported as unmeasured.
 - Chat/Discuss is a first-class mode that can turn conversation into Project Atlas documentation.
 - Canonical project truth stays in Git.
 - Operational execution state uses SQLite plus append-only events, under `.atlas-flow/`.
-- Frontend: Tauri 2 + React + TypeScript.
+- Frontend: Avalonia 12 with compiled XAML bindings and direct in-process Application contracts.
 - Frontend/runtime agent events: AG-UI.
 - Coding-agent client protocol: ACP preferred; a generic CLI runner is the fallback.
 - Tool integration: MCP.
-- Backend/orchestration core: Python, reusing Project Atlas.
+- Backend/orchestration core: C#/.NET, consuming Project Atlas as protocol and canonical project knowledge.
 - Atlas Harness is a meta-harness coordinating existing coding agents.
 - Command Code is the development harness.
 - Primary models: DeepSeek V4 Pro and MiMo V2.5 Pro.
@@ -121,10 +121,10 @@ actually reports, and unmeasured spend is reported as unmeasured.
 
 ## Next action
 
-Complete the P11 and P12 foundation reviews and then continue the remaining
-AF-EVO-001 phases. The P00–P10 gates pass, the packaged AppImage runs a Goal end to end,
-releases are signed and verifiable, and every completed Goal carries evidence
-for all four of its gates.
+Complete the P11 and P12 foundation reviews, then execute the C# port roadmap
+in [docs/03-implementation/REMAINING_GOALS.md](docs/03-implementation/REMAINING_GOALS.md).
+The P00–P10 evidence in this branch is historical evidence from the deleted
+Python/Tauri runtime and must be re-earned before a C# Goal can be closed.
 
 What a second reader should look at hardest is the part no gate covers — whether
 the work does what the Goals actually asked for, rather than whether it is
@@ -135,5 +135,6 @@ Deferred by owner decision on 2026-08-11, and recorded as non-goals rather than
 quietly dropped: macOS and Windows support (P06, P09, P10), and the manual
 screen-reader walkthrough (P09). The supported platform is Linux on desktop.
 
-See [Release Gates](docs/04-quality/RELEASE_GATES.md) for the gate-by-gate
-status.
+See [Remaining Goals](docs/03-implementation/REMAINING_GOALS.md) and [Release
+Gates](docs/04-quality/RELEASE_GATES.md) for the planned sequence and current
+gate-by-gate status.
