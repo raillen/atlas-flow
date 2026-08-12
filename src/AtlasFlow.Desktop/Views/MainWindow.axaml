@@ -271,6 +271,21 @@
                     </StackPanel>
                   </Border>
 
+                  <Border IsVisible="{Binding Plan.HasPlans}"
+                          Classes="elevated-panel"
+                          Padding="14">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="Decisão de contexto" Classes="eyebrow" />
+                      <TextBlock Text="{Binding Plan.SelectedContextState}" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding Plan.SelectedContextSummary}"
+                                 Classes="secondary"
+                                 TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding Plan.SelectedContextReasons}"
+                                 Classes="micro"
+                                 TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+
                   <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
                     <TextBlock Text="{Binding Plan.SelectedPlanState}"
                                Classes="mono"
@@ -559,9 +574,29 @@
 
             <Border Classes="panel" Padding="14">
               <StackPanel Spacing="8">
-                <TextBlock Text="Contexto enviado ao agente" Classes="eyebrow" />
-                <TextBlock Text="Nenhum conteúdo enviado" FontWeight="SemiBold" />
-                <TextBlock Text="Referências serão sempre explícitas e validadas pelo núcleo confiável."
+                <TextBlock Text="PROJECT INTELLIGENCE" Classes="eyebrow" />
+                <TextBlock Text="{Binding Plan.IntelligenceStatusLabel}"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="{Binding Plan.IntelligenceSummaryLabel}"
+                           Classes="micro"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="{Binding Plan.IntelligenceCostLabel}"
+                           Classes="micro"
+                           TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="panel" Padding="14">
+              <StackPanel Spacing="8">
+                <TextBlock Text="CONTEXTO PLANEJADO" Classes="eyebrow" />
+                <TextBlock Text="{Binding Plan.SelectedContextState}"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="{Binding Plan.SelectedContextSummary}"
+                           Classes="micro"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="{Binding Plan.SelectedContextReasons}"
                            Classes="micro"
                            TextWrapping="Wrap" />
               </StackPanel>

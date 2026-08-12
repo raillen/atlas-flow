@@ -23,6 +23,11 @@ report through the Plan/Run lifecycle. The repository remains a v0.1 canonical
 project; v0.2 migration, retrieval execution, context garbage collection and
 provider-level usage measurement are still separate Goals.
 
+The Avalonia desktop now projects the persisted context decision in the Plan
+inspector and the compact Project Intelligence aggregate in the context rail.
+This is intentionally a decision/summary surface: retrieval payloads and
+unobserved cost are not presented as if they were available to the frontend.
+
 ## How to read the Goal states
 
 Every Goal was audited on 2026-08-10 against its own acceptance criteria. Goals

@@ -1,8 +1,10 @@
 using AtlasFlow.Application.Contracts;
 using AtlasFlow.Desktop.ViewModels;
 using AtlasFlow.Domain;
+using AtlasFlow.Domain.Context;
 using AtlasFlow.Domain.Execution;
 using AtlasFlow.Domain.Goals;
+using AtlasFlow.Domain.Intelligence;
 using AtlasFlow.Domain.Planning;
 
 using NSubstitute;
@@ -51,6 +53,80 @@ public sealed class PlanViewModelTests
         await service.Received(1).CreateAsync(
             Arg.Is<CreatePlanRequest>(request => request.GoalId == goal.Id),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Loading_exposes_the_bounded_context_decision_without_payload_details()
+    {
+        Goal goal = CreateGoal();
+        Plan plan = CreatePlan("plan-context", PlanState.Draft) with
+        {
+            Context = new ContextPlan
+            {
+                Profile = ContextProfile.Medium,
+                Strategy = ContextStrategy.StructuralRetrieval,
+                Mode = ContextMode.Progressive,
+                Budget = new ContextBudget
+                {
+                    ContextTargetTokens = 8000,
+                    ContextHardTokens = 12000,
+                    OutputTargetTokens = 2000,
+                    OutputHardTokens = 4000,
+                    MaxExpansionRounds = 2,
+                    MaxDelegationDepth = 1,
+                },
+                Reasons = ["dependências estruturais"],
+                Source = "lpc-policy",
+            },
+        };
+        IPlanService service = Substitute.For<IPlanService>();
+        service.ListForGoalAsync(goal.Id, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<Plan>>([plan]));
+
+        PlanViewModel viewModel = new(service);
+
+        await viewModel.LoadAsync(goal, TestContext.Current.CancellationToken);
+
+        Assert.Equal("Medium · Structural retrieval · Progressive", viewModel.SelectedContextState);
+        Assert.Equal(
+            "Entrada: 8000/12000 tokens · saída: 2000/4000 · expansão: 2 · delegação: 1",
+            viewModel.SelectedContextSummary);
+        Assert.Contains("dependências estruturais", viewModel.SelectedContextReasons);
+        Assert.DoesNotContain("payload", viewModel.SelectedContextSummary, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Loading_reads_the_project_intelligence_summary()
+    {
+        Goal goal = CreateGoal();
+        IPlanService planService = Substitute.For<IPlanService>();
+        planService.ListForGoalAsync(goal.Id, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<Plan>>([CreatePlan("plan-intelligence", PlanState.Draft)]));
+        IProjectIntelligenceService intelligenceService = Substitute.For<IProjectIntelligenceService>();
+        intelligenceService.GetAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new ProjectIntelligenceSnapshot
+            {
+                Version = 1,
+                UpdatedAt = DateTimeOffset.UtcNow,
+                Summary = new ProjectIntelligenceSummary
+                {
+                    Tasks = 2,
+                    InputTokens = 100,
+                    OutputTokens = 50,
+                    CachedTokens = 0,
+                    IntermediateOutputTokens = 10,
+                    DirectCost = 0,
+                },
+            }));
+
+        PlanViewModel viewModel = new(planService, intelligenceService);
+
+        await viewModel.LoadAsync(goal, TestContext.Current.CancellationToken);
+
+        Assert.Equal("Snapshot carregado · 2 relatório(s)", viewModel.IntelligenceStatusLabel);
+        Assert.Equal("100 tokens de entrada · 50 de saída · 10 intermediários", viewModel.IntelligenceSummaryLabel);
+        Assert.Equal("Custo direto: não observado", viewModel.IntelligenceCostLabel);
+        await intelligenceService.Received(1).GetAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

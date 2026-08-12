@@ -16,6 +16,18 @@ iniciado imediatamente.
 A execução registra Goal/revisão, settings e plano consumido. Um snapshot depois
 de `LOCKED` é imutável; se o Goal canônico mudar, um novo plano é necessário.
 
+## Inspector de contexto e inteligência
+
+O inspector do Plan mostra a decisão de contexto que foi persistida no snapshot:
+perfil, estratégia, modo progressivo, orçamento de entrada/saída, limites de
+expansão/delegação e justificativas. Ele não mostra nem simula o payload
+recuperado; a decisão precisa permanecer revisável antes da execução.
+
+A rail de contexto também mostra o resumo compacto de Project Intelligence:
+quantidade de relatórios e tokens agregados. Custo só é apresentado como
+observado quando o contrato fornece uma medição direta; ausência de medição não
+é convertida em estimativa visual.
+
 ## Projeto externo
 
 Em `external`, `atlas-needs-adaptation` e `atlas-incompatible`, Plan aparece

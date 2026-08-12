@@ -132,7 +132,10 @@ the missing capability boundary rather than receiving a plausible stub.
 
 The v0.2 context contract returns a bounded decision, not a copied context
 payload. A Plan captures that decision so the desktop can show the reviewed
-budget and strategy. The Project Intelligence contract records compact task
-reports and recomputes aggregates with explicit measurement provenance. These
-boundaries are ready for the desktop to consume while retrieval, Discuss and
-provider integration continue independently.
+budget and strategy. `PlanViewModel` consumes that decision and projects it into
+the Plan inspector and context rail without exposing retrieval payloads. The
+Project Intelligence contract records compact task reports and recomputes
+aggregates with explicit measurement provenance; the desktop shows only this
+summary and keeps unavailable cost measurements honest. These boundaries are
+ready for the desktop to consume while retrieval, Discuss and provider
+integration continue independently.

@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 
 using AtlasFlow.Application.Contracts;
+using AtlasFlow.Domain.Context;
 using AtlasFlow.Domain.Goals;
+using AtlasFlow.Domain.Intelligence;
 using AtlasFlow.Domain.Planning;
 
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -17,11 +19,15 @@ namespace AtlasFlow.Desktop.ViewModels;
 public sealed partial class PlanViewModel : ObservableObject
 {
     private readonly IPlanService _plans;
+    private readonly IProjectIntelligenceService? _intelligenceService;
     private Goal? _goal;
 
-    public PlanViewModel(IPlanService plans)
+    public PlanViewModel(
+        IPlanService plans,
+        IProjectIntelligenceService? intelligenceService = null)
     {
         _plans = plans;
+        _intelligenceService = intelligenceService;
     }
 
     public ObservableCollection<Plan> Plans { get; } = [];
@@ -46,11 +52,56 @@ public sealed partial class PlanViewModel : ObservableObject
         ? "Nenhum snapshot criado"
         : $"{SelectedPlan.Tasks.Count} tarefa(s) · {SelectedPlan.Runner} · integra em {SelectedPlan.IntegrationTarget}";
 
+    public string SelectedContextState => SelectedPlan?.Context is null
+        ? "Contexto ainda não planejado"
+        : $"{ProfileLabel(SelectedPlan.Context.Profile)} · "
+          + $"{StrategyLabel(SelectedPlan.Context.Strategy)} · "
+          + ModeLabel(SelectedPlan.Context.Mode);
+
+    public string SelectedContextSummary => SelectedPlan?.Context is not { } context
+        ? "Crie um snapshot para registrar a decisão LPC/PCA junto do plano."
+        : $"Entrada: {context.Budget.ContextTargetTokens}/{context.Budget.ContextHardTokens} tokens · "
+          + $"saída: {context.Budget.OutputTargetTokens}/{context.Budget.OutputHardTokens} · "
+          + $"expansão: {context.Budget.MaxExpansionRounds} · delegação: {context.Budget.MaxDelegationDepth}";
+
+    public string SelectedContextReasons => SelectedPlan?.Context is not { } context
+        ? "Nenhum payload é enviado antes de existir uma decisão revisável."
+        : context.Reasons.Count == 0
+            ? "Sem justificativa adicional registrada."
+            : $"Motivo: {string.Join(" · ", context.Reasons)} · fonte: {context.Source}";
+
+    public string IntelligenceStatusLabel => Intelligence is null
+        ? _intelligenceService is null
+            ? "Project Intelligence aguardando integração"
+            : "Histórico de inteligência indisponível"
+        : Intelligence.Summary.Tasks == 0
+            ? "Nenhum relatório registrado"
+            : $"Snapshot carregado · {Intelligence.Summary.Tasks} relatório(s)";
+
+    public string IntelligenceSummaryLabel => Intelligence is null
+        ? "A inteligência do projeto aparecerá depois do primeiro plano."
+        : $"{Intelligence.Summary.InputTokens} tokens de entrada · "
+          + $"{Intelligence.Summary.OutputTokens} de saída · "
+          + $"{Intelligence.Summary.IntermediateOutputTokens} intermediários";
+
+    public string IntelligenceCostLabel => Intelligence is null || Intelligence.Summary.DirectCost == 0
+        ? "Custo direto: não observado"
+        : "Custo direto: registrado com provenance";
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanLockPlan))]
     [NotifyPropertyChangedFor(nameof(SelectedPlanState))]
     [NotifyPropertyChangedFor(nameof(SelectedPlanSummary))]
+    [NotifyPropertyChangedFor(nameof(SelectedContextState))]
+    [NotifyPropertyChangedFor(nameof(SelectedContextSummary))]
+    [NotifyPropertyChangedFor(nameof(SelectedContextReasons))]
     private Plan? _selectedPlan;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IntelligenceStatusLabel))]
+    [NotifyPropertyChangedFor(nameof(IntelligenceSummaryLabel))]
+    [NotifyPropertyChangedFor(nameof(IntelligenceCostLabel))]
+    private ProjectIntelligenceSnapshot? _intelligence;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanCreatePlan))]
@@ -69,6 +120,7 @@ public sealed partial class PlanViewModel : ObservableObject
         _goal = goal;
         Plans.Clear();
         SelectedPlan = null;
+        Intelligence = null;
         ErrorMessage = null;
         NotifyGoalChanged();
 
@@ -90,6 +142,7 @@ public sealed partial class PlanViewModel : ObservableObject
             }
 
             SelectedPlan = Plans.FirstOrDefault();
+            await LoadIntelligenceAsync(cancellationToken).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -123,6 +176,7 @@ public sealed partial class PlanViewModel : ObservableObject
 
             Plans.Insert(0, created);
             SelectedPlan = created;
+            await LoadIntelligenceAsync(cancellationToken).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -203,4 +257,54 @@ public sealed partial class PlanViewModel : ObservableObject
         OnPropertyChanged(nameof(CanCreatePlan));
         CreatePlanCommand.NotifyCanExecuteChanged();
     }
+
+    private async Task LoadIntelligenceAsync(CancellationToken cancellationToken)
+    {
+        if (_intelligenceService is null)
+        {
+            Intelligence = null;
+            return;
+        }
+
+        try
+        {
+            Intelligence = await _intelligenceService
+                .GetAsync(cancellationToken)
+                .ConfigureAwait(true);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            // Project Intelligence is a derived projection. Its unavailability
+            // must not hide an otherwise usable Goal and Plan workspace.
+            Intelligence = null;
+        }
+    }
+
+    private static string ProfileLabel(ContextProfile profile) => profile switch
+    {
+        ContextProfile.Small => "Small",
+        ContextProfile.Medium => "Medium",
+        ContextProfile.Large => "Large",
+        _ => profile.ToString(),
+    };
+
+    private static string StrategyLabel(ContextStrategy strategy) => strategy switch
+    {
+        ContextStrategy.Direct => "Direct",
+        ContextStrategy.StructuralRetrieval => "Structural retrieval",
+        ContextStrategy.ContextPack => "Context pack",
+        ContextStrategy.ProgressiveRetrieval => "Progressive retrieval",
+        _ => strategy.ToString(),
+    };
+
+    private static string ModeLabel(ContextMode mode) => mode switch
+    {
+        ContextMode.Legacy => "Legacy",
+        ContextMode.Progressive => "Progressive",
+        _ => mode.ToString(),
+    };
 }
