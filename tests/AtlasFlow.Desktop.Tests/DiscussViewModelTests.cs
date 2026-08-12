@@ -99,6 +99,57 @@ public sealed class DiscussViewModelTests
     }
 
     [Fact]
+    public async Task Proposing_accepting_and_finalizing_a_decision_use_explicit_service_commands()
+    {
+        Discussion discussion = CreateDiscussion("disc-decision", DateTimeOffset.UtcNow);
+        Decision proposed = CreateDecision("decision-1", DecisionState.Proposed);
+        Decision accepted = proposed with { State = DecisionState.Accepted };
+        IDiscussionService service = Substitute.For<IDiscussionService>();
+        service.StartAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(discussion));
+        service.ProposeDecisionAsync(Arg.Any<ProposeDecisionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(proposed));
+        service.AcceptDecisionAsync(discussion.Id, proposed.Id, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(accepted));
+        service.FinalizeAsync(discussion.Id, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new DiscussionOutcome
+            {
+                DiscussionId = discussion.Id,
+                Recorded = [accepted.Id],
+                Written = [new ProjectPath(".atlas/decisions/decision-1.md")],
+            }));
+
+        DiscussViewModel viewModel = new(service);
+        await viewModel.StartAsync(TestContext.Current.CancellationToken);
+        viewModel.DecisionTitle = "Manter o contrato";
+        viewModel.DecisionStatement = "O contrato público permanece a fronteira.";
+        viewModel.DecisionRationale = "Permite evolução independente do backend.";
+
+        await viewModel.ProposeDecisionAsync(TestContext.Current.CancellationToken);
+        await viewModel.AcceptSelectedDecisionAsync(TestContext.Current.CancellationToken);
+        await viewModel.FinalizeDiscussionAsync(TestContext.Current.CancellationToken);
+
+        await service.Received(1).ProposeDecisionAsync(
+            Arg.Is<ProposeDecisionRequest>(request =>
+                request.DiscussionId == discussion.Id
+                && request.Title == "Manter o contrato"
+                && request.Statement == "O contrato público permanece a fronteira."
+                && request.Rationale == "Permite evolução independente do backend."),
+            Arg.Any<CancellationToken>());
+        await service.Received(1).AcceptDecisionAsync(
+            discussion.Id,
+            proposed.Id,
+            Arg.Any<CancellationToken>());
+        await service.Received(1).FinalizeAsync(discussion.Id, Arg.Any<CancellationToken>());
+        Assert.Equal(DecisionState.Accepted, viewModel.Decisions.Single().State);
+        Assert.Equal(
+            "1 decisão(ões) registrada(s) · 1 arquivo(s) escrito(s)",
+            viewModel.FinalizationStatusLabel);
+        Assert.False(viewModel.CanAcceptDecision);
+        Assert.False(viewModel.CanFinalizeDiscussion);
+    }
+
+    [Fact]
     public void Missing_discussion_service_keeps_the_define_surface_explicitly_unavailable()
     {
         DiscussViewModel viewModel = new();
@@ -125,5 +176,15 @@ public sealed class DiscussViewModelTests
                 CreatedAt = createdAt,
             },
         ],
+    };
+
+    private static Decision CreateDecision(string id, DecisionState state) => new()
+    {
+        Id = new DecisionId(id),
+        Title = "Decisão de teste",
+        Statement = "O contrato público permanece a fronteira.",
+        Rationale = "Permite evolução independente do backend.",
+        State = state,
+        CreatedAt = DateTimeOffset.UtcNow,
     };
 }

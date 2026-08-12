@@ -28,7 +28,13 @@ public sealed partial class DiscussViewModel : ObservableObject
 
     public ObservableCollection<MessageReference> References { get; } = [];
 
+    public IReadOnlyList<Decision> Decisions => CurrentDiscussion?.Decisions ?? [];
+
     public bool HasDiscussion => CurrentDiscussion is not null;
+
+    public bool HasDecisions => Decisions.Count > 0;
+
+    public bool IsDecisionEmptyState => !HasDecisions;
 
     public bool HasMessages => Messages.Count > 0;
 
@@ -44,13 +50,38 @@ public sealed partial class DiscussViewModel : ObservableObject
         _discussions is not null
         && CurrentDiscussion is not null
         && !IsBusy
+        && !IsFinalized
         && !string.IsNullOrWhiteSpace(DraftMessage);
 
     public bool CanAddReference =>
         _discussions is not null
         && CurrentDiscussion is not null
         && !IsBusy
+        && !IsFinalized
         && !string.IsNullOrWhiteSpace(ReferencePath);
+
+    public bool CanProposeDecision =>
+        _discussions is not null
+        && CurrentDiscussion is not null
+        && !IsBusy
+        && !IsFinalized
+        && !string.IsNullOrWhiteSpace(DecisionTitle)
+        && !string.IsNullOrWhiteSpace(DecisionStatement)
+        && !string.IsNullOrWhiteSpace(DecisionRationale);
+
+    public bool CanAcceptDecision =>
+        _discussions is not null
+        && CurrentDiscussion is not null
+        && SelectedDecision?.State == DecisionState.Proposed
+        && !IsFinalized
+        && !IsBusy;
+
+    public bool CanFinalizeDiscussion =>
+        _discussions is not null
+        && CurrentDiscussion is not null
+        && Decisions.Any(decision => decision.State == DecisionState.Accepted)
+        && !IsFinalized
+        && !IsBusy;
 
     public string IntegrationStatusLabel => _discussions is null
         ? "Discuss aguardando integração"
@@ -67,15 +98,25 @@ public sealed partial class DiscussViewModel : ObservableObject
 
     public string DecisionSummaryLabel => CurrentDiscussion is null
         ? "Nenhuma decisão proposta"
-        : CurrentDiscussion.Decisions.Count == 0
+        : Decisions.Count == 0
             ? "Nenhuma decisão proposta"
-            : $"{CurrentDiscussion.Decisions.Count} decisão(ões) · "
-              + $"{CurrentDiscussion.Decisions.Count(decision => decision.State == DecisionState.Accepted)} aceita(s)";
+            : $"{Decisions.Count} decisão(ões) · "
+              + $"{Decisions.Count(decision => decision.State == DecisionState.Accepted)} aceita(s)";
+
+    public string SelectedDecisionSummary => SelectedDecision is null
+        ? "Selecione uma decisão para aceitar ou revisar."
+        : $"{SelectedDecision.Title} · {SelectedDecision.State}";
+
+    public string DecisionFormToggleLabel => IsDecisionFormVisible
+        ? "Ocultar proposta"
+        : "Propor decisão";
 
     public string ComposerStatusLabel => _discussions is null
         ? "Composer aguardando Discuss"
         : CurrentDiscussion is null
             ? "Inicie uma conversa para habilitar o composer"
+            : IsFinalized
+                ? "Discuss finalizado no ledger"
             : "Mensagem não é persistida até o envio";
 
     public string ReferenceSummaryLabel => References.Count switch
@@ -85,16 +126,29 @@ public sealed partial class DiscussViewModel : ObservableObject
         _ => $"{References.Count} referências aguardando envio",
     };
 
+    public string FinalizationStatusLabel { get; private set; } = "Nenhuma finalização solicitada.";
+
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Decisions))]
     [NotifyPropertyChangedFor(nameof(HasDiscussion))]
+    [NotifyPropertyChangedFor(nameof(HasDecisions))]
+    [NotifyPropertyChangedFor(nameof(IsDecisionEmptyState))]
     [NotifyPropertyChangedFor(nameof(IsEmptyState))]
     [NotifyPropertyChangedFor(nameof(CanSendMessage))]
     [NotifyPropertyChangedFor(nameof(CanAddReference))]
+    [NotifyPropertyChangedFor(nameof(CanProposeDecision))]
+    [NotifyPropertyChangedFor(nameof(CanAcceptDecision))]
+    [NotifyPropertyChangedFor(nameof(CanFinalizeDiscussion))]
     [NotifyPropertyChangedFor(nameof(DiscussionStateLabel))]
     [NotifyPropertyChangedFor(nameof(DiscussionSummaryLabel))]
     [NotifyPropertyChangedFor(nameof(DecisionSummaryLabel))]
     [NotifyPropertyChangedFor(nameof(ComposerStatusLabel))]
     private Discussion? _currentDiscussion;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanAcceptDecision))]
+    [NotifyPropertyChangedFor(nameof(SelectedDecisionSummary))]
+    private Decision? _selectedDecision;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSendMessage))]
@@ -105,10 +159,39 @@ public sealed partial class DiscussViewModel : ObservableObject
     private string _referencePath = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanProposeDecision))]
+    private string _decisionTitle = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanProposeDecision))]
+    private string _decisionStatement = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanProposeDecision))]
+    private string _decisionRationale = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DecisionFormToggleLabel))]
+    private bool _isDecisionFormVisible;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanStartDiscussion))]
     [NotifyPropertyChangedFor(nameof(CanSendMessage))]
     [NotifyPropertyChangedFor(nameof(CanAddReference))]
+    [NotifyPropertyChangedFor(nameof(CanProposeDecision))]
+    [NotifyPropertyChangedFor(nameof(CanAcceptDecision))]
+    [NotifyPropertyChangedFor(nameof(CanFinalizeDiscussion))]
+    [NotifyPropertyChangedFor(nameof(ComposerStatusLabel))]
     private bool _isBusy;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSendMessage))]
+    [NotifyPropertyChangedFor(nameof(CanAddReference))]
+    [NotifyPropertyChangedFor(nameof(CanProposeDecision))]
+    [NotifyPropertyChangedFor(nameof(CanAcceptDecision))]
+    [NotifyPropertyChangedFor(nameof(CanFinalizeDiscussion))]
+    [NotifyPropertyChangedFor(nameof(ComposerStatusLabel))]
+    private bool _isFinalized;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasError))]
@@ -121,6 +204,8 @@ public sealed partial class DiscussViewModel : ObservableObject
     {
         ClearConversation();
         ErrorMessage = null;
+        FinalizationStatusLabel = "Nenhuma finalização solicitada.";
+        OnPropertyChanged(nameof(FinalizationStatusLabel));
 
         if (_discussions is null)
         {
@@ -179,6 +264,9 @@ public sealed partial class DiscussViewModel : ObservableObject
                 .StartAsync(cancellationToken)
                 .ConfigureAwait(true);
             ApplyDiscussion(discussion);
+            IsFinalized = false;
+            FinalizationStatusLabel = "Nenhuma finalização solicitada.";
+            OnPropertyChanged(nameof(FinalizationStatusLabel));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -243,6 +331,134 @@ public sealed partial class DiscussViewModel : ObservableObject
         }
     }
 
+    public async Task ProposeDecisionAsync(CancellationToken cancellationToken = default)
+    {
+        Discussion? discussion = CurrentDiscussion;
+        string title = DecisionTitle.Trim();
+        string statement = DecisionStatement.Trim();
+        string rationale = DecisionRationale.Trim();
+        if (_discussions is null
+            || discussion is null
+            || string.IsNullOrWhiteSpace(title)
+            || string.IsNullOrWhiteSpace(statement)
+            || string.IsNullOrWhiteSpace(rationale))
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            Decision proposed = await _discussions
+                .ProposeDecisionAsync(
+                    new ProposeDecisionRequest
+                    {
+                        DiscussionId = discussion.Id,
+                        Title = title,
+                        Statement = statement,
+                        Rationale = rationale,
+                    },
+                    cancellationToken)
+                .ConfigureAwait(true);
+
+            CurrentDiscussion = discussion with
+            {
+                Decisions = discussion.Decisions.Append(proposed).ToArray(),
+            };
+            SelectedDecision = proposed;
+            DecisionTitle = string.Empty;
+            DecisionStatement = string.Empty;
+            DecisionRationale = string.Empty;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            ErrorMessage = exception.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+            NotifyCommands();
+        }
+    }
+
+    public async Task AcceptSelectedDecisionAsync(CancellationToken cancellationToken = default)
+    {
+        Discussion? discussion = CurrentDiscussion;
+        Decision? selected = SelectedDecision;
+        if (_discussions is null
+            || discussion is null
+            || selected is null
+            || selected.State != DecisionState.Proposed)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            Decision accepted = await _discussions
+                .AcceptDecisionAsync(discussion.Id, selected.Id, cancellationToken)
+                .ConfigureAwait(true);
+            ReplaceDecision(accepted);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            ErrorMessage = exception.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+            NotifyCommands();
+        }
+    }
+
+    public async Task FinalizeDiscussionAsync(CancellationToken cancellationToken = default)
+    {
+        Discussion? discussion = CurrentDiscussion;
+        if (_discussions is null
+            || discussion is null
+            || !Decisions.Any(decision => decision.State == DecisionState.Accepted))
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            DiscussionOutcome outcome = await _discussions
+                .FinalizeAsync(discussion.Id, cancellationToken)
+                .ConfigureAwait(true);
+            FinalizationStatusLabel =
+                $"{outcome.Recorded.Count} decisão(ões) registrada(s) · {outcome.Written.Count} arquivo(s) escrito(s)";
+            IsFinalized = true;
+            OnPropertyChanged(nameof(FinalizationStatusLabel));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            ErrorMessage = exception.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+            NotifyCommands();
+        }
+    }
+
     public void AddFileReference() => AddReference(ReferenceKind.File);
 
     public void AddImageReference() => AddReference(ReferenceKind.Image);
@@ -259,6 +475,19 @@ public sealed partial class DiscussViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanAddReference))]
     private void AddImage() => AddImageReference();
 
+    [RelayCommand(CanExecute = nameof(CanProposeDecision))]
+    private Task ProposeAsync(CancellationToken cancellationToken) => ProposeDecisionAsync(cancellationToken);
+
+    [RelayCommand(CanExecute = nameof(CanAcceptDecision))]
+    private Task AcceptAsync(CancellationToken cancellationToken) => AcceptSelectedDecisionAsync(cancellationToken);
+
+    [RelayCommand(CanExecute = nameof(CanFinalizeDiscussion))]
+    private Task FinalizeAsync(CancellationToken cancellationToken) =>
+        FinalizeDiscussionAsync(cancellationToken);
+
+    [RelayCommand]
+    private void ToggleDecisionForm() => IsDecisionFormVisible = !IsDecisionFormVisible;
+
     [RelayCommand]
     private void ClearReferences()
     {
@@ -268,11 +497,21 @@ public sealed partial class DiscussViewModel : ObservableObject
 
     partial void OnIsBusyChanged(bool value) => NotifyCommands();
 
+    partial void OnIsFinalizedChanged(bool value) => NotifyCommands();
+
     partial void OnCurrentDiscussionChanged(Discussion? value) => NotifyCommands();
 
     partial void OnDraftMessageChanged(string value) => NotifyCommands();
 
     partial void OnReferencePathChanged(string value) => NotifyCommands();
+
+    partial void OnSelectedDecisionChanged(Decision? value) => NotifyCommands();
+
+    partial void OnDecisionTitleChanged(string value) => NotifyCommands();
+
+    partial void OnDecisionStatementChanged(string value) => NotifyCommands();
+
+    partial void OnDecisionRationaleChanged(string value) => NotifyCommands();
 
     private void AddReference(ReferenceKind kind)
     {
@@ -295,6 +534,9 @@ public sealed partial class DiscussViewModel : ObservableObject
     private void ApplyDiscussion(Discussion? discussion)
     {
         CurrentDiscussion = discussion;
+        SelectedDecision = discussion is { Decisions.Count: > 0 }
+            ? discussion.Decisions[0]
+            : null;
         Messages.Clear();
         if (discussion is not null)
         {
@@ -310,10 +552,18 @@ public sealed partial class DiscussViewModel : ObservableObject
     private void ClearConversation()
     {
         CurrentDiscussion = null;
+        SelectedDecision = null;
         Messages.Clear();
         ClearReferences();
         DraftMessage = string.Empty;
         ReferencePath = string.Empty;
+        DecisionTitle = string.Empty;
+        DecisionStatement = string.Empty;
+        DecisionRationale = string.Empty;
+        IsDecisionFormVisible = false;
+        IsFinalized = false;
+        FinalizationStatusLabel = "Nenhuma finalização solicitada.";
+        OnPropertyChanged(nameof(FinalizationStatusLabel));
         NotifyCollectionStateChanged();
     }
 
@@ -321,9 +571,12 @@ public sealed partial class DiscussViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(HasMessages));
         OnPropertyChanged(nameof(HasReferences));
+        OnPropertyChanged(nameof(Decisions));
+        OnPropertyChanged(nameof(HasDecisions));
         OnPropertyChanged(nameof(DiscussionSummaryLabel));
         OnPropertyChanged(nameof(ReferenceSummaryLabel));
         OnPropertyChanged(nameof(DecisionSummaryLabel));
+        OnPropertyChanged(nameof(CanFinalizeDiscussion));
         NotifyCommands();
     }
 
@@ -333,6 +586,22 @@ public sealed partial class DiscussViewModel : ObservableObject
         SendCommand.NotifyCanExecuteChanged();
         AddFileCommand.NotifyCanExecuteChanged();
         AddImageCommand.NotifyCanExecuteChanged();
+        ProposeCommand.NotifyCanExecuteChanged();
+        AcceptCommand.NotifyCanExecuteChanged();
+        FinalizeCommand.NotifyCanExecuteChanged();
+    }
+
+    private void ReplaceDecision(Decision updated)
+    {
+        Discussion discussion = CurrentDiscussion
+            ?? throw new InvalidOperationException("Não há uma discussão selecionada.");
+        CurrentDiscussion = discussion with
+        {
+            Decisions = discussion.Decisions
+                .Select(decision => decision.Id == updated.Id ? updated : decision)
+                .ToArray(),
+        };
+        SelectedDecision = updated;
     }
 
     private static string LastPathSegment(string path) =>

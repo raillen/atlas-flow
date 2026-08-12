@@ -656,6 +656,120 @@
               </Border>
 
               <StackPanel Grid.Column="1" Spacing="16">
+                <Border Classes="panel"
+                        Padding="16"
+                        IsVisible="{Binding IsDefineStageSelected}">
+                  <Grid RowDefinitions="Auto,*,Auto,Auto" RowSpacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="Decision Rail" Classes="section-heading" />
+                        <TextBlock Text="{Binding Discuss.DecisionSummaryLabel}"
+                                   Classes="micro"
+                                   TextWrapping="Wrap" />
+                      </StackPanel>
+                      <TextBlock Grid.Column="1" Text="DECISIONS" Classes="eyebrow" />
+                    </Grid>
+
+                    <StackPanel Grid.Row="1" Spacing="8">
+                      <ListBox ItemsSource="{Binding Discuss.Decisions}"
+                               SelectedItem="{Binding Discuss.SelectedDecision}"
+                               IsVisible="{Binding Discuss.HasDecisions}"
+                               a11y:AutomationProperties.Name="Decisões da conversa">
+                        <ListBox.ItemTemplate>
+                          <DataTemplate x:DataType="discuss:Decision">
+                            <Border Classes="elevated-panel" Padding="10" Margin="0,0,0,6">
+                              <StackPanel Spacing="4">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                  <TextBlock Text="{Binding Title}"
+                                             FontWeight="SemiBold"
+                                             TextWrapping="Wrap" />
+                                  <TextBlock Grid.Column="1"
+                                             Text="{Binding State}"
+                                             Classes="mono micro" />
+                                </Grid>
+                                <TextBlock Text="{Binding Statement}"
+                                           Classes="secondary"
+                                           TextWrapping="Wrap" />
+                              </StackPanel>
+                            </Border>
+                          </DataTemplate>
+                        </ListBox.ItemTemplate>
+                      </ListBox>
+                      <Border Classes="elevated-panel"
+                              Padding="10"
+                              IsVisible="{Binding Discuss.IsDecisionEmptyState}">
+                        <TextBlock Text="Nenhuma decisão proposta. Registre uma decisão quando a conversa tiver uma escolha revisável."
+                                   Classes="micro"
+                                   TextWrapping="Wrap" />
+                      </Border>
+                    </StackPanel>
+
+                    <Button Grid.Row="2"
+                            Classes="atlas-button ghost"
+                            Command="{Binding Discuss.ToggleDecisionFormCommand}"
+                            HorizontalAlignment="Left"
+                            a11y:AutomationProperties.Name="Mostrar ou ocultar formulário de proposta de decisão">
+                      <TextBlock Text="{Binding Discuss.DecisionFormToggleLabel}" />
+                    </Button>
+
+                    <Border Grid.Row="3"
+                            Classes="elevated-panel"
+                            Padding="10"
+                            IsVisible="{Binding Discuss.IsDecisionFormVisible}">
+                      <StackPanel Spacing="8">
+                        <TextBox Text="{Binding Discuss.DecisionTitle, UpdateSourceTrigger=PropertyChanged}"
+                                 Classes="atlas-input"
+                                 PlaceholderText="Título curto da decisão"
+                                 a11y:AutomationProperties.Name="Título da decisão" />
+                        <TextBox Text="{Binding Discuss.DecisionStatement, UpdateSourceTrigger=PropertyChanged}"
+                                 Classes="atlas-input"
+                                 PlaceholderText="O que foi decidido?"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 MinHeight="54"
+                                 a11y:AutomationProperties.Name="Enunciado da decisão" />
+                        <TextBox Text="{Binding Discuss.DecisionRationale, UpdateSourceTrigger=PropertyChanged}"
+                                 Classes="atlas-input"
+                                 PlaceholderText="Por que esta decisão é necessária?"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 MinHeight="54"
+                                 a11y:AutomationProperties.Name="Justificativa da decisão" />
+                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                          <TextBlock Text="{Binding Discuss.SelectedDecisionSummary}"
+                                     Classes="micro"
+                                     TextWrapping="Wrap"
+                                     VerticalAlignment="Center" />
+                          <Button Grid.Column="1"
+                                  Classes="atlas-button"
+                                  Command="{Binding Discuss.AcceptCommand}"
+                                  IsEnabled="{Binding Discuss.CanAcceptDecision}"
+                                  a11y:AutomationProperties.Name="Aceitar decisão selecionada">
+                            Aceitar
+                          </Button>
+                          <Button Grid.Column="2"
+                                  Classes="atlas-button primary"
+                                  Command="{Binding Discuss.ProposeCommand}"
+                                  IsEnabled="{Binding Discuss.CanProposeDecision}"
+                                  a11y:AutomationProperties.Name="Propor nova decisão">
+                            Propor
+                          </Button>
+                        </Grid>
+                        <Button Classes="atlas-button ghost"
+                                Command="{Binding Discuss.FinalizeCommand}"
+                                IsEnabled="{Binding Discuss.CanFinalizeDiscussion}"
+                                HorizontalAlignment="Left"
+                                a11y:AutomationProperties.Name="Finalizar discussão no ledger">
+                          Finalizar no ledger
+                        </Button>
+                        <TextBlock Text="{Binding Discuss.FinalizationStatusLabel}"
+                                   Classes="micro"
+                                   TextWrapping="Wrap" />
+                      </StackPanel>
+                    </Border>
+                  </Grid>
+                </Border>
+
                 <Border Classes="panel" Padding="16">
                   <StackPanel Spacing="10">
                     <TextBlock Text="Estado do shell" Classes="section-heading" />

@@ -79,7 +79,10 @@ ações de execução. Cada componente interativo deve cobrir, quando aplicável
 default, hover, pressed, focus-visible, disabled, loading, empty, error e
 success.
 
-Componentes de domínio previstos:
+Componentes de domínio:
+
+O Decision Rail do Define já está integrado para propostas, aceite e
+finalização explícita; o formulário de proposta permanece sob demanda.
 
 - `ProjectSwitcher` e `ProjectModeBanner`;
 - `AttentionStage` e `AdaptationWizard`;

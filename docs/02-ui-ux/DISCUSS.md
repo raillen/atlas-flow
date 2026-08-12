@@ -41,3 +41,8 @@ explicitamente e mantém o composer inerte.
 O picker nativo de arquivos ainda é uma etapa posterior. Esta fatia já fixa o
 contrato visual e de estado para arquivos e imagens sem inventar uma validação
 paralela ou um upload remoto.
+
+O Decision Rail já projeta as decisões da discussão e mantém a progressão
+explícita: a pessoa propõe, seleciona e aceita uma decisão, e só então pode
+solicitar a finalização no ledger. Cada ação aguarda a confirmação de
+IDiscussionService; erro ou rejeição preserva o formulário para correção.

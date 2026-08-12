@@ -39,3 +39,4 @@ history:
 - '2026-08-11: added a persisted light/dark renderer theme with WCAG contrast coverage for both palettes.'
 - '2026-08-11: reduced visual density with lighter typography, discreet status markers, collapsible shell panels and on-demand Discuss context.'
 - '2026-08-12: ported the Define Discuss surface to Avalonia with a contract-first thread, composer, decision summary and project-relative file/image references.'
+- '2026-08-12: added the contract-confirmed Decision Rail for proposing, accepting and finalizing discussion decisions with progressive disclosure.'

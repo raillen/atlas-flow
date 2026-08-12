@@ -100,6 +100,9 @@ AppendMessageRequest com referências relativas. A referência permanece um
 valor do contrato; o Desktop não resolve caminhos, lê arquivos, faz upload ou
 antecipa a validação canônica do serviço.
 
+Proposta, aceite e finalização seguem o mesmo limite: o ViewModel exibe a
+intenção e só atualiza a projeção depois da confirmação de IDiscussionService.
+
 ## Comandos e eventos
 
 Mutação entra na aplicação como comando por intenção, por exemplo
