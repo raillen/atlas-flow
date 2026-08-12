@@ -115,7 +115,7 @@ Measured on 2026-08-11: Arch Linux, x86_64, .NET SDK 10.0.110.
 | --- | --- |
 | `dotnet restore` | 13 projects, clean — after pinning two transitive advisories |
 | `dotnet build` | 0 warnings, 0 errors, with warnings-as-errors and `AnalysisMode=All` |
-| `dotnet test` | Hosts start in all 6 test projects. **0 tests exist.** |
+| Desktop headless tests | 10 tests cover application-contract aggregation, palettes, ViewModel state, accessible actions and a rendered shell frame |
 | AOT publish, `linux-x64` | Succeeds for both `AtlasFlow.Cli` and `AtlasFlow.Desktop` |
 | `atlas` binary | **2.9 MB**, runs, prints help |
 | `atlas-flow` binary | **20 MB** (the 86 MB publish directory is debug symbols, which do not ship) |
@@ -127,19 +127,20 @@ is the dependency policy working rather than failing: an advisory is an error,
 so the build stopped. Both are pinned forward in `Directory.Packages.props`,
 each pin annotated with its advisory and the condition for removing it.
 
-Read the RSS number carefully. It is an **empty window** — a `TextBlock` in a
-`Window`, with no orchestrator attached. It is not a measurement of the product,
-and it is above the 80 MB this document previously estimated. The comparison it
-does support: the previous stack needed roughly 250 MB and a Python interpreter
-present on the machine.
+Read the RSS number carefully. It was measured on the historical empty-window
+scaffold, before the App Shell existed. It is not a current measurement of the
+product and must be repeated after the frontend and application adapter are
+integrated. The comparison it did support at the time: the previous stack
+needed roughly 250 MB and a Python interpreter present on the machine.
 
 ## Not verified
 
 - **Windows. Nothing at all.** No build, no publish, no launch, no MSI — and none is scheduled while development is Linux-first.
 - **`deb`, Flatpak and MSI packaging.** No package has been produced.
 - **SBOM, checksums and signature** against a .NET artefact.
-- **Any behaviour.** Zero tests exist. The binary opens a window that does
-  nothing, which is what a scaffold is.
+- **End-to-end behaviour with the application adapter.** Current Desktop tests
+  exercise the safe unavailable snapshot; no real Goal, Discuss or Run flow is
+  connected yet.
 
 ## Not yet done
 

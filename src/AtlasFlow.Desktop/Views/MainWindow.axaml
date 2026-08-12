@@ -1,85 +1,404 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:a11y="clr-namespace:Avalonia.Automation;assembly=Avalonia.Controls"
-        xmlns:vm="clr-namespace:AtlasFlow.Desktop.ViewModels"
-        xmlns:goals="clr-namespace:AtlasFlow.Domain.Goals;assembly=AtlasFlow.Domain"
+        xmlns:viewModels="clr-namespace:AtlasFlow.Desktop.ViewModels"
         x:Class="AtlasFlow.Desktop.Views.MainWindow"
-        x:DataType="vm:WorkspaceViewModel"
+        x:DataType="viewModels:WorkspaceViewModel"
         Title="Atlas Flow"
-        Width="1100" Height="720"
-        MinWidth="720" MinHeight="480">
+        Width="1440"
+        Height="900"
+        MinWidth="960"
+        MinHeight="640">
 
-  <!--
-    The first vertical slice: a real project inspection and a real Goal list,
-    from real services. Deliberately plain — its job is to prove the contract
-    end to end, not to be the workspace shell ADR-013 specifies.
-  -->
+  <Grid RowDefinitions="50,*,30">
+    <Border Grid.Row="0"
+            Background="{DynamicResource AtlasDeepSurfaceBrush}"
+            BorderBrush="{DynamicResource AtlasBorderSubtleBrush}"
+            BorderThickness="0,0,0,1"
+            Padding="12,0">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <Border Width="28"
+                  Height="28"
+                  CornerRadius="8"
+                  Background="{DynamicResource AtlasAccentBrush}">
+            <TextBlock Text="A"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource AtlasOnAccentBrush}" />
+          </Border>
 
-  <DockPanel Margin="24">
+          <StackPanel Spacing="0" VerticalAlignment="Center">
+            <TextBlock Text="ATLAS FLOW" Classes="eyebrow" />
+            <TextBlock Text="{Binding ProjectName}" FontSize="12" FontWeight="SemiBold" />
+          </StackPanel>
 
-    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,20">
-      <TextBlock Text="{Binding ProjectHeadline}"
-                 FontSize="22" FontWeight="SemiBold"
-                 a11y:AutomationProperties.Name="Open project" />
-      <TextBlock Text="{Binding StageAvailability}"
-                 Opacity="0.7"
-                 IsVisible="{Binding HasProject}"
-                 a11y:AutomationProperties.Name="Available workspace stages" />
-    </StackPanel>
+          <Border Width="1"
+                  Height="24"
+                  Margin="4,0"
+                  Background="{DynamicResource AtlasBorderBrush}" />
 
-    <Button DockPanel.Dock="Bottom"
-            Content="Reload"
-            HorizontalAlignment="Left"
-            Margin="0,16,0,0"
-            Command="{Binding LoadCommand}"
-            a11y:AutomationProperties.Name="Reload the project and its Goals" />
+          <StackPanel Spacing="0" VerticalAlignment="Center">
+            <TextBlock Text="{Binding SelectedStage.Title}" FontSize="12" />
+            <TextBlock Text="{Binding ProjectPath}" Classes="micro" MaxWidth="360" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+        </StackPanel>
 
-    <Panel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Classes="atlas-button ghost"
+                  IsEnabled="False"
+                  a11y:AutomationProperties.Name="Abrir paleta de comandos">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="Comandos" />
+              <Border Padding="5,2"
+                      CornerRadius="4"
+                      BorderBrush="{DynamicResource AtlasBorderBrush}"
+                      BorderThickness="1">
+                <TextBlock Text="Ctrl K" Classes="mono micro" />
+              </Border>
+            </StackPanel>
+            <ToolTip.Tip>Disponível quando os comandos de aplicação forem conectados.</ToolTip.Tip>
+          </Button>
 
-      <!-- Loading. Present because a real service takes real time. -->
-      <TextBlock Text="Reading the project…"
-                 IsVisible="{Binding IsLoading}"
-                 VerticalAlignment="Top"
-                 a11y:AutomationProperties.Name="Loading" />
+          <Button Classes="atlas-button"
+                  Command="{Binding ToggleThemeCommand}"
+                  a11y:AutomationProperties.Name="Alternar tema claro ou escuro">
+            <TextBlock Text="{Binding ThemeModeLabel}" />
+          </Button>
 
-      <!--
-        Failure. An external directory, a malformed manifest and an unreadable
-        Goal file all land here, each with the reason the backend produced.
-      -->
-      <Border IsVisible="{Binding HasError}"
-              BorderThickness="1" CornerRadius="4"
-              Padding="16" VerticalAlignment="Top">
-        <TextBlock Text="{Binding Error}"
-                   TextWrapping="Wrap"
-                   a11y:AutomationProperties.Name="Why the Goals could not be read" />
+          <Button Classes="atlas-button"
+                  Command="{Binding ToggleContextCommand}"
+                  a11y:AutomationProperties.Name="Mostrar ou ocultar painel de contexto">
+            <TextBlock Text="Contexto" />
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto">
+      <Border Grid.Column="0"
+              Width="{Binding NavigationPanelWidth}"
+              ClipToBounds="True"
+              Background="{DynamicResource AtlasDeepSurfaceBrush}"
+              BorderBrush="{DynamicResource AtlasBorderSubtleBrush}"
+              BorderThickness="0,0,1,0"
+              Padding="8,12">
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
+          <Grid ColumnDefinitions="*,Auto" Margin="4,0,4,12">
+            <TextBlock Text="FLOW" Classes="eyebrow" VerticalAlignment="Center" />
+            <Button x:Name="ToggleNavigationButton"
+                    Grid.Column="1"
+                    Classes="atlas-button icon ghost"
+                    Command="{Binding ToggleNavigationCommand}"
+                    a11y:AutomationProperties.Name="Expandir ou recolher navegação">
+              <TextBlock Text="≡" FontSize="16" />
+            </Button>
+          </Grid>
+
+          <ListBox x:Name="StageNavigation"
+                   Grid.Row="1"
+                   Classes="stage-list"
+                   ItemsSource="{Binding Stages}"
+                   SelectedItem="{Binding SelectedStage}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="viewModels:WorkspaceStageViewModel">
+                <Grid ColumnDefinitions="16,*" Height="36" ToolTip.Tip="{Binding Description}">
+                  <Grid Width="6" Height="6" VerticalAlignment="Center">
+                    <Border CornerRadius="3"
+                            IsVisible="{Binding IsEnabled}"
+                            Background="{DynamicResource AtlasAccentBrush}" />
+                    <Border CornerRadius="3"
+                            IsVisible="{Binding !IsEnabled}"
+                            Background="{DynamicResource AtlasDisabledTextBrush}" />
+                  </Grid>
+                  <StackPanel Grid.Column="1"
+                              Margin="10,0,0,0"
+                              Orientation="Horizontal"
+                              Spacing="8"
+                              VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Title}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding AvailabilityLabel}" Classes="micro" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <Border Grid.Row="3" Classes="panel" Padding="12" Margin="0,12,0,0">
+            <StackPanel Spacing="6">
+              <TextBlock Text="PROJECT TRUTH" Classes="eyebrow" />
+              <TextBlock Text="{Binding GoalSummaryLabel}" FontSize="12" FontWeight="SemiBold" />
+              <TextBlock Text="Git e Project Atlas continuam canônicos." Classes="micro" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+        </Grid>
       </Border>
 
-      <!-- Empty: a valid project that declares no Goals yet. -->
-      <TextBlock Text="This project declares no Goals yet."
-                 IsVisible="{Binding IsEmpty}"
-                 VerticalAlignment="Top"
-                 a11y:AutomationProperties.Name="No Goals" />
+      <Border Grid.Column="1" Background="{DynamicResource AtlasBackgroundBrush}">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="24" Spacing="20">
+            <Border Classes="panel" Padding="14">
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                <Border Width="8"
+                        Height="8"
+                        CornerRadius="4"
+                        VerticalAlignment="Center"
+                        Background="{DynamicResource AtlasWarningBrush}" />
+                <StackPanel Grid.Column="1" Spacing="3">
+                  <TextBlock Text="{Binding ProjectModeLabel}" FontSize="12" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding ProjectModeDescription}" Classes="secondary" TextWrapping="Wrap" />
+                </StackPanel>
+              </Grid>
+            </Border>
 
-      <ListBox ItemsSource="{Binding Goals}"
-               a11y:AutomationProperties.Name="Goals in this project">
-        <ListBox.ItemTemplate>
-          <DataTemplate x:DataType="goals:Goal">
-            <StackPanel Spacing="2" Margin="0,6">
-              <TextBlock FontWeight="SemiBold">
-                <Run Text="{Binding Phase}" />
-                <Run Text=" · " />
-                <Run Text="{Binding Title}" />
-              </TextBlock>
-              <TextBlock Opacity="0.7" TextWrapping="Wrap">
-                <Run Text="{Binding State}" />
-                <Run Text=" — " />
-                <Run Text="{Binding Objective}" />
-              </TextBlock>
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{Binding SelectedStage.Kicker}" Classes="eyebrow" />
+                <TextBlock Text="{Binding SelectedStage.Title}" Classes="heading" />
+                <TextBlock Text="{Binding SelectedStage.Description}"
+                           Classes="secondary"
+                           MaxWidth="720"
+                           TextWrapping="Wrap" />
+              </StackPanel>
+
+              <Button Grid.Column="1"
+                      Classes="atlas-button primary"
+                      IsEnabled="False"
+                      a11y:AutomationProperties.Name="Executar próxima ação do estágio">
+                <TextBlock Text="{Binding SelectedStage.NextAction}" />
+                <ToolTip.Tip>A ação será habilitada pelo gateway de aplicação.</ToolTip.Tip>
+              </Button>
+            </Grid>
+
+            <Grid ColumnDefinitions="2*,*" ColumnSpacing="16">
+              <Border Classes="panel" Padding="20" MinHeight="300">
+                <StackPanel Spacing="20">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Superfície principal" Classes="section-heading" />
+                      <TextBlock Text="Uma atividade por vez, com contexto persistente ao redor." Classes="muted" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="FRONTEND" Classes="eyebrow" />
+                  </Grid>
+
+                  <Border Classes="elevated-panel" Padding="16">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                      <Border Width="34"
+                              Height="34"
+                              CornerRadius="8"
+                              Background="{DynamicResource AtlasAccentSoftBrush}">
+                        <TextBlock Text="01"
+                                   Classes="mono"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AtlasAccentBrush}" />
+                      </Border>
+                      <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock Text="Renderer desacoplado" FontWeight="SemiBold" />
+                        <TextBlock Text="Views e ViewModels consomem apenas contratos públicos agregados no gateway."
+                                   Classes="secondary"
+                                   TextWrapping="Wrap" />
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+
+                  <Border Classes="elevated-panel" Padding="16">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                      <Border Width="34"
+                              Height="34"
+                              CornerRadius="8"
+                              Background="{DynamicResource AtlasAccentSoftBrush}">
+                        <TextBlock Text="02"
+                                   Classes="mono"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AtlasAccentBrush}" />
+                      </Border>
+                      <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock Text="Comandos por intenção" FontWeight="SemiBold" />
+                        <TextBlock Text="A UI solicitará ações; o núcleo validará e produzirá eventos tipados."
+                                   Classes="secondary"
+                                   TextWrapping="Wrap" />
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+
+                  <Border Classes="elevated-panel" Padding="16">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                      <Border Width="34"
+                              Height="34"
+                              CornerRadius="8"
+                              Background="{DynamicResource AtlasAccentSoftBrush}">
+                        <TextBlock Text="03"
+                                   Classes="mono"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AtlasAccentBrush}" />
+                      </Border>
+                      <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock Text="Estado recuperável" FontWeight="SemiBold" />
+                        <TextBlock Text="Eventos atualizam a projeção; Git e SQLite permanecem fora do renderer."
+                                   Classes="secondary"
+                                   TextWrapping="Wrap" />
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </StackPanel>
+              </Border>
+
+              <StackPanel Grid.Column="1" Spacing="16">
+                <Border Classes="panel" Padding="16">
+                  <StackPanel Spacing="10">
+                    <TextBlock Text="Estado do shell" Classes="section-heading" />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                      <Border Width="7"
+                              Height="7"
+                              CornerRadius="4"
+                              VerticalAlignment="Center"
+                              Background="{DynamicResource AtlasSuccessBrush}" />
+                      <TextBlock Grid.Column="1" Text="Tokens e composição carregados" Classes="secondary" />
+                    </Grid>
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                      <Border Width="7"
+                              Height="7"
+                              CornerRadius="4"
+                              VerticalAlignment="Center"
+                              Background="{DynamicResource AtlasWarningBrush}" />
+                      <TextBlock Grid.Column="1" Text="Adapter de aplicação conectado" Classes="secondary" />
+                    </Grid>
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                      <Border Width="7"
+                              Height="7"
+                              CornerRadius="4"
+                              VerticalAlignment="Center"
+                              Background="{DynamicResource AtlasWarningBrush}" />
+                      <TextBlock Grid.Column="1" Text="Stream AG-UI pendente" Classes="secondary" />
+                    </Grid>
+                  </StackPanel>
+                </Border>
+
+                <Border Classes="panel" Padding="16">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="Densidade" Classes="eyebrow" />
+                    <TextBlock Text="Default" FontWeight="SemiBold" />
+                    <TextBlock Text="Compact será reservado para logs, tabelas, árvores e histórico."
+                               Classes="micro"
+                               TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </Grid>
+
+            <Border IsVisible="{Binding HasError}"
+                    Classes="panel"
+                    Padding="14"
+                    BorderBrush="{DynamicResource AtlasDangerBrush}">
+              <TextBlock Text="{Binding ErrorMessage}"
+                         Foreground="{DynamicResource AtlasDangerBrush}"
+                         TextWrapping="Wrap" />
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+
+      <Border x:Name="ContextPanel"
+              Grid.Column="2"
+              Width="{Binding ContextPanelWidth}"
+              IsVisible="{Binding IsContextVisible}"
+              Background="{DynamicResource AtlasDeepSurfaceBrush}"
+              BorderBrush="{DynamicResource AtlasBorderSubtleBrush}"
+              BorderThickness="1,0,0,0"
+              Padding="16">
+        <Grid RowDefinitions="Auto,*,Auto">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="3">
+              <TextBlock Text="CONTEXTO" Classes="eyebrow" />
+              <TextBlock Text="Projeto e integração" Classes="section-heading" />
             </StackPanel>
-          </DataTemplate>
-        </ListBox.ItemTemplate>
-      </ListBox>
+            <Button Grid.Column="1"
+                    Classes="atlas-button icon ghost"
+                    Command="{Binding ToggleContextCommand}"
+                    a11y:AutomationProperties.Name="Fechar painel de contexto">
+              <TextBlock Text="×" FontSize="18" />
+            </Button>
+          </Grid>
 
-    </Panel>
-  </DockPanel>
+          <StackPanel Grid.Row="1" Margin="0,20,0,0" Spacing="12">
+            <Border Classes="panel" Padding="14">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Fonte de verdade" Classes="eyebrow" />
+                <TextBlock Text="Git + Project Atlas" FontWeight="SemiBold" />
+                <TextBlock Text="A UI apenas projeta estado e envia intenções tipadas." Classes="micro" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="panel" Padding="14">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Conexão" Classes="eyebrow" />
+                <TextBlock Text="{Binding ConnectionDescription}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <TextBlock Text="O adapter de aplicação está registrado no composition root do Desktop."
+                           Classes="micro"
+                           TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="panel" Padding="14">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Contexto enviado ao agente" Classes="eyebrow" />
+                <TextBlock Text="Nenhum conteúdo enviado" FontWeight="SemiBold" />
+                <TextBlock Text="Referências serão sempre explícitas e validadas pelo núcleo confiável."
+                           Classes="micro"
+                           TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+
+          <Border Grid.Row="2" Classes="elevated-panel" Padding="10">
+            <Grid RowDefinitions="Auto,Auto" RowSpacing="8">
+              <TextBox Classes="atlas-input"
+                       IsEnabled="False"
+                       PlaceholderText="Pergunte ao Atlas sobre este contexto"
+                       a11y:AutomationProperties.Name="Mensagem para o Atlas" />
+              <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
+                <TextBlock Text="Composer aguardando Discuss" Classes="micro" VerticalAlignment="Center" />
+                <Button Grid.Column="1"
+                        Classes="atlas-button primary"
+                        IsEnabled="False"
+                        a11y:AutomationProperties.Name="Enviar mensagem">
+                  Enviar
+                </Button>
+              </Grid>
+            </Grid>
+          </Border>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <Border Grid.Row="2"
+            Background="{DynamicResource AtlasDeepSurfaceBrush}"
+            BorderBrush="{DynamicResource AtlasBorderSubtleBrush}"
+            BorderThickness="0,1,0,0"
+            Padding="12,0">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Border Width="7"
+                  Height="7"
+                  CornerRadius="4"
+                  Background="{DynamicResource AtlasSuccessBrush}" />
+          <TextBlock Text="Frontend pronto" Classes="micro" />
+        </StackPanel>
+        <TextBlock Grid.Column="1"
+                   Text="{Binding ConnectionDescription}"
+                   Classes="micro"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+        <TextBlock Grid.Column="2"
+                   Text="Avalonia 12 · .NET 10"
+                   Classes="mono micro"
+                   VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+  </Grid>
 </Window>

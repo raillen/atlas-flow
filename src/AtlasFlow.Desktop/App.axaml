@@ -1,17 +1,16 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="AtlasFlow.Desktop.App"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Dark">
 
   <!--
-    RequestedThemeVariant="Default" follows the operating system's light/dark
-    setting. Pinning it here would override a user who chose dark mode at the
-    OS level for a reason, which is the sort of thing the accessibility
-    documentation exists to prevent.
+    Dark is the product's quiet-workspace default. The shell keeps an explicit
+    accessible toggle, and persistence will move to the local settings adapter.
   -->
 
   <Application.Styles>
     <FluentTheme />
+    <StyleInclude Source="/Styles/AtlasTheme.axaml" />
   </Application.Styles>
 
 </Application>

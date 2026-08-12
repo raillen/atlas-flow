@@ -696,6 +696,12 @@
       "type": "document",
       "path": "docs/03-implementation/APPLICATION_CONTRACT.md",
       "title": "The Application Contract"
+    },
+    {
+      "id": "doc:docs/03-implementation/FRONTEND_ARCHITECTURE.md",
+      "type": "document",
+      "path": "docs/03-implementation/FRONTEND_ARCHITECTURE.md",
+      "title": "Atlas Flow Frontend Architecture"
     }
   ],
   "edges": [
@@ -868,6 +874,11 @@
       "from": "doc:docs/03-implementation/COMMAND_CODE_INTEGRATION.md",
       "to": "doc:docs/05-governance/AI_ORCHESTRATION.md",
       "type": "implements"
+    },
+    {
+      "from": "doc:docs/03-implementation/FRONTEND_ARCHITECTURE.md",
+      "to": "doc:docs/03-implementation/APPLICATION_CONTRACT.md",
+      "type": "uses"
     },
     {
       "from": "doc:docs/07-decisions/ADR-017-DOTNET-RUNTIME.md",

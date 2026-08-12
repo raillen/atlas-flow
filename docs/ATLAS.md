@@ -57,6 +57,8 @@ Canonical navigation surface for humans and agents.
 ## 03 Implementation
 - `03-implementation/TECH_STACK.md`
 - `03-implementation/REPOSITORY_STRUCTURE.md`
+- `03-implementation/APPLICATION_CONTRACT.md`
+- `03-implementation/FRONTEND_ARCHITECTURE.md`
 - `03-implementation/API_CONTRACTS.md`
 - `03-implementation/DATA_MODELS.md`
 - `03-implementation/DATABASE_SCHEMA.md`

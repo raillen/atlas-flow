@@ -211,6 +211,10 @@ documents:
   title: The Application Contract
   section: 03-implementation
   canonical: true
+- path: docs/03-implementation/FRONTEND_ARCHITECTURE.md
+  title: Atlas Flow Frontend Architecture
+  section: 03-implementation
+  canonical: true
 - path: docs/03-implementation/API_CONTRACTS.md
   title: API Contracts
   section: 03-implementation

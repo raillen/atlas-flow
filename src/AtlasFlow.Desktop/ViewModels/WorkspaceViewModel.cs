@@ -1,135 +1,210 @@
 using System.Collections.ObjectModel;
-
-using AtlasFlow.Application.Contracts;
-using AtlasFlow.Domain.Goals;
+using AtlasFlow.Desktop.Integration;
 using AtlasFlow.Domain.Projects;
-
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
 namespace AtlasFlow.Desktop.ViewModels;
 
-/// <summary>
-/// The workspace: which project is open, and what Goals it declares.
-/// </summary>
-/// <remarks>
-/// <para>
-/// This is the first vertical slice — real services, no stubs. It exists to
-/// prove the contract against a real backend before either side is broadened,
-/// because a contract nobody has called is a guess.
-/// </para>
-/// <para>
-/// Loading, failure and emptiness are modelled explicitly. A view model built
-/// against fakes tends to have none of them: a fake answers instantly, never
-/// fails, and always has data. Every one of those three happens here on the
-/// first directory a user opens.
-/// </para>
-/// </remarks>
 public sealed partial class WorkspaceViewModel : ObservableObject
 {
-    private readonly IProjectService _projects;
-    private readonly IGoalService _goals;
+    public const double ExpandedNavigationWidth = 232;
+    public const double CompactNavigationWidth = 64;
+    public const double DefaultContextWidth = 384;
 
-    public WorkspaceViewModel(IProjectService projects, IGoalService goals)
+    private readonly IAtlasFlowFrontendGateway _gateway;
+    private readonly IThemeController _themeController;
+    private WorkspaceStageViewModel _selectedStage;
+
+    public WorkspaceViewModel(
+        IAtlasFlowFrontendGateway gateway,
+        IThemeController themeController)
     {
-        _projects = projects;
-        _goals = goals;
+        _gateway = gateway;
+        _themeController = themeController;
+
+        Stages =
+        [
+            new("attention", "Attention", "COMMAND CENTER", "Veja bloqueios, decisões e trabalho que precisa de supervisão.", "Revisar o que requer atenção", true),
+            new("define", "Define", "DISCUSS", "Transforme intenção em conversa, decisões e um Project Draft verificável.", "Iniciar ou retomar uma conversa", true),
+            new("plan", "Plan", "GOAL PLANNING", "Revise escopo, dependências, riscos e gates antes de bloquear o plano.", "Selecionar um Goal para planejar", false),
+            new("run", "Run", "EXECUTION", "Acompanhe tasks, agentes, worktrees e eventos sem perder o contexto atual.", "Abrir uma execução ativa", false),
+            new("review", "Review", "EVIDENCE", "Relacione critérios de aceite, gates e evidências antes de concluir um Goal.", "Revisar a matriz de evidências", false),
+            new("knowledge", "Knowledge", "PROJECT TRUTH", "Navegue por documentação, ADRs, Goals e conhecimento canônico do projeto.", "Explorar a verdade mantida em Git", true),
+        ];
+
+        _selectedStage = Stages[0];
+        ThemeModeLabel = _themeController.CurrentMode;
+    }
+
+    public ObservableCollection<WorkspaceStageViewModel> Stages { get; }
+
+    public WorkspaceStageViewModel SelectedStage
+    {
+        get => _selectedStage;
+        set
+        {
+            if (value is null || !value.IsEnabled)
+            {
+                OnPropertyChanged();
+                return;
+            }
+
+            SetProperty(ref _selectedStage, value);
+        }
     }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasProject))]
-    private ProjectInspection? _project;
+    public partial string ProjectName { get; private set; } = "Nenhum projeto aberto";
 
     [ObservableProperty]
-    private bool _isLoading;
+    public partial string ProjectPath { get; private set; } = "Selecione um workspace Project Atlas";
 
-    /// <summary>
-    /// Why the Goals could not be read, when they could not be.
-    /// </summary>
-    /// <remarks>
-    /// Separate from the project's own <c>Reason</c>. A project can be
-    /// perfectly well-formed and still have one unreadable Goal file, and
-    /// collapsing the two would report a broken YAML as a broken project.
-    /// </remarks>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasError))]
-    private string? _error;
+    public partial string ProjectModeLabel { get; private set; } = "Aguardando projeto";
 
-    public ObservableCollection<Goal> Goals { get; } = [];
+    [ObservableProperty]
+    public partial string ProjectModeDescription { get; private set; } = "Carregando contexto do workspace.";
 
-    public bool HasProject => Project is not null;
+    [ObservableProperty]
+    public partial string ConnectionDescription { get; private set; } = "Inicializando frontend";
 
-    public bool HasError => !string.IsNullOrEmpty(Error);
+    [ObservableProperty]
+    public partial string GoalSummaryLabel { get; private set; } = "Nenhum Goal carregado";
 
-    /// <summary>True once loading finished and there was nothing to show.</summary>
-    public bool IsEmpty => !IsLoading && !HasError && Goals.Count == 0 && HasProject;
+    [ObservableProperty]
+    public partial string? ErrorMessage { get; private set; }
 
-    public string ProjectHeadline => Project is null
-        ? "No project open"
-        : $"{Project.ProjectName} — {Describe(Project.Mode)}";
+    [ObservableProperty]
+    public partial bool IsBusy { get; private set; }
 
-    public string StageAvailability => Project is null
-        ? string.Empty
-        : $"Plan {YesNo(Project.Capabilities.CanPlan)}  ·  "
-          + $"Run {YesNo(Project.Capabilities.CanRun)}  ·  "
-          + $"Review {YesNo(Project.Capabilities.CanReview)}";
+    [ObservableProperty]
+    public partial bool IsNavigationExpanded { get; private set; } = true;
 
-    [RelayCommand]
-    public async Task LoadAsync(CancellationToken cancellationToken)
+    [ObservableProperty]
+    public partial double NavigationPanelWidth { get; private set; } = ExpandedNavigationWidth;
+
+    [ObservableProperty]
+    public partial bool IsContextVisible { get; private set; } = true;
+
+    [ObservableProperty]
+    public partial double ContextPanelWidth { get; private set; } = DefaultContextWidth;
+
+    [ObservableProperty]
+    public partial string ThemeModeLabel { get; private set; }
+
+    public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
+
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        IsLoading = true;
-        Error = null;
-        Goals.Clear();
+        if (IsBusy)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = null;
 
         try
         {
-            Project = await _projects.GetCurrentAsync(cancellationToken).ConfigureAwait(true);
-
-            if (Project is null)
-            {
-                Error = "No project directory was found. Set ATLAS_FLOW_PROJECT_ROOT.";
-                return;
-            }
-
-            // An external or unadapted project has no .ai/goals to read. That
-            // is an expected outcome, not a failure, and the reason the
-            // inspection already produced is the better thing to show.
-            if (Project.Mode != ProjectMode.AtlasReady)
-            {
-                Error = Project.Reason;
-                return;
-            }
-
-            foreach (Goal goal in await _goals.ListAsync(cancellationToken).ConfigureAwait(true))
-            {
-                Goals.Add(goal);
-            }
+            WorkspaceSnapshot snapshot = await _gateway.LoadWorkspaceAsync(cancellationToken);
+            ApplySnapshot(snapshot);
         }
-#pragma warning disable CA1031 // The window is the last place an exception can
-        // be reported to a person. Anything unhandled here becomes a blank
-        // screen with no explanation, which is the worst possible outcome.
-        catch (Exception exc)
-#pragma warning restore CA1031
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            Error = exc.Message;
+            throw;
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Não foi possível carregar o workspace. Verifique a integração e tente novamente.";
+            ConnectionDescription = "Frontend disponível · integração indisponível";
         }
         finally
         {
-            IsLoading = false;
-            OnPropertyChanged(nameof(IsEmpty));
-            OnPropertyChanged(nameof(ProjectHeadline));
-            OnPropertyChanged(nameof(StageAvailability));
+            IsBusy = false;
         }
     }
 
-    private static string Describe(ProjectMode mode) => mode switch
+    public void SelectStage(string key)
     {
-        ProjectMode.AtlasReady => "ready",
-        ProjectMode.AtlasNeedsAdaptation => "needs adaptation",
-        ProjectMode.AtlasIncompatible => "incompatible framework",
-        ProjectMode.External => "external project",
-        _ => "unknown",
-    };
+        WorkspaceStageViewModel? stage = Stages.FirstOrDefault(
+            candidate => string.Equals(candidate.Key, key, StringComparison.Ordinal));
 
-    private static string YesNo(bool value) => value ? "yes" : "no";
+        if (stage is not null)
+        {
+            SelectedStage = stage;
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleNavigation()
+    {
+        IsNavigationExpanded = !IsNavigationExpanded;
+        NavigationPanelWidth = IsNavigationExpanded ? ExpandedNavigationWidth : CompactNavigationWidth;
+    }
+
+    [RelayCommand]
+    private void ToggleContext()
+    {
+        IsContextVisible = !IsContextVisible;
+        ContextPanelWidth = IsContextVisible ? DefaultContextWidth : 0;
+    }
+
+    [RelayCommand]
+    private void ToggleTheme() => ThemeModeLabel = _themeController.Toggle();
+
+    partial void OnErrorMessageChanged(string? value) => OnPropertyChanged(nameof(HasError));
+
+    private void ApplySnapshot(WorkspaceSnapshot snapshot)
+    {
+        ConnectionDescription = snapshot.ConnectionDescription;
+        GoalSummaryLabel = snapshot.Goals.Count == 0
+            ? "Nenhum Goal carregado"
+            : $"{snapshot.Goals.Count} Goal(s) no projeto";
+
+        if (snapshot.Project is null)
+        {
+            ProjectName = "Nenhum projeto aberto";
+            ProjectPath = "Selecione um workspace Project Atlas";
+            ProjectModeLabel = "Núcleo conectado";
+            ProjectModeDescription = "Nenhum projeto aberto. Selecione um workspace Project Atlas para continuar.";
+            SetStageAvailability("define", true);
+            SetStageAvailability("plan", false);
+            SetStageAvailability("run", false);
+            SetStageAvailability("review", false);
+            SetStageAvailability("knowledge", true);
+            return;
+        }
+
+        ProjectName = snapshot.Project.ProjectName;
+        ProjectPath = snapshot.Project.Root;
+        ProjectModeLabel = LabelFor(snapshot.Project.Mode);
+        ProjectModeDescription = snapshot.Project.Reason;
+
+        SetStageAvailability("define", snapshot.Project.Capabilities.CanDiscuss);
+        SetStageAvailability("plan", snapshot.Project.Capabilities.CanPlan);
+        SetStageAvailability("run", snapshot.Project.Capabilities.CanRun);
+        SetStageAvailability("review", snapshot.Project.Capabilities.CanReview);
+        SetStageAvailability("knowledge", snapshot.Project.Capabilities.CanExplore);
+    }
+
+    private void SetStageAvailability(string key, bool isEnabled)
+    {
+        WorkspaceStageViewModel? stage = Stages.FirstOrDefault(
+            candidate => string.Equals(candidate.Key, key, StringComparison.Ordinal));
+
+        if (stage is not null)
+        {
+            stage.IsEnabled = isEnabled;
+        }
+    }
+
+    private static string LabelFor(ProjectMode mode) => mode switch
+    {
+        ProjectMode.External => "Projeto externo",
+        ProjectMode.AtlasNeedsAdaptation => "Adaptação necessária",
+        ProjectMode.AtlasIncompatible => "Atlas incompatível",
+        ProjectMode.AtlasReady => "Project Atlas pronto",
+        _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Modo de projeto desconhecido."),
+    };
 }

@@ -1,0 +1,209 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="AtlasBackgroundBrush" Color="#070708" />
+          <SolidColorBrush x:Key="AtlasDeepSurfaceBrush" Color="#0B0B0D" />
+          <SolidColorBrush x:Key="AtlasSurfaceBrush" Color="#111114" />
+          <SolidColorBrush x:Key="AtlasElevatedSurfaceBrush" Color="#18181C" />
+          <SolidColorBrush x:Key="AtlasActiveSurfaceBrush" Color="#222228" />
+          <SolidColorBrush x:Key="AtlasBorderSubtleBrush" Color="#1C1C21" />
+          <SolidColorBrush x:Key="AtlasBorderBrush" Color="#2A2A31" />
+          <SolidColorBrush x:Key="AtlasBorderStrongBrush" Color="#3A3A43" />
+          <SolidColorBrush x:Key="AtlasPrimaryTextBrush" Color="#F7F7F8" />
+          <SolidColorBrush x:Key="AtlasSecondaryTextBrush" Color="#B4B4BA" />
+          <SolidColorBrush x:Key="AtlasMutedTextBrush" Color="#92929A" />
+          <SolidColorBrush x:Key="AtlasDisabledTextBrush" Color="#686870" />
+          <SolidColorBrush x:Key="AtlasAccentBrush" Color="#65D6A7" />
+          <SolidColorBrush x:Key="AtlasAccentHoverBrush" Color="#75E1B4" />
+          <SolidColorBrush x:Key="AtlasAccentSoftBrush" Color="#182A24" />
+          <SolidColorBrush x:Key="AtlasOnAccentBrush" Color="#07110D" />
+          <SolidColorBrush x:Key="AtlasSuccessBrush" Color="#65D6A7" />
+          <SolidColorBrush x:Key="AtlasWarningBrush" Color="#E7B85A" />
+          <SolidColorBrush x:Key="AtlasDangerBrush" Color="#F08088" />
+          <SolidColorBrush x:Key="AtlasInfoBrush" Color="#7BB4F0" />
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="AtlasBackgroundBrush" Color="#F4F5F2" />
+          <SolidColorBrush x:Key="AtlasDeepSurfaceBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="AtlasSurfaceBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="AtlasElevatedSurfaceBrush" Color="#E9EDE8" />
+          <SolidColorBrush x:Key="AtlasActiveSurfaceBrush" Color="#DEE5DF" />
+          <SolidColorBrush x:Key="AtlasBorderSubtleBrush" Color="#E0E4DE" />
+          <SolidColorBrush x:Key="AtlasBorderBrush" Color="#C9CFC7" />
+          <SolidColorBrush x:Key="AtlasBorderStrongBrush" Color="#AEB7AD" />
+          <SolidColorBrush x:Key="AtlasPrimaryTextBrush" Color="#171A18" />
+          <SolidColorBrush x:Key="AtlasSecondaryTextBrush" Color="#3F4742" />
+          <SolidColorBrush x:Key="AtlasMutedTextBrush" Color="#59635D" />
+          <SolidColorBrush x:Key="AtlasDisabledTextBrush" Color="#778179" />
+          <SolidColorBrush x:Key="AtlasAccentBrush" Color="#176B50" />
+          <SolidColorBrush x:Key="AtlasAccentHoverBrush" Color="#125940" />
+          <SolidColorBrush x:Key="AtlasAccentSoftBrush" Color="#DCECE5" />
+          <SolidColorBrush x:Key="AtlasOnAccentBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="AtlasSuccessBrush" Color="#176B50" />
+          <SolidColorBrush x:Key="AtlasWarningBrush" Color="#76540C" />
+          <SolidColorBrush x:Key="AtlasDangerBrush" Color="#A92F3A" />
+          <SolidColorBrush x:Key="AtlasInfoBrush" Color="#245F9E" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+
+      <FontFamily x:Key="AtlasSansFont">avares://Avalonia.Fonts.Inter/Assets#Inter</FontFamily>
+      <FontFamily x:Key="AtlasMonoFont">monospace</FontFamily>
+    </ResourceDictionary>
+  </Styles.Resources>
+
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource AtlasBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AtlasPrimaryTextBrush}" />
+    <Setter Property="FontFamily" Value="{DynamicResource AtlasSansFont}" />
+    <Setter Property="FontSize" Value="14" />
+  </Style>
+
+  <Style Selector="Border.panel">
+    <Setter Property="Background" Value="{DynamicResource AtlasSurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AtlasBorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+  </Style>
+
+  <Style Selector="Border.elevated-panel">
+    <Setter Property="Background" Value="{DynamicResource AtlasElevatedSurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AtlasBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+  </Style>
+
+  <Style Selector="TextBlock.heading">
+    <Setter Property="FontSize" Value="24" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource AtlasPrimaryTextBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.section-heading">
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource AtlasPrimaryTextBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.eyebrow">
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="LetterSpacing" Value="1.2" />
+    <Setter Property="Foreground" Value="{DynamicResource AtlasAccentBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.secondary">
+    <Setter Property="Foreground" Value="{DynamicResource AtlasSecondaryTextBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="{DynamicResource AtlasMutedTextBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.micro">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Foreground" Value="{DynamicResource AtlasMutedTextBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.mono">
+    <Setter Property="FontFamily" Value="{DynamicResource AtlasMonoFont}" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
+  <Style Selector="Button.atlas-button">
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="Padding" Value="12,0" />
+    <Setter Property="Background" Value="{DynamicResource AtlasSurfaceBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AtlasPrimaryTextBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AtlasBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
+  <Style Selector="Button.atlas-button:pointerover">
+    <Setter Property="Background" Value="{DynamicResource AtlasElevatedSurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AtlasBorderStrongBrush}" />
+  </Style>
+
+  <Style Selector="Button.atlas-button:focus-visible">
+    <Setter Property="BorderBrush" Value="{DynamicResource AtlasAccentHoverBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+
+  <Style Selector="Button.atlas-button.primary">
+    <Setter Property="Background" Value="{DynamicResource AtlasAccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AtlasOnAccentBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AtlasAccentBrush}" />
+  </Style>
+
+  <Style Selector="Button.atlas-button.primary:pointerover">
+    <Setter Property="Background" Value="{DynamicResource AtlasAccentHoverBrush}" />
+  </Style>
+
+  <Style Selector="Button.atlas-button.ghost">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.atlas-button.icon">
+    <Setter Property="Width" Value="32" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+
+  <Style Selector="TextBox.atlas-input">
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="Padding" Value="10,7" />
+    <Setter Property="Background" Value="{DynamicResource AtlasDeepSurfaceBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AtlasPrimaryTextBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AtlasBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+
+  <Style Selector="TextBox.atlas-input:focus-visible">
+    <Setter Property="BorderBrush" Value="{DynamicResource AtlasAccentBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+
+  <Style Selector="ListBox.stage-list">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="ListBox.stage-list > ListBoxItem">
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="Margin" Value="0,2" />
+    <Setter Property="Padding" Value="8,0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+  </Style>
+
+  <Style Selector="ListBox.stage-list > ListBoxItem:pointerover">
+    <Setter Property="Background" Value="{DynamicResource AtlasElevatedSurfaceBrush}" />
+  </Style>
+
+  <Style Selector="ListBox.stage-list > ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AtlasElevatedSurfaceBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AtlasPrimaryTextBrush}" />
+  </Style>
+
+  <Style Selector="ListBox.stage-list > ListBoxItem:selected">
+    <Setter Property="Background" Value="{DynamicResource AtlasAccentSoftBrush}" />
+  </Style>
+
+  <Style Selector="ListBox.stage-list > ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AtlasAccentSoftBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AtlasPrimaryTextBrush}" />
+  </Style>
+
+  <Style Selector="ListBox.stage-list > ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AtlasAccentSoftBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AtlasPrimaryTextBrush}" />
+  </Style>
+</Styles>

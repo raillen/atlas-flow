@@ -38,7 +38,7 @@ cognitiva e enfraquecia a conversa como ponto de entrada do produto.
 - peso tipográfico é contido e estados são pontos discretos com rótulos curtos;
 - a base visual é compacta e legível, com temas escuro e claro baseados nos
   mesmos tokens semânticos; o escuro é o padrão inicial;
-- o frontend é Avalonia 11 sobre .NET 10, sem webview (ADR-018).
+- o frontend é Avalonia 12 sobre .NET 10, sem webview (ADR-018).
 
 ## Temas
 

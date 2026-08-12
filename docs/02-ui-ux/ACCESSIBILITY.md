@@ -30,33 +30,32 @@ was translating ARIA into. The tree is real. The audit tooling for it is not.
 
 ## What is enforced automatically
 
-Colour is the part of accessibility that quietly rots, so the palette is data
-rather than scattered literals. `src/AtlasFlow.Desktop/Theme/Palette.cs` holds
-every token, and `AtlasFlow.Desktop.Tests` computes real contrast ratios for
-every pair the views render:
+Colour is the part of accessibility that quietly rots, so values críticos da
+paleta têm uma representação auditável em
+`src/AtlasFlow.Desktop/Theme/Palette.cs`, espelhando os recursos semânticos do
+XAML. `AtlasFlow.Desktop.Tests` calcula contraste real para os pares usados no
+shell:
 
 | Check | Threshold |
 | --- | --- |
-| Primary, muted and faint text on both surfaces | 4.5:1 |
-| Every status tone on its own tint, and on the page | 4.5:1 |
-| Text on the accent (the active tab) | 4.5:1 |
-| Focus ring against both surfaces | 3:1 |
-| Success and failure separated in luminance, not only hue | — |
+| Primary, secondary and muted text on background e surface | 4.5:1 |
+| Texto sobre o acento | 4.5:1 |
+| Focus ring contra o background | 3:1 |
+| Success, warning, danger e info contra o background | 4.5:1 |
 
 Nothing in the app claims the 3:1 large-text allowance: every coloured element
 is normal-size text.
 
-These checks port directly. Relative luminance is arithmetic over sRGB and does
-not care what language computes it. The two failures the original suite found —
-amber `PENDING` and green `SUCCEEDED` below 4.5:1 on white, and success and
-failure at near-identical luminance — must stay fixed, and the tests that prove
-it must be ported before the palette is trusted again.
+Esses checks já foram portados. Relative luminance é aritmética sobre sRGB e
+independe da linguagem que a calcula. Contraste sobre tints semânticos e
+separação de luminância entre estados continuam pendentes até que badges reais
+entrem no shell.
 
 ## Keyboard and focus
 
-- Primary workspace navigation uses `TabControl`, which implements arrow-key
-  movement, Home and End, and roving focus natively. The React build had to
-  hand-write the WAI-ARIA tabs pattern; the platform control owns it here.
+- A navegação primária usa `ListBox`, preservando seleção única e navegação de
+  teclado do controle nativo. O ViewModel rejeita a seleção de um estágio cuja
+  capability esteja bloqueada.
 - The bug that pattern produced is worth keeping in view. Focus was moved
   synchronously inside the key handler, onto a tab whose `tabIndex` was still
   `-1` from the previous render: the first arrow key worked and every one after
@@ -78,14 +77,15 @@ neutral tone for an unknown state rather than rendering it invisibly.
 
 ## Automation properties
 
-Every interactive control carries an `AutomationProperties.Name`. Compiled
-bindings are on repository-wide, so a binding to a property that does not exist
-fails the build rather than rendering an unlabelled control — which is the
-Avalonia-specific reason that setting is not merely a preference.
+Todo botão e toda ação sem rótulo textual suficiente carrega
+`AutomationProperties.Name`. Compiled bindings estão ativos no Desktop, então
+uma binding para propriedade inexistente falha o build em vez de renderizar um
+controle incompleto.
 
-Headless tests assert through automation peers what `axe-core` used to assert
-through the DOM: that exactly one tab is selected, that the tab panel is
-associated with its tab, and that every button has an accessible name.
+Testes headless verificam que o estágio selecionado do ViewModel corresponde ao
+controle, que todos os botões renderizados têm nome acessível e que o shell
+produz um frame na geometria mínima suportada. Isso não equivale a uma auditoria
+completa de automation peers.
 
 ## Verification
 

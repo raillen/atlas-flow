@@ -1,11 +1,10 @@
+using AtlasFlow.Application;
+using AtlasFlow.Desktop.Integration;
+using AtlasFlow.Desktop.ViewModels;
+using AtlasFlow.Desktop.Views;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-
-using AtlasFlow.Application;
-using AtlasFlow.Desktop.ViewModels;
-using AtlasFlow.Desktop.Views;
-
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AtlasFlow.Desktop;
@@ -14,12 +13,10 @@ namespace AtlasFlow.Desktop;
 /// The base type is written out in full because <c>Application</c> alone is
 /// ambiguous here: from inside <c>AtlasFlow.Desktop</c> the compiler finds the
 /// <c>AtlasFlow.Application</c> namespace before it finds Avalonia's type.
-/// Any file in this project that touches <c>Application.Current</c> hits the
-/// same thing; qualify it or alias it at the top of the file.
 /// </remarks>
 public sealed partial class App : Avalonia.Application
 {
-    private ServiceProvider? _services;
+    private ServiceProvider? _serviceProvider;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
@@ -27,35 +24,34 @@ public sealed partial class App : Avalonia.Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            _services = BuildServices();
-            desktop.MainWindow = new MainWindow
+            ServiceCollection services = new();
+            ConfigureServices(services);
+            _serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
             {
-                DataContext = _services.GetRequiredService<WorkspaceViewModel>(),
-            };
+                ValidateOnBuild = true,
+                ValidateScopes = true,
+            });
 
-            desktop.ShutdownRequested += (_, _) => _services?.Dispose();
+            // Database initialization is explicit and happens before the first
+            // window can issue a planning or execution command.
+            _serviceProvider.InitializeAtlasFlowAsync().GetAwaiter().GetResult();
+
+            desktop.MainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+            desktop.Exit += (_, _) => _serviceProvider?.Dispose();
         }
 
         base.OnFrameworkInitializationCompleted();
     }
 
-    /// <summary>
-    /// Wires the runtime against whatever directory the app was pointed at.
-    /// </summary>
-    /// <remarks>
-    /// <c>ATLAS_FLOW_PROJECT_ROOT</c> wins, then the working directory. A
-    /// packaged build launched from a menu has a working directory inside its
-    /// own bundle, so the variable is not optional there — the previous
-    /// implementation learned that by shipping without it.
-    /// </remarks>
-    private static ServiceProvider BuildServices()
+    private static void ConfigureServices(IServiceCollection services)
     {
         string root = Environment.GetEnvironmentVariable("ATLAS_FLOW_PROJECT_ROOT")
                       ?? Directory.GetCurrentDirectory();
 
-        ServiceCollection services = new();
         services.AddAtlasFlow(root);
+        services.AddSingleton<IAtlasFlowFrontendGateway, ApplicationAtlasFlowFrontendGateway>();
+        services.AddSingleton<IThemeController, AvaloniaThemeController>();
         services.AddSingleton<WorkspaceViewModel>();
-        return services.BuildServiceProvider();
+        services.AddSingleton<MainWindow>();
     }
 }

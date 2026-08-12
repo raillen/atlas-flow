@@ -1,27 +1,23 @@
-using Avalonia.Controls;
-using Avalonia.Interactivity;
-
 using AtlasFlow.Desktop.ViewModels;
+using Avalonia.Controls;
 
 namespace AtlasFlow.Desktop.Views;
 
 public sealed partial class MainWindow : Window
 {
-    public MainWindow() => InitializeComponent();
+    private readonly WorkspaceViewModel _viewModel;
 
-    /// <remarks>
-    /// The first load runs when the window opens rather than in the view
-    /// model's constructor. Reading a project is I/O, and a constructor that
-    /// blocks on it is a constructor that can fail before there is anywhere to
-    /// show why.
-    /// </remarks>
-    protected override async void OnLoaded(RoutedEventArgs e)
+    public MainWindow(WorkspaceViewModel viewModel)
     {
-        base.OnLoaded(e);
+        _viewModel = viewModel;
+        InitializeComponent();
+        DataContext = viewModel;
+        Opened += OnOpened;
+    }
 
-        if (DataContext is WorkspaceViewModel workspace)
-        {
-            await workspace.LoadAsync(CancellationToken.None);
-        }
+    private async void OnOpened(object? sender, EventArgs eventArgs)
+    {
+        Opened -= OnOpened;
+        await _viewModel.InitializeAsync();
     }
 }

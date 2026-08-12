@@ -22,7 +22,7 @@ atlas-flow/
 │   │   ├── Planner/ Execution/ Harness/ Runners/
 │   │   └── Routing/ Verification/ Workforce/ Context/
 │   ├── AtlasFlow.Application/
-│   ├── AtlasFlow.Desktop/{Views,ViewModels,Controls,Theme}/
+│   ├── AtlasFlow.Desktop/{Integration,Styles,Theme,ViewModels,Views}/
 │   └── AtlasFlow.Cli/
 ├── tests/
 │   ├── AtlasFlow.Domain.Tests/
