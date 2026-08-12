@@ -1,6 +1,6 @@
 using YamlDotNet.RepresentationModel;
 
-namespace AtlasFlow.Orchestration.Projects;
+namespace AtlasFlow.Orchestration;
 
 /// <summary>One YAML manifest, read defensively.</summary>
 /// <remarks>
@@ -77,6 +77,20 @@ internal sealed record Manifest
 
         return scalar.Value.Trim();
     }
+
+    /// <summary>How many entries a sequence has, whatever shape they are.</summary>
+    /// <remarks>
+    /// A Goal's evidence is a list of mappings, and the Goal list renders how
+    /// many there are rather than what they say. Counting without parsing them
+    /// is the difference between reading a directory and reading every file
+    /// in it.
+    /// </remarks>
+    internal int SequenceLength(string key) =>
+        _root is not null
+        && _root.Children.TryGetValue(new YamlScalarNode(key), out YamlNode? node)
+        && node is YamlSequenceNode sequence
+            ? sequence.Children.Count
+            : 0;
 
     /// <summary>A scalar or a sequence of them, as a list. Never null.</summary>
     internal IReadOnlyList<string> Strings(string key)

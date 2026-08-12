@@ -1,24 +1,85 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:a11y="clr-namespace:Avalonia.Automation;assembly=Avalonia.Controls"
+        xmlns:vm="clr-namespace:AtlasFlow.Desktop.ViewModels"
+        xmlns:goals="clr-namespace:AtlasFlow.Domain.Goals;assembly=AtlasFlow.Domain"
         x:Class="AtlasFlow.Desktop.Views.MainWindow"
+        x:DataType="vm:WorkspaceViewModel"
         Title="Atlas Flow"
-        Width="1280" Height="800"
-        MinWidth="960" MinHeight="600">
+        Width="1100" Height="720"
+        MinWidth="720" MinHeight="480">
 
   <!--
-    Scaffold only. The workspace shell described in ADR-013 and
-    docs/02-ui-ux/INFORMATION_ARCHITECTURE.md has not been ported yet.
-
-    When it is: every interactive control needs an AutomationProperties.Name.
-    Avalonia surfaces these through UI Automation on Windows and AT-SPI on
-    Linux, which is what replaces the ARIA attributes the React build relied on.
-    See docs/02-ui-ux/ACCESSIBILITY.md.
+    The first vertical slice: a real project inspection and a real Goal list,
+    from real services. Deliberately plain — its job is to prove the contract
+    end to end, not to be the workspace shell ADR-013 specifies.
   -->
 
-  <TextBlock Text="Atlas Flow"
-             a11y:AutomationProperties.Name="Atlas Flow, not yet implemented"
-             HorizontalAlignment="Center"
-             VerticalAlignment="Center" />
+  <DockPanel Margin="24">
 
+    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,20">
+      <TextBlock Text="{Binding ProjectHeadline}"
+                 FontSize="22" FontWeight="SemiBold"
+                 a11y:AutomationProperties.Name="Open project" />
+      <TextBlock Text="{Binding StageAvailability}"
+                 Opacity="0.7"
+                 IsVisible="{Binding HasProject}"
+                 a11y:AutomationProperties.Name="Available workspace stages" />
+    </StackPanel>
+
+    <Button DockPanel.Dock="Bottom"
+            Content="Reload"
+            HorizontalAlignment="Left"
+            Margin="0,16,0,0"
+            Command="{Binding LoadCommand}"
+            a11y:AutomationProperties.Name="Reload the project and its Goals" />
+
+    <Panel>
+
+      <!-- Loading. Present because a real service takes real time. -->
+      <TextBlock Text="Reading the project…"
+                 IsVisible="{Binding IsLoading}"
+                 VerticalAlignment="Top"
+                 a11y:AutomationProperties.Name="Loading" />
+
+      <!--
+        Failure. An external directory, a malformed manifest and an unreadable
+        Goal file all land here, each with the reason the backend produced.
+      -->
+      <Border IsVisible="{Binding HasError}"
+              BorderThickness="1" CornerRadius="4"
+              Padding="16" VerticalAlignment="Top">
+        <TextBlock Text="{Binding Error}"
+                   TextWrapping="Wrap"
+                   a11y:AutomationProperties.Name="Why the Goals could not be read" />
+      </Border>
+
+      <!-- Empty: a valid project that declares no Goals yet. -->
+      <TextBlock Text="This project declares no Goals yet."
+                 IsVisible="{Binding IsEmpty}"
+                 VerticalAlignment="Top"
+                 a11y:AutomationProperties.Name="No Goals" />
+
+      <ListBox ItemsSource="{Binding Goals}"
+               a11y:AutomationProperties.Name="Goals in this project">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="goals:Goal">
+            <StackPanel Spacing="2" Margin="0,6">
+              <TextBlock FontWeight="SemiBold">
+                <Run Text="{Binding Phase}" />
+                <Run Text=" · " />
+                <Run Text="{Binding Title}" />
+              </TextBlock>
+              <TextBlock Opacity="0.7" TextWrapping="Wrap">
+                <Run Text="{Binding State}" />
+                <Run Text=" — " />
+                <Run Text="{Binding Objective}" />
+              </TextBlock>
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+    </Panel>
+  </DockPanel>
 </Window>

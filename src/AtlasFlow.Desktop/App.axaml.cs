@@ -2,7 +2,11 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 
+using AtlasFlow.Application;
+using AtlasFlow.Desktop.ViewModels;
 using AtlasFlow.Desktop.Views;
+
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AtlasFlow.Desktop;
 
@@ -15,15 +19,43 @@ namespace AtlasFlow.Desktop;
 /// </remarks>
 public sealed partial class App : Avalonia.Application
 {
+    private ServiceProvider? _services;
+
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow();
+            _services = BuildServices();
+            desktop.MainWindow = new MainWindow
+            {
+                DataContext = _services.GetRequiredService<WorkspaceViewModel>(),
+            };
+
+            desktop.ShutdownRequested += (_, _) => _services?.Dispose();
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// Wires the runtime against whatever directory the app was pointed at.
+    /// </summary>
+    /// <remarks>
+    /// <c>ATLAS_FLOW_PROJECT_ROOT</c> wins, then the working directory. A
+    /// packaged build launched from a menu has a working directory inside its
+    /// own bundle, so the variable is not optional there — the previous
+    /// implementation learned that by shipping without it.
+    /// </remarks>
+    private static ServiceProvider BuildServices()
+    {
+        string root = Environment.GetEnvironmentVariable("ATLAS_FLOW_PROJECT_ROOT")
+                      ?? Directory.GetCurrentDirectory();
+
+        ServiceCollection services = new();
+        services.AddAtlasFlow(root);
+        services.AddSingleton<WorkspaceViewModel>();
+        return services.BuildServiceProvider();
     }
 }

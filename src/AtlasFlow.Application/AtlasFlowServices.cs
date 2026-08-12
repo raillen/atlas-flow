@@ -1,3 +1,7 @@
+using AtlasFlow.Application.Contracts;
+using AtlasFlow.Application.Services;
+using AtlasFlow.Orchestration.Goals;
+
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AtlasFlow.Application;
@@ -38,11 +42,15 @@ public static class AtlasFlowServices
 
         services.AddSingleton(new AtlasFlowOptions { ProjectRoot = projectRoot });
 
-        // Registrations land here as each module is ported. The order the UI
-        // needs them, which is also the order they are being written:
+        // Ported and real.
+        services.AddSingleton<GoalLoader>();
+        services.AddSingleton<IProjectService, ProjectService>();
+        services.AddSingleton<IGoalService, GoalService>();
+
+        // Not ported. Left unregistered on purpose: resolving one throws where
+        // it is asked for, naming the service, instead of handing back a stub
+        // that answers plausibly and is believed.
         //
-        //   IProjectService        project inspection, files, adaptation
-        //   IGoalService           the Goals in Git, and whether they may close
         //   IDiscussionService     conversations and the decision ledger
         //   IPlanService           drawing and locking a task graph
         //   IRunService            execution and the AG-UI event stream
