@@ -245,7 +245,10 @@ public sealed class RunSliceTests : IAsyncLifetime
         Assert.Equal(EventType.RunStarted, seen[0].Type);
         int firstSuccess = seen.FindIndex(e => e.Type == EventType.TaskSucceeded);
         int firstReady = seen.FindIndex(e => e.Type == EventType.TaskReady);
-        Assert.True(firstReady >= 0 && firstReady < firstSuccess);
+        Assert.True(
+            firstReady >= 0 && firstReady < firstSuccess,
+            $"firstReady={firstReady}, firstSuccess={firstSuccess}; "
+            + string.Join(", ", seen.Select(domainEvent => domainEvent.Type)));
     }
 
     [Fact]

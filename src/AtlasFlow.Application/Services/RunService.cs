@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using System.Threading.Channels;
 
 using AtlasFlow.Application.Contracts;
@@ -186,11 +187,11 @@ public sealed class RunService : IRunService, IDisposable
         {
             delivered.Add(recorded.Id);
             yield return recorded;
-        }
 
-        if (await HasStoppedAsync(id, cancellationToken).ConfigureAwait(false))
-        {
-            yield break;
+            if (StopsStream(recorded))
+            {
+                yield break;
+            }
         }
 
         await foreach (DomainEvent domainEvent in live.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
@@ -202,7 +203,7 @@ public sealed class RunService : IRunService, IDisposable
 
             yield return domainEvent;
 
-            if (await HasStoppedAsync(id, cancellationToken).ConfigureAwait(false))
+            if (StopsStream(domainEvent))
             {
                 yield break;
             }
@@ -251,10 +252,16 @@ public sealed class RunService : IRunService, IDisposable
     private static bool IsWhereTheEngineStops(RunState state) =>
         state.IsTerminal() || state is RunState.Verifying or RunState.Blocked;
 
-    private async Task<bool> HasStoppedAsync(RunId id, CancellationToken cancellationToken)
+    private static bool StopsStream(DomainEvent domainEvent)
     {
-        Run? run = await _runs.FindAsync(id, cancellationToken).ConfigureAwait(false);
-        return run is not null && IsWhereTheEngineStops(run.State);
+        if (domainEvent.Payload["next"] is not JsonValue value
+            || !value.TryGetValue<string>(out string? nextState)
+            || !Enum.TryParse(nextState, ignoreCase: true, out RunState state))
+        {
+            return false;
+        }
+
+        return IsWhereTheEngineStops(state);
     }
 
     private async Task<Plan> LockedPlanFor(StartRunRequest request, CancellationToken cancellationToken)
