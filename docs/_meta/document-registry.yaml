@@ -207,6 +207,10 @@ documents:
   title: Review UX
   section: 02-ui-ux
   canonical: true
+- path: docs/03-implementation/APPLICATION_CONTRACT.md
+  title: The Application Contract
+  section: 03-implementation
+  canonical: true
 - path: docs/03-implementation/API_CONTRACTS.md
   title: API Contracts
   section: 03-implementation

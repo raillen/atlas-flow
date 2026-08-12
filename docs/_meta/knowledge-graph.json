@@ -690,6 +690,12 @@
       "type": "document",
       "path": "docs/07-decisions/ADR-018-AVALONIA-DESKTOP.md",
       "title": "ADR-018 — Avalonia, and the end of the webview"
+    },
+    {
+      "id": "doc:docs/03-implementation/APPLICATION_CONTRACT.md",
+      "type": "document",
+      "path": "docs/03-implementation/APPLICATION_CONTRACT.md",
+      "title": "The Application Contract"
     }
   ],
   "edges": [
