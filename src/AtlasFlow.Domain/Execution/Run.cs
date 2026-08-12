@@ -80,7 +80,13 @@ public sealed record Run
 
     public required AutonomyLevel Autonomy { get; init; }
 
+    public required string ProjectId { get; init; }
+
     public required DateTimeOffset CreatedAt { get; init; }
+
+    public DateTimeOffset? StartedAt { get; init; }
+
+    public DateTimeOffset? CompletedAt { get; init; }
 
     public int TaskCount { get; init; }
 }
@@ -94,7 +100,11 @@ public sealed record RunTask
 
     public required TaskState State { get; init; }
 
+    public required RunId RunId { get; init; }
+
     public required RiskLevel Risk { get; init; }
+
+    public required DateTimeOffset CreatedAt { get; init; }
 
     /// <summary>The abstract role resolved for this task, if one was.</summary>
     public string? Role { get; init; }
@@ -112,9 +122,15 @@ public sealed record Attempt
 
     public required TaskId TaskId { get; init; }
 
+    public required RunId RunId { get; init; }
+
     public required AttemptState State { get; init; }
 
+    public required DateTimeOffset CreatedAt { get; init; }
+
     public string? Runner { get; init; }
+
+    public string? ModelProvider { get; init; }
 
     public string? ModelId { get; init; }
 

@@ -66,8 +66,13 @@
       CA2007: ConfigureAwait is required in the libraries and meaningless
               here — the test host installs no synchronization context, so
               every await would carry the same noise for no behaviour.
+      CA1001: xunit's IAsyncLifetime is the disposal mechanism for a fixture,
+              and the analyzer cannot see it. Held disposables are released in
+              DisposeAsync.
+      CA2000: same cause. An object a fixture owns and releases in its
+              DisposeAsync reads as a leak to the analyzer.
     -->
-    <NoWarn>$(NoWarn);CS8618;CA1707;CA2007</NoWarn>
+    <NoWarn>$(NoWarn);CS8618;CA1707;CA2007;CA1001;CA2000</NoWarn>
     <!-- Tests are not a public API surface; XML docs on them are noise. -->
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
