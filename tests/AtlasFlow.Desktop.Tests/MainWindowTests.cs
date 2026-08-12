@@ -1,3 +1,4 @@
+using AtlasFlow.Application.Contracts;
 using AtlasFlow.Desktop.Integration;
 using AtlasFlow.Desktop.ViewModels;
 using AtlasFlow.Desktop.Views;
@@ -8,6 +9,8 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Media.Imaging;
 using Avalonia.VisualTree;
 
+using NSubstitute;
+
 namespace AtlasFlow.Desktop.Tests;
 
 public sealed class MainWindowTests
@@ -17,7 +20,8 @@ public sealed class MainWindowTests
     {
         WorkspaceViewModel viewModel = new(
             new UnavailableAtlasFlowFrontendGateway(),
-            new TestThemeController());
+            new TestThemeController(),
+            new PlanViewModel(Substitute.For<IPlanService>()));
         await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
 
         MainWindow window = new(viewModel);

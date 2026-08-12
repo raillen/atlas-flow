@@ -21,10 +21,9 @@ namespace AtlasFlow.Application;
 /// either side reaching into the other.
 /// </para>
 /// <para>
-/// <b>Nothing is registered yet.</b> The interfaces exist, the implementations
-/// do not. A host that calls this today gets a container that will throw on
-/// the first resolve — which is the honest behaviour, and better than a silent
-/// null.
+/// Project inspection, Goals, Plans and the first Run slice are registered
+/// here. Remaining services stay unregistered so a host fails at the boundary
+/// that asks for an unported capability rather than receiving a plausible stub.
 /// </para>
 /// </remarks>
 public static class AtlasFlowServices
@@ -69,9 +68,9 @@ public static class AtlasFlowServices
         services.AddSingleton<IPlanService, PlanService>();
         services.AddSingleton<IRunService, RunService>();
 
-        // Not ported. Left unregistered on purpose: resolving one returns null
-        // and fails where it is asked for, naming the service, instead of
-        // handing back a stub that answers plausibly and is believed.
+        // Not ported. Left unregistered on purpose: resolving one fails where
+        // it is asked for, naming the service, instead of handing back a stub
+        // that answers plausibly and is believed.
         //
         //   IDiscussionService     conversations and the decision ledger
         //   IRoutingService        which model each role resolved to

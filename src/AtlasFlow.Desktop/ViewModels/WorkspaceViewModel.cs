@@ -14,14 +14,17 @@ public sealed partial class WorkspaceViewModel : ObservableObject
 
     private readonly IAtlasFlowFrontendGateway _gateway;
     private readonly IThemeController _themeController;
+    private readonly PlanViewModel _plan;
     private WorkspaceStageViewModel _selectedStage;
 
     public WorkspaceViewModel(
         IAtlasFlowFrontendGateway gateway,
-        IThemeController themeController)
+        IThemeController themeController,
+        PlanViewModel plan)
     {
         _gateway = gateway;
         _themeController = themeController;
+        _plan = plan;
 
         Stages =
         [
@@ -51,8 +54,16 @@ public sealed partial class WorkspaceViewModel : ObservableObject
             }
 
             SetProperty(ref _selectedStage, value);
+            OnPropertyChanged(nameof(IsPlanStageSelected));
         }
     }
+
+    public PlanViewModel Plan => _plan;
+
+    public bool IsPlanStageSelected => string.Equals(
+        SelectedStage.Key,
+        "plan",
+        StringComparison.Ordinal);
 
     [ObservableProperty]
     public partial string ProjectName { get; private set; } = "Nenhum projeto aberto";
@@ -109,6 +120,11 @@ public sealed partial class WorkspaceViewModel : ObservableObject
         {
             WorkspaceSnapshot snapshot = await _gateway.LoadWorkspaceAsync(cancellationToken);
             ApplySnapshot(snapshot);
+            await _plan.LoadAsync(
+                snapshot.Project?.Mode == ProjectMode.AtlasReady
+                    ? snapshot.Goals.Count > 0 ? snapshot.Goals[0] : null
+                    : null,
+                cancellationToken).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -118,6 +134,7 @@ public sealed partial class WorkspaceViewModel : ObservableObject
         {
             ErrorMessage = "Não foi possível carregar o workspace. Verifique a integração e tente novamente.";
             ConnectionDescription = "Frontend disponível · integração indisponível";
+            await _plan.LoadAsync(null, cancellationToken).ConfigureAwait(true);
         }
         finally
         {

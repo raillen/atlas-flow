@@ -51,6 +51,7 @@ public sealed partial class App : Avalonia.Application
         services.AddAtlasFlow(root);
         services.AddSingleton<IAtlasFlowFrontendGateway, ApplicationAtlasFlowFrontendGateway>();
         services.AddSingleton<IThemeController, AvaloniaThemeController>();
+        services.AddSingleton<PlanViewModel>();
         services.AddSingleton<WorkspaceViewModel>();
         services.AddSingleton<MainWindow>();
     }

@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:a11y="clr-namespace:Avalonia.Automation;assembly=Avalonia.Controls"
         xmlns:viewModels="clr-namespace:AtlasFlow.Desktop.ViewModels"
+        xmlns:planning="clr-namespace:AtlasFlow.Domain.Planning;assembly=AtlasFlow.Domain"
         x:Class="AtlasFlow.Desktop.Views.MainWindow"
         x:DataType="viewModels:WorkspaceViewModel"
         Title="Atlas Flow"
@@ -173,7 +174,7 @@
             </Grid>
 
             <Grid ColumnDefinitions="2*,*" ColumnSpacing="16">
-              <Border Classes="panel" Padding="20" MinHeight="300">
+              <Border Classes="panel" Padding="20" MinHeight="300" IsVisible="{Binding !IsPlanStageSelected}">
                 <StackPanel Spacing="20">
                   <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Spacing="4">
@@ -244,6 +245,107 @@
                                    TextWrapping="Wrap" />
                       </StackPanel>
                     </Grid>
+                  </Border>
+                </StackPanel>
+              </Border>
+
+              <Border Grid.Column="0"
+                      Classes="panel"
+                      Padding="20"
+                      IsVisible="{Binding IsPlanStageSelected}">
+                <StackPanel Spacing="14">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Plano executável" Classes="section-heading" />
+                      <TextBlock Text="Revise o snapshot antes de bloqueá-lo para execução." Classes="muted" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="PLAN" Classes="eyebrow" />
+                  </Grid>
+
+                  <Border Classes="elevated-panel" Padding="14">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="{Binding Plan.GoalTitle}" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding Plan.GoalObjective}" Classes="secondary" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding Plan.SelectedPlanSummary}" Classes="micro" />
+                    </StackPanel>
+                  </Border>
+
+                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                    <TextBlock Text="{Binding Plan.SelectedPlanState}"
+                               Classes="mono"
+                               VerticalAlignment="Center" />
+                    <Button Grid.Column="1"
+                            Classes="atlas-button"
+                            Command="{Binding Plan.CreatePlanCommand}"
+                            IsEnabled="{Binding Plan.CanCreatePlan}"
+                            a11y:AutomationProperties.Name="Criar snapshot de plano">
+                      Criar rascunho
+                    </Button>
+                    <Button Grid.Column="2"
+                            Classes="atlas-button primary"
+                            Command="{Binding Plan.LockPlanCommand}"
+                            IsEnabled="{Binding Plan.CanLockPlan}"
+                            a11y:AutomationProperties.Name="Bloquear plano selecionado">
+                      Bloquear plano
+                    </Button>
+                  </Grid>
+
+                  <Border IsVisible="{Binding Plan.HasError}"
+                          Classes="panel"
+                          Padding="10"
+                          BorderBrush="{DynamicResource AtlasDangerBrush}">
+                    <TextBlock Text="{Binding Plan.ErrorMessage}"
+                               Foreground="{DynamicResource AtlasDangerBrush}"
+                               TextWrapping="Wrap" />
+                  </Border>
+
+                  <ListBox ItemsSource="{Binding Plan.Plans}"
+                           SelectedItem="{Binding Plan.SelectedPlan}"
+                           a11y:AutomationProperties.Name="Snapshots de plano">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate x:DataType="planning:Plan">
+                        <Border Classes="elevated-panel" Padding="10" Margin="0,0,0,6">
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <StackPanel Spacing="3">
+                              <TextBlock Text="{Binding State}" FontWeight="SemiBold" />
+                              <TextBlock Text="{Binding Tasks.Count, StringFormat='{}{0} tarefa(s)'}" Classes="micro" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="{Binding Runner}" Classes="mono micro" />
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+
+                  <Border IsVisible="{Binding Plan.HasPlans}"
+                          Classes="elevated-panel"
+                          Padding="12">
+                    <StackPanel Spacing="8">
+                      <TextBlock Text="Tarefas do snapshot selecionado" Classes="eyebrow" />
+                      <ItemsControl ItemsSource="{Binding Plan.SelectedPlan.Tasks}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="planning:PlanTask">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" Margin="0,4">
+                              <Border Width="24"
+                                      Height="24"
+                                      CornerRadius="6"
+                                      Background="{DynamicResource AtlasAccentSoftBrush}">
+                                <TextBlock Text="·"
+                                           Foreground="{DynamicResource AtlasAccentBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                              </Border>
+                              <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Text="{Binding Objective}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding Risk}"
+                                           Classes="micro"
+                                           TextWrapping="Wrap" />
+                              </StackPanel>
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
                   </Border>
                 </StackPanel>
               </Border>

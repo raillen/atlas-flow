@@ -13,7 +13,8 @@ public sealed partial class MainWindow : Window
     public MainWindow()
         : this(new WorkspaceViewModel(
             new UnavailableAtlasFlowFrontendGateway(),
-            new AvaloniaThemeController()))
+            new AvaloniaThemeController(),
+            new PlanViewModel(new UnavailablePlanService())))
     {
     }
 

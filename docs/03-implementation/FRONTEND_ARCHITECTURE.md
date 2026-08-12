@@ -64,20 +64,24 @@ produto. `LoadWorkspaceAsync` retorna `WorkspaceSnapshot`, que agrupa
 `ProjectInspection` e a lista de `Goal` recebidas dos contratos públicos. Modos,
 capabilities, IDs e estados são os mesmos tipos usados pelo núcleo.
 
-`ApplicationAtlasFlowFrontendGateway` já compõe `IProjectService` e
-`IGoalService`. Enquanto essas interfaces ainda não têm implementações
-registradas, `UnavailableAtlasFlowFrontendGateway` retorna um snapshot seguro e
-explícito. Falha de integração não impede renderização, troca de tema ou leitura
-do erro.
+`ApplicationAtlasFlowFrontendGateway` já compõe as implementações reais de
+`IProjectService` e `IGoalService` registradas em `AddAtlasFlow`. O
+`UnavailableAtlasFlowFrontendGateway` permanece somente como fallback explícito
+para construção Avalonia, testes e recuperação. Falha de integração não impede
+renderização, troca de tema ou leitura do erro.
 
 Ao conectar o backend:
 
 1. registrar as implementações públicas em `AtlasFlowServices.AddAtlasFlow`;
 2. chamar `AddAtlasFlow` no composition root com o projeto selecionado;
-3. substituir o registro do fallback por
-   `ApplicationAtlasFlowFrontendGateway`;
+3. registrar `ApplicationAtlasFlowFrontendGateway` no composition root;
 4. manter testes de contrato para agregação, cancelamento e erros;
 5. preservar o fallback para design, testes e recuperação.
+
+O primeiro ViewModel de domínio, `PlanViewModel`, recebe `IPlanService`
+diretamente. Ele carrega o histórico de snapshots do primeiro Goal, cria um
+`DRAFT` e solicita o bloqueio de um plano selecionado. A UI não valida o DAG
+nem muda o estado otimisticamente: a aplicação confirma cada transição.
 
 O gateway não cresce para encapsular os oito serviços. ViewModels de domínio
 receberão diretamente `IDiscussionService`, `IPlanService`, `IRunService` e os
@@ -121,7 +125,7 @@ mudança é discutida antes de editar `Application/Contracts`.
 ## Estado atual
 
 A fundação implementada contém fallback indisponível, adapter de aplicação
-compilado, ViewModel do workspace, tema semântico claro/escuro e App Shell. O
-adapter real ainda não está registrado porque os serviços de aplicação não têm
-implementações públicas. A UI não afirma integração com Discuss, AG-UI ou
-settings; os controles correspondentes permanecem desabilitados.
+real, ViewModels de workspace e Plan, tema semântico claro/escuro e App Shell.
+O fluxo de Plan já carrega histórico, cria rascunhos e bloqueia snapshots por
+meio dos contratos públicos. A UI ainda não afirma integração com Discuss,
+AG-UI ou settings; os controles correspondentes permanecem desabilitados.

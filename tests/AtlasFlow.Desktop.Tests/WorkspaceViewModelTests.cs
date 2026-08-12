@@ -1,8 +1,11 @@
+using AtlasFlow.Application.Contracts;
 using AtlasFlow.Desktop.Integration;
 using AtlasFlow.Desktop.ViewModels;
 using AtlasFlow.Domain;
 using AtlasFlow.Domain.Goals;
 using AtlasFlow.Domain.Projects;
+
+using NSubstitute;
 
 namespace AtlasFlow.Desktop.Tests;
 
@@ -82,7 +85,8 @@ public sealed class WorkspaceViewModelTests
     {
         return new WorkspaceViewModel(
             new StubGateway(loadWorkspace),
-            new StubThemeController());
+            new StubThemeController(),
+            new PlanViewModel(Substitute.For<IPlanService>()));
     }
 
     private static WorkspaceStageViewModel Stage(WorkspaceViewModel viewModel, string key)
