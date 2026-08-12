@@ -83,6 +83,12 @@ diretamente. Ele carrega o histórico de snapshots do primeiro Goal, cria um
 `DRAFT` e solicita o bloqueio de um plano selecionado. A UI não valida o DAG
 nem muda o estado otimisticamente: a aplicação confirma cada transição.
 
+`RunViewModel` recebe `IRunService` e a mesma instância de `PlanViewModel`.
+Ele só envia `StartRunRequest` para um plano `LOCKED`, acompanha
+`WatchAsync` com replay dos eventos duráveis e delega cancelamento cooperativo
+ao serviço. A timeline é uma projeção de `DomainEvent`; ela não interpreta
+payloads para fabricar estados locais nem faz polling em timer.
+
 O gateway não cresce para encapsular os oito serviços. ViewModels de domínio
 receberão diretamente `IDiscussionService`, `IPlanService`, `IRunService` e os
 demais contratos que realmente usam. Isso mantém dependências pequenas e torna
@@ -125,7 +131,9 @@ mudança é discutida antes de editar `Application/Contracts`.
 ## Estado atual
 
 A fundação implementada contém fallback indisponível, adapter de aplicação
-real, ViewModels de workspace e Plan, tema semântico claro/escuro e App Shell.
-O fluxo de Plan já carrega histórico, cria rascunhos e bloqueia snapshots por
-meio dos contratos públicos. A UI ainda não afirma integração com Discuss,
-AG-UI ou settings; os controles correspondentes permanecem desabilitados.
+real, ViewModels de workspace, Plan e Run, tema semântico claro/escuro e App
+Shell. O fluxo de Plan já carrega histórico, cria rascunhos e bloqueia
+snapshots; o fluxo de Run inicia somente snapshots bloqueados e expõe fila,
+progresso, timeline durável e cancelamento cooperativo. A UI ainda não afirma
+integração com Discuss ou settings; os controles correspondentes permanecem
+desabilitados.

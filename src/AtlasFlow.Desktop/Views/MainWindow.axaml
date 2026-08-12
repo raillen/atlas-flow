@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:a11y="clr-namespace:Avalonia.Automation;assembly=Avalonia.Controls"
         xmlns:viewModels="clr-namespace:AtlasFlow.Desktop.ViewModels"
+        xmlns:execution="clr-namespace:AtlasFlow.Domain.Execution;assembly=AtlasFlow.Domain"
         xmlns:planning="clr-namespace:AtlasFlow.Domain.Planning;assembly=AtlasFlow.Domain"
         x:Class="AtlasFlow.Desktop.Views.MainWindow"
         x:DataType="viewModels:WorkspaceViewModel"
@@ -174,7 +175,7 @@
             </Grid>
 
             <Grid ColumnDefinitions="2*,*" ColumnSpacing="16">
-              <Border Classes="panel" Padding="20" MinHeight="300" IsVisible="{Binding !IsPlanStageSelected}">
+              <Border Classes="panel" Padding="20" MinHeight="300" IsVisible="{Binding IsPrimarySurfaceVisible}">
                 <StackPanel Spacing="20">
                   <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Spacing="4">
@@ -270,7 +271,7 @@
                     </StackPanel>
                   </Border>
 
-                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                  <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
                     <TextBlock Text="{Binding Plan.SelectedPlanState}"
                                Classes="mono"
                                VerticalAlignment="Center" />
@@ -287,6 +288,13 @@
                             IsEnabled="{Binding Plan.CanLockPlan}"
                             a11y:AutomationProperties.Name="Bloquear plano selecionado">
                       Bloquear plano
+                    </Button>
+                    <Button Grid.Column="3"
+                            Classes="atlas-button primary"
+                            Command="{Binding Run.StartRunCommand}"
+                            IsEnabled="{Binding Run.CanStartRun}"
+                            a11y:AutomationProperties.Name="Executar plano bloqueado">
+                      Executar plano
                     </Button>
                   </Grid>
 
@@ -348,6 +356,109 @@
                     </StackPanel>
                   </Border>
                 </StackPanel>
+              </Border>
+
+              <Border Grid.Column="0"
+                      Classes="panel"
+                      Padding="20"
+                      IsVisible="{Binding IsRunStageSelected}">
+                <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="14">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Command center de execução" Classes="section-heading" />
+                      <TextBlock Text="Acompanhe o estado durável; a atividade chega pelo stream do run." Classes="muted" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="RUN" Classes="eyebrow" />
+                  </Grid>
+
+                  <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="{Binding Run.SelectedRunState}" Classes="mono" />
+                      <TextBlock Text="{Binding Run.SelectedRunSummary}" Classes="micro" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{Binding Run.TaskProgress}" Classes="secondary" VerticalAlignment="Center" />
+                    <Button Grid.Column="2"
+                            Classes="atlas-button"
+                            Command="{Binding Run.CancelRunCommand}"
+                            IsEnabled="{Binding Run.CanCancelRun}"
+                            a11y:AutomationProperties.Name="Solicitar cancelamento da execução">
+                      Cancelar
+                    </Button>
+                  </Grid>
+
+                  <Grid Grid.Row="2" ColumnDefinitions="*,1.35*" ColumnSpacing="12">
+                    <Border Classes="elevated-panel" Padding="12">
+                      <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Text="Fila de runs" Classes="eyebrow" />
+                          <TextBlock Grid.Column="1" Text="{Binding Run.StreamStatus}" Classes="micro" />
+                        </Grid>
+                        <ListBox ItemsSource="{Binding Run.Runs}"
+                                 SelectedItem="{Binding Run.SelectedRun}"
+                                 a11y:AutomationProperties.Name="Fila de execuções">
+                          <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="execution:Run">
+                              <Border Classes="panel" Padding="10" Margin="0,0,0,6">
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                  <Border Width="7"
+                                          Height="7"
+                                          CornerRadius="4"
+                                          VerticalAlignment="Center"
+                                          Background="{DynamicResource AtlasAccentBrush}" />
+                                  <StackPanel Grid.Column="1" Spacing="2">
+                                    <TextBlock Text="{Binding State}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding GoalId}" Classes="micro" />
+                                  </StackPanel>
+                                  <TextBlock Grid.Column="2" Text="{Binding Id}" Classes="mono micro" />
+                                </Grid>
+                              </Border>
+                            </DataTemplate>
+                          </ListBox.ItemTemplate>
+                        </ListBox>
+                      </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="1" Classes="elevated-panel" Padding="12">
+                      <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Text="Timeline semântica" Classes="eyebrow" />
+                          <TextBlock Grid.Column="1" Text="{Binding Run.TaskProgress}" Classes="micro" />
+                        </Grid>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                          <ItemsControl ItemsSource="{Binding Run.Events}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="execution:DomainEvent">
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="0,4">
+                                  <Border Width="7"
+                                          Height="7"
+                                          CornerRadius="4"
+                                          VerticalAlignment="Center"
+                                          Background="{DynamicResource AtlasInfoBrush}" />
+                                  <StackPanel Grid.Column="1" Spacing="2">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Type}" Classes="micro" />
+                                  </StackPanel>
+                                  <TextBlock Grid.Column="2"
+                                             Text="{Binding Timestamp, StringFormat='{}{0:HH:mm:ss}'}"
+                                             Classes="mono micro"
+                                             VerticalAlignment="Center" />
+                                </Grid>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </ScrollViewer>
+                        <TextBlock Grid.Row="2"
+                                   Text="Eventos duráveis · replay + live"
+                                   Classes="micro"
+                                   TextWrapping="Wrap" />
+                      </Grid>
+                    </Border>
+                  </Grid>
+
+                  <Border Grid.Row="3" IsVisible="{Binding Run.HasError}" Classes="panel" Padding="10" BorderBrush="{DynamicResource AtlasDangerBrush}">
+                    <TextBlock Text="{Binding Run.ErrorMessage}" Foreground="{DynamicResource AtlasDangerBrush}" TextWrapping="Wrap" />
+                  </Border>
+                </Grid>
               </Border>
 
               <StackPanel Grid.Column="1" Spacing="16">

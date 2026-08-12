@@ -28,6 +28,9 @@ public sealed class WorkspaceViewModelTests
         Assert.Equal("1 Goal(s) no projeto", viewModel.GoalSummaryLabel);
         Assert.True(Stage(viewModel, "run").IsEnabled);
         Assert.False(Stage(viewModel, "review").IsEnabled);
+        viewModel.SelectStage("run");
+        Assert.True(viewModel.IsRunStageSelected);
+        Assert.False(viewModel.IsPrimarySurfaceVisible);
         Assert.False(viewModel.HasError);
     }
 
@@ -83,10 +86,12 @@ public sealed class WorkspaceViewModelTests
     private static WorkspaceViewModel CreateViewModel(
         Func<CancellationToken, Task<WorkspaceSnapshot>> loadWorkspace)
     {
+        PlanViewModel plan = new(Substitute.For<IPlanService>());
         return new WorkspaceViewModel(
             new StubGateway(loadWorkspace),
             new StubThemeController(),
-            new PlanViewModel(Substitute.For<IPlanService>()));
+            plan,
+            new RunViewModel(Substitute.For<IRunService>(), plan));
     }
 
     private static WorkspaceStageViewModel Stage(WorkspaceViewModel viewModel, string key)

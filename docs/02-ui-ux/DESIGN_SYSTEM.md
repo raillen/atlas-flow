@@ -74,9 +74,10 @@ mas nunca os três ao mesmo tempo.
 ## Componentes e estados
 
 A primeira fundação inclui `Panel`, `Button`, `TextBox`, navegação de estágios,
-tipografia semântica e shell. Cada componente interativo deve cobrir, quando
-aplicável: default, hover, pressed, focus-visible, disabled, loading, empty,
-error e success.
+tipografia semântica, shell e um command center de Run com fila, timeline e
+ações de execução. Cada componente interativo deve cobrir, quando aplicável:
+default, hover, pressed, focus-visible, disabled, loading, empty, error e
+success.
 
 Componentes de domínio previstos:
 
@@ -84,7 +85,8 @@ Componentes de domínio previstos:
 - `AttentionStage` e `AdaptationWizard`;
 - `DiscussScreen`, `ReferencePicker` e `DecisionRail`;
 - `GoalSidebar`, `TaskGraph` e `PlanInspector`;
-- `RunQueue`, `RunStatusBar` e task detail;
+- `RunQueue`, `RunStatusBar` e task detail — a primeira versão está integrada
+  ao `RunViewModel`, ainda sem drawer detalhado de tentativa;
 - `ReviewMatrix` e `ProjectExplorer`.
 
 Nenhum controle de domínio acessa arquivos, SQLite, Git, processos ou serviços

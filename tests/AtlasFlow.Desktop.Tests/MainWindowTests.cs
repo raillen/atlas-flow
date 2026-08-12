@@ -18,10 +18,12 @@ public sealed class MainWindowTests
     [AvaloniaFact]
     public async Task Shell_composes_navigation_context_and_accessible_actions()
     {
+        PlanViewModel plan = new(Substitute.For<IPlanService>());
         WorkspaceViewModel viewModel = new(
             new UnavailableAtlasFlowFrontendGateway(),
             new TestThemeController(),
-            new PlanViewModel(Substitute.For<IPlanService>()));
+            plan,
+            new RunViewModel(Substitute.For<IRunService>(), plan));
         await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
 
         MainWindow window = new(viewModel);
