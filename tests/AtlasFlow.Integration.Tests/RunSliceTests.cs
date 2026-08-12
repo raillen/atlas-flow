@@ -3,6 +3,7 @@ using AtlasFlow.Application.Contracts;
 using AtlasFlow.Domain;
 using AtlasFlow.Domain.Execution;
 using AtlasFlow.Domain.Goals;
+using AtlasFlow.Domain.Intelligence;
 using AtlasFlow.Domain.Planning;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -102,12 +103,15 @@ public sealed class RunSliceTests : IAsyncLifetime
 
     private IRunService Runs => _provider.GetRequiredService<IRunService>();
 
-    private static readonly GoalId TheGoal = new("P01-G01");
+    private IProjectIntelligenceService Intelligence =>
+        _provider.GetRequiredService<IProjectIntelligenceService>();
+
+    private static readonly GoalId _theGoal = new("P01-G01");
 
     private async Task<Plan> LockedPlanAsync()
     {
         Plan draft = await Plans.CreateAsync(
-            new CreatePlanRequest { GoalId = TheGoal },
+            new CreatePlanRequest { GoalId = _theGoal },
             CancellationToken.None);
 
         return await Plans.LockAsync(draft.Id, CancellationToken.None);
@@ -121,7 +125,7 @@ public sealed class RunSliceTests : IAsyncLifetime
         // The contract that keeps a plan answerable to its Goal. A planner
         // that drops a criterion produces a run that can succeed while the
         // Goal remains unmet.
-        Plan plan = await Plans.CreateAsync(new CreatePlanRequest { GoalId = TheGoal }, CancellationToken.None);
+        Plan plan = await Plans.CreateAsync(new CreatePlanRequest { GoalId = _theGoal }, CancellationToken.None);
 
         Assert.Equal(3, plan.Tasks.Count);
         Assert.Contains(plan.Tasks, task => task.Objective == "The second criterion holds");
@@ -130,7 +134,7 @@ public sealed class RunSliceTests : IAsyncLifetime
     [Fact]
     public async Task ATaskCarriesTheGoalsRequiredGates()
     {
-        Plan plan = await Plans.CreateAsync(new CreatePlanRequest { GoalId = TheGoal }, CancellationToken.None);
+        Plan plan = await Plans.CreateAsync(new CreatePlanRequest { GoalId = _theGoal }, CancellationToken.None);
 
         // review and documentation are declared optional in the fixture.
         Assert.Equal([GateKind.Build, GateKind.Tests], plan.Tasks[0].Gates);
@@ -155,12 +159,12 @@ public sealed class RunSliceTests : IAsyncLifetime
     [Fact]
     public async Task ARunMustNameALockedPlan()
     {
-        Plan draft = await Plans.CreateAsync(new CreatePlanRequest { GoalId = TheGoal }, CancellationToken.None);
+        Plan draft = await Plans.CreateAsync(new CreatePlanRequest { GoalId = _theGoal }, CancellationToken.None);
 
         // Accepting a draft would make locking decorative.
         await Assert.ThrowsAsync<PlanStateException>(
             () => Runs.StartAsync(
-                new StartRunRequest { GoalId = TheGoal, PlanId = draft.Id },
+                new StartRunRequest { GoalId = _theGoal, PlanId = draft.Id },
                 CancellationToken.None));
     }
 
@@ -169,7 +173,7 @@ public sealed class RunSliceTests : IAsyncLifetime
     {
         Plan locked = await LockedPlanAsync();
         await Runs.StartAsync(
-            new StartRunRequest { GoalId = TheGoal, PlanId = locked.Id },
+            new StartRunRequest { GoalId = _theGoal, PlanId = locked.Id },
             CancellationToken.None);
 
         Plan? after = await Plans.FindAsync(locked.Id, CancellationToken.None);
@@ -180,11 +184,40 @@ public sealed class RunSliceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task PlanAndRunUpdateOneProjectIntelligenceReport()
+    {
+        Plan locked = await LockedPlanAsync();
+        Assert.NotNull(locked.Context);
+
+        string reportId = $"plan:{locked.Id.Value}";
+        ProjectIntelligenceSnapshot planned = await Intelligence.GetAsync();
+        TaskReport? plannedReport = planned.Tasks.SingleOrDefault(task => task.Id == reportId);
+
+        Assert.NotNull(plannedReport);
+        Assert.Equal(TaskReportStatus.Planned, plannedReport.Status);
+        Assert.Equal("orchestration-plan", plannedReport.Type);
+        Assert.Equal("context-pack", plannedReport.Strategy);
+
+        Run started = await Runs.StartAsync(
+            new StartRunRequest { GoalId = _theGoal, PlanId = locked.Id },
+            CancellationToken.None);
+
+        await DrainAsync(started.Id);
+        ProjectIntelligenceSnapshot completed = await WaitForReportAsync(
+            reportId,
+            TaskReportStatus.Success);
+
+        TaskReport report = completed.Tasks.Single(task => task.Id == reportId);
+        Assert.Equal(TaskReportStatus.Success, report.Status);
+        Assert.Null(report.DirectCost);
+    }
+
+    [Fact]
     public async Task ARunReachesATerminalStateAndItsTasksSucceed()
     {
         Plan locked = await LockedPlanAsync();
         Run started = await Runs.StartAsync(
-            new StartRunRequest { GoalId = TheGoal, PlanId = locked.Id },
+            new StartRunRequest { GoalId = _theGoal, PlanId = locked.Id },
             CancellationToken.None);
 
         await DrainAsync(started.Id);
@@ -204,7 +237,7 @@ public sealed class RunSliceTests : IAsyncLifetime
     {
         Plan locked = await LockedPlanAsync();
         Run started = await Runs.StartAsync(
-            new StartRunRequest { GoalId = TheGoal, PlanId = locked.Id },
+            new StartRunRequest { GoalId = _theGoal, PlanId = locked.Id },
             CancellationToken.None);
 
         List<DomainEvent> seen = await DrainAsync(started.Id);
@@ -221,7 +254,7 @@ public sealed class RunSliceTests : IAsyncLifetime
     {
         Plan locked = await LockedPlanAsync();
         Run started = await Runs.StartAsync(
-            new StartRunRequest { GoalId = TheGoal, PlanId = locked.Id },
+            new StartRunRequest { GoalId = _theGoal, PlanId = locked.Id },
             CancellationToken.None);
 
         List<DomainEvent> seen = await DrainAsync(started.Id);
@@ -237,7 +270,7 @@ public sealed class RunSliceTests : IAsyncLifetime
     {
         Plan locked = await LockedPlanAsync();
         Run started = await Runs.StartAsync(
-            new StartRunRequest { GoalId = TheGoal, PlanId = locked.Id },
+            new StartRunRequest { GoalId = _theGoal, PlanId = locked.Id },
             CancellationToken.None);
 
         List<DomainEvent> seen = await DrainAsync(started.Id);
@@ -258,7 +291,7 @@ public sealed class RunSliceTests : IAsyncLifetime
         // same thing as one that watched it live.
         Plan locked = await LockedPlanAsync();
         Run started = await Runs.StartAsync(
-            new StartRunRequest { GoalId = TheGoal, PlanId = locked.Id },
+            new StartRunRequest { GoalId = _theGoal, PlanId = locked.Id },
             CancellationToken.None);
 
         await DrainAsync(started.Id);
@@ -273,7 +306,7 @@ public sealed class RunSliceTests : IAsyncLifetime
     {
         Plan locked = await LockedPlanAsync();
         Run started = await Runs.StartAsync(
-            new StartRunRequest { GoalId = TheGoal, PlanId = locked.Id },
+            new StartRunRequest { GoalId = _theGoal, PlanId = locked.Id },
             CancellationToken.None);
 
         using (CancellationTokenSource giveUp = new())
@@ -311,5 +344,28 @@ public sealed class RunSliceTests : IAsyncLifetime
         }
 
         return seen;
+    }
+
+    private async Task<ProjectIntelligenceSnapshot> WaitForReportAsync(
+        string reportId,
+        TaskReportStatus expected)
+    {
+        DateTimeOffset deadline = DateTimeOffset.UtcNow.AddSeconds(5);
+        ProjectIntelligenceSnapshot snapshot = await Intelligence.GetAsync();
+
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            TaskReport? report = snapshot.Tasks.SingleOrDefault(task => task.Id == reportId);
+            if (report?.Status == expected)
+            {
+                return snapshot;
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(10));
+            snapshot = await Intelligence.GetAsync();
+        }
+
+        Assert.Fail($"Project Intelligence report '{reportId}' did not reach {expected}.");
+        return snapshot;
     }
 }

@@ -1,11 +1,14 @@
 using System.Runtime.CompilerServices;
 
 using AtlasFlow.Domain;
+using AtlasFlow.Domain.Context;
 using AtlasFlow.Domain.Execution;
 using AtlasFlow.Domain.Goals;
 using AtlasFlow.Domain.Planning;
 using AtlasFlow.Domain.Verification;
 using AtlasFlow.Persistence;
+
+using Microsoft.Data.Sqlite;
 
 namespace AtlasFlow.Persistence.Tests;
 
@@ -78,7 +81,7 @@ public sealed class PersistenceTests : IAsyncLifetime
     /// "identical" plans differed by microseconds and every comparison found a
     /// change.
     /// </remarks>
-    private static readonly DateTimeOffset FixedMoment =
+    private static readonly DateTimeOffset _fixedMoment =
         new(2026, 8, 11, 12, 0, 0, TimeSpan.Zero);
 
     private static Plan NewPlan(PlanState state = PlanState.Draft) => new()
@@ -91,7 +94,24 @@ public sealed class PersistenceTests : IAsyncLifetime
         Autonomy = AutonomyLevel.Agentic,
         Runner = "dummy",
         IntegrationTarget = "main",
-        CreatedAt = FixedMoment,
+        CreatedAt = _fixedMoment,
+        Context = new ContextPlan
+        {
+            Profile = ContextProfile.Medium,
+            Strategy = ContextStrategy.ContextPack,
+            Mode = ContextMode.Legacy,
+            Budget = new ContextBudget
+            {
+                ContextTargetTokens = 8000,
+                ContextHardTokens = 16000,
+                OutputTargetTokens = 1500,
+                OutputHardTokens = 3000,
+                MaxExpansionRounds = 2,
+                MaxDelegationDepth = 1,
+            },
+            Reasons = ["legacy-project", "default"],
+            Source = "legacy-default",
+        },
         Tasks =
         [
             new PlanTask
@@ -160,6 +180,72 @@ public sealed class PersistenceTests : IAsyncLifetime
         Assert.Equal("port the thing", loaded.Tasks[0].Objective);
         Assert.True(loaded.Tasks[0].IsParallelizable);
         Assert.Equal([GateKind.Build, GateKind.Tests], loaded.Tasks[0].Gates);
+    }
+
+    [Fact]
+    public async Task APlanKeepsItsBoundedContextDecision()
+    {
+        Plan plan = NewPlan();
+        await _plans.SaveAsync(plan);
+
+        Plan? loaded = await _plans.FindAsync(plan.Id);
+
+        Assert.NotNull(loaded?.Context);
+        Assert.Equal(ContextProfile.Medium, loaded.Context.Profile);
+        Assert.Equal(ContextStrategy.ContextPack, loaded.Context.Strategy);
+        Assert.Equal(16000, loaded.Context.Budget.ContextHardTokens);
+        Assert.Equal(["legacy-project", "default"], loaded.Context.Reasons);
+    }
+
+    [Fact]
+    public async Task AVersionThreeDatabaseReceivesTheNullableContextColumn()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), $"atlas-migration-{Guid.NewGuid():N}");
+        string path = Path.Combine(directory, "state.db");
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            await using (SqliteConnection legacy = new($"Data Source={path}"))
+            {
+                await legacy.OpenAsync();
+                await using SqliteCommand command = legacy.CreateCommand();
+                command.CommandText = """
+                    CREATE TABLE schema_version (version INTEGER PRIMARY KEY);
+                    INSERT INTO schema_version (version) VALUES (3);
+                    CREATE TABLE plans (
+                        id TEXT PRIMARY KEY,
+                        project_id TEXT NOT NULL,
+                        goal_id TEXT NOT NULL,
+                        goal_revision TEXT NOT NULL,
+                        state TEXT NOT NULL,
+                        autonomy TEXT NOT NULL,
+                        runner TEXT NOT NULL,
+                        integration_target TEXT NOT NULL,
+                        created_at TEXT NOT NULL,
+                        tasks TEXT NOT NULL DEFAULT '[]'
+                    );
+                    """;
+                await command.ExecuteNonQueryAsync();
+            }
+
+            await using AtlasFlowDatabase upgraded = new(path);
+            await upgraded.InitializeAsync();
+            PlanRepository repository = new(upgraded);
+            Plan plan = NewPlan();
+
+            await repository.SaveAsync(plan);
+
+            Plan? loaded = await repository.FindAsync(plan.Id);
+            Assert.Equal(ContextProfile.Medium, loaded?.Context?.Profile);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
     }
 
     // --- the state machine ------------------------------------------------

@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 
 using AtlasFlow.Domain;
+using AtlasFlow.Domain.Context;
 using AtlasFlow.Domain.Execution;
 using AtlasFlow.Domain.Goals;
 using AtlasFlow.Domain.Planning;
@@ -15,9 +16,9 @@ public sealed class PlanRepository(AtlasFlowDatabase database)
     private const string Upsert = """
         INSERT OR REPLACE INTO plans
             (id, project_id, goal_id, goal_revision, state, autonomy, runner,
-             integration_target, created_at, tasks)
+             integration_target, created_at, context, tasks)
         VALUES ($id, $projectId, $goalId, $goalRevision, $state, $autonomy, $runner,
-                $integrationTarget, $createdAt, $tasks)
+                $integrationTarget, $createdAt, $context, $tasks)
         """;
 
     private readonly AtlasFlowDatabase _database = database;
@@ -103,8 +104,38 @@ public sealed class PlanRepository(AtlasFlowDatabase database)
         ["$runner"] = plan.Runner,
         ["$integrationTarget"] = plan.IntegrationTarget,
         ["$createdAt"] = SqlValues.Text(plan.CreatedAt),
+        ["$context"] = SerializeContext(plan.Context),
         ["$tasks"] = SerializeTasks(plan.Tasks),
     };
+
+    private static string? SerializeContext(ContextPlan? context)
+    {
+        if (context is null)
+        {
+            return null;
+        }
+
+        JsonObject document = new()
+        {
+            ["profile"] = ProfileText(context.Profile),
+            ["strategy"] = StrategyText(context.Strategy),
+            ["mode"] = ModeText(context.Mode),
+            ["deep_recursion_enabled"] = context.DeepRecursionEnabled,
+            ["source"] = context.Source,
+            ["reasons"] = ArrayOf(context.Reasons),
+            ["budget"] = new JsonObject
+            {
+                ["context_target_tokens"] = context.Budget.ContextTargetTokens,
+                ["context_hard_tokens"] = context.Budget.ContextHardTokens,
+                ["output_target_tokens"] = context.Budget.OutputTargetTokens,
+                ["output_hard_tokens"] = context.Budget.OutputHardTokens,
+                ["max_expansion_rounds"] = context.Budget.MaxExpansionRounds,
+                ["max_delegation_depth"] = context.Budget.MaxDelegationDepth,
+            },
+        };
+
+        return document.ToJsonString();
+    }
 
     private static string SerializeTasks(IReadOnlyList<PlanTask> tasks)
     {
@@ -183,6 +214,94 @@ public sealed class PlanRepository(AtlasFlowDatabase database)
         Runner = reader.String("runner"),
         IntegrationTarget = reader.String("integration_target"),
         CreatedAt = reader.Moment("created_at"),
+        Context = DeserializeContext(reader.NullableString("context")),
         Tasks = DeserializeTasks(reader.String("tasks")),
     };
+
+    private static ContextPlan? DeserializeContext(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        JsonObject document = JsonNode.Parse(json) as JsonObject
+            ?? throw new PersistenceException("The stored plan context is not an object");
+        JsonObject budget = document["budget"] as JsonObject
+            ?? throw new PersistenceException("The stored plan context has no budget");
+
+        return new ContextPlan
+        {
+            Profile = ParseProfile(Text(document, "profile")),
+            Strategy = ParseStrategy(Text(document, "strategy")),
+            Mode = ParseMode(Text(document, "mode")),
+            DeepRecursionEnabled = document["deep_recursion_enabled"]?.GetValue<bool>() ?? false,
+            Source = Text(document, "source"),
+            Reasons = Strings(document, "reasons"),
+            Budget = new ContextBudget
+            {
+                ContextTargetTokens = Number(budget, "context_target_tokens"),
+                ContextHardTokens = Number(budget, "context_hard_tokens"),
+                OutputTargetTokens = Number(budget, "output_target_tokens"),
+                OutputHardTokens = Number(budget, "output_hard_tokens"),
+                MaxExpansionRounds = Number(budget, "max_expansion_rounds"),
+                MaxDelegationDepth = Number(budget, "max_delegation_depth"),
+            },
+        };
+    }
+
+    private static string ProfileText(ContextProfile profile) => profile switch
+    {
+        ContextProfile.Small => "small",
+        ContextProfile.Medium => "medium",
+        ContextProfile.Large => "large",
+        _ => throw new PersistenceException($"Unknown context profile '{profile}'"),
+    };
+
+    private static string StrategyText(ContextStrategy strategy) => strategy switch
+    {
+        ContextStrategy.Direct => "direct",
+        ContextStrategy.StructuralRetrieval => "structural-retrieval",
+        ContextStrategy.ContextPack => "context-pack",
+        ContextStrategy.ProgressiveRetrieval => "progressive-retrieval",
+        _ => throw new PersistenceException($"Unknown context strategy '{strategy}'"),
+    };
+
+    private static string ModeText(ContextMode mode) => mode switch
+    {
+        ContextMode.Legacy => "legacy",
+        ContextMode.Progressive => "progressive",
+        _ => throw new PersistenceException($"Unknown context mode '{mode}'"),
+    };
+
+    private static ContextProfile ParseProfile(string value) => value switch
+    {
+        "small" => ContextProfile.Small,
+        "medium" => ContextProfile.Medium,
+        "large" => ContextProfile.Large,
+        _ => throw new PersistenceException($"Stored value '{value}' is not a known context profile"),
+    };
+
+    private static ContextStrategy ParseStrategy(string value) => value switch
+    {
+        "direct" => ContextStrategy.Direct,
+        "structural-retrieval" => ContextStrategy.StructuralRetrieval,
+        "context-pack" => ContextStrategy.ContextPack,
+        "progressive-retrieval" => ContextStrategy.ProgressiveRetrieval,
+        _ => throw new PersistenceException($"Stored value '{value}' is not a known context strategy"),
+    };
+
+    private static ContextMode ParseMode(string value) => value switch
+    {
+        "legacy" => ContextMode.Legacy,
+        "progressive" => ContextMode.Progressive,
+        _ => throw new PersistenceException($"Stored value '{value}' is not a known context mode"),
+    };
+
+    private static int Number(JsonObject node, string key) =>
+        node[key] is JsonValue value
+        && value.TryGetValue<int>(out int number)
+        && number >= 0
+            ? number
+            : throw new PersistenceException($"Stored context budget field '{key}' is invalid");
 }

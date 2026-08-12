@@ -49,9 +49,10 @@ The v0.2 reader recognizes:
 This is a read boundary, not a migration. The project remains on its current
 canonical format until a separate migration Goal defines validation,
 conflict handling, atomic writes and rollback evidence. The runtime now exposes
-bounded LPC/PCA planning and a versioned Project Intelligence report store, but
-does not yet perform broad retrieval, context garbage collection or automatic
-task-report emission.
+bounded LPC/PCA planning and a versioned Project Intelligence report store.
+Plans persist the selected context decision, and the Plan/Run lifecycle updates
+one compact report. The runtime does not yet perform broad retrieval, context
+garbage collection or provider-level usage measurement.
 
 The Project Intelligence writer uses
 `.atlas/history/project-intelligence.json` for v0.2, preserves unknown fields,

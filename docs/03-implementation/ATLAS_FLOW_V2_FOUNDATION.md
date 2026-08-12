@@ -12,7 +12,7 @@ visibility: internal
 authority: canonical
 source: human
 owner: atlas-flow-maintainers
-last_reviewed: 2026-08-11
+last_reviewed: 2026-08-12
 review_interval: 180d
 risk: medium
 tags:
@@ -27,8 +27,9 @@ related:
 
 Esta é a segunda fatia de compatibilidade implementada do
 [AF-EVO-001](../08-rfcs/AF-EVO-001-ATLAS-FLOW-EVOLUTION.md). Ela adiciona
-contratos bounded de contexto e Project Intelligence sem alterar o runtime
-existente de Goals, Runs ou desktop.
+contratos bounded de contexto e Project Intelligence integrados ao snapshot de
+Plan e ao ciclo operacional de Run, sem alterar os contratos existentes de
+Goals ou desktop.
 
 ## O que existe
 
@@ -36,8 +37,13 @@ existente de Goals, Runs ou desktop.
   bounded, perfil, estratégia e limites LPC/PCA;
 - `src/AtlasFlow.Domain/Context/ContextPlan.cs`: contrato de decisão sem
   payload de contexto;
+- `src/AtlasFlow.Domain/Planning/Plan.cs` e
+  `src/AtlasFlow.Persistence/PlanRepository.cs`: persistência compatível do
+  `ContextPlan` no snapshot do plano;
 - `src/AtlasFlow.Domain/Intelligence/TaskReport.cs`: relatório compacto,
   token usage e provenance de custo;
+- `src/AtlasFlow.Application/Services/ProjectIntelligenceReportFactory.cs`:
+  emissão do lifecycle `planned → running → success|failed|cancelled`;
 - `src/AtlasFlow.Persistence/ProjectIntelligenceRepository.cs`: leitura,
   agregação, preservação de campos desconhecidos e escrita atômica;
 - `src/AtlasFlow.Application/Contracts/`: seam consumível pelo desktop para
@@ -62,7 +68,9 @@ O conteúdo Markdown, metadata, manifests, task maps e context packs são fonte
 do projeto. O registry, o grafo, o site e `project-summary.json` são derivados.
 `atlas.json` e Goals são canônicos no formato v2. O snapshot de inteligência é
 uma projeção durable versionada; SQLite continua operacional e não substitui
-decisões, Goals ou documentação canônica.
+decisões, Goals ou documentação canônica. A coluna `plans.context` usa uma
+migração incremental de schema (v3 → v4) e continua opcional para snapshots
+antigos.
 
 ## Compatibilidade
 
@@ -74,6 +82,6 @@ reescrito automaticamente.
 ## Limitações da primeira fatia
 
 Ainda não há indexação AST de símbolos, retrieval progressivo, embeddings,
-preços de providers, emissão automática de reports, CLI v2 ou dashboard visual.
+preços de providers, relatórios por tarefa/runner, CLI v2 ou dashboard visual.
 Quando não existe usage observado, o snapshot preserva provenance não observada
 e não inventa custo direto.

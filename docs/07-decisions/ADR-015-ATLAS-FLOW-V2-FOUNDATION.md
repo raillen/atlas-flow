@@ -44,6 +44,8 @@ externos para funcionar.
    distintos. Escrita é atômica e o resumo é reconstruível.
 5. Registry, grafo, CLI v2 e documentação publicada continuam projeções
    posteriores. Eles não são simulados pelo contrato de contexto ou pela UI.
+   O Plan snapshot persiste a decisão de contexto e o ciclo Plan/Run atualiza
+   um relatório compacto, sem copiar payloads ou traces para o domínio.
 
 ## Consequências
 
@@ -59,8 +61,8 @@ externos para funcionar.
 
 - A seleção inicial usa heurísticas léxicas; retrieval de símbolos, delta
   context e dashboard visual ainda são fases posteriores.
-- O runtime ainda não emite automaticamente um TaskReport ao concluir uma
-  execução.
+- O relatório atual representa o lifecycle do plano revisado; não há ainda
+  um relatório individual por tarefa, runner ou provider.
 
 ## Rejeitadas nesta fase
 

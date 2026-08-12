@@ -1,3 +1,5 @@
+using AtlasFlow.Domain;
+using AtlasFlow.Domain.Context;
 using AtlasFlow.Domain.Execution;
 
 namespace AtlasFlow.Domain.Planning;
@@ -64,6 +66,16 @@ public sealed record Plan
     public required string IntegrationTarget { get; init; }
 
     public required DateTimeOffset CreatedAt { get; init; }
+
+    /// <summary>
+    /// The bounded context decision captured when this plan was drawn.
+    /// </summary>
+    /// <remarks>
+    /// Optional for plans created by the v1 runtime. Keeping the field nullable
+    /// lets old SQLite snapshots remain readable while new plans carry the
+    /// exact LPC/PCA policy reviewed alongside their task graph.
+    /// </remarks>
+    public ContextPlan? Context { get; init; }
 
     public IReadOnlyList<PlanTask> Tasks { get; init; } = [];
 }

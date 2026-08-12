@@ -1,12 +1,10 @@
 namespace AtlasFlow.Persistence;
 
-/// <summary>The operational schema, version 3.</summary>
+/// <summary>The operational schema, version 4.</summary>
 /// <remarks>
-/// Every statement is <c>IF NOT EXISTS</c>, so applying this to an existing
-/// database is a no-op rather than a migration. When a column has to change,
-/// this stops being enough and a real migration step is needed — that day has
-/// not arrived and pretending otherwise now would be a framework for one call
-/// site.
+/// The base schema is idempotent. Incremental changes that cannot be expressed
+/// with <c>IF NOT EXISTS</c> are applied by
+/// <see cref="AtlasFlowDatabase.EnsurePlanContextColumnAsync"/> during startup.
 /// </remarks>
 internal static class DatabaseSchema
 {
@@ -96,6 +94,7 @@ internal static class DatabaseSchema
             runner TEXT NOT NULL,
             integration_target TEXT NOT NULL,
             created_at TEXT NOT NULL,
+            context TEXT,
             tasks TEXT NOT NULL DEFAULT '[]'
         );
 

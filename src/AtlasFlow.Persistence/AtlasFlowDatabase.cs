@@ -24,7 +24,7 @@ public sealed class AtlasFlowDatabase : IAsyncDisposable
     /// <summary>An in-memory database that several connections can share.</summary>
     public const string SharedMemory = "file::memory:?cache=shared";
 
-    private const int SchemaVersion = 3;
+    private const int SchemaVersion = 4;
 
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly string _connectionString;
@@ -84,6 +84,7 @@ public sealed class AtlasFlowDatabase : IAsyncDisposable
                 await RunAsync(connection, "PRAGMA journal_mode=WAL;", cancellationToken).ConfigureAwait(false);
                 await RunAsync(connection, "PRAGMA foreign_keys=ON;", cancellationToken).ConfigureAwait(false);
                 await RunAsync(connection, DatabaseSchema.Sql, cancellationToken).ConfigureAwait(false);
+                await EnsurePlanContextColumnAsync(connection, cancellationToken).ConfigureAwait(false);
                 await RunAsync(
                     connection,
                     $"INSERT OR IGNORE INTO schema_version (version) VALUES ({SchemaVersion});",
@@ -263,6 +264,34 @@ public sealed class AtlasFlowDatabase : IAsyncDisposable
             command.CommandText = sql;
             await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    private static async Task EnsurePlanContextColumnAsync(
+        SqliteConnection connection,
+        CancellationToken cancellationToken)
+    {
+        SqliteCommand command = connection.CreateCommand();
+        await using (command.ConfigureAwait(false))
+        {
+            command.CommandText = "PRAGMA table_info(plans);";
+            SqliteDataReader reader =
+                await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            await using (reader.ConfigureAwait(false))
+            {
+                while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    if (reader.GetString(1).Equals("context", StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+                }
+            }
+        }
+
+        await RunAsync(
+            connection,
+            "ALTER TABLE plans ADD COLUMN context TEXT;",
+            cancellationToken).ConfigureAwait(false);
     }
 
     private static SqliteCommand Build(

@@ -6,6 +6,7 @@ using System.Threading.Channels;
 using AtlasFlow.Application.Contracts;
 using AtlasFlow.Domain;
 using AtlasFlow.Domain.Execution;
+using AtlasFlow.Domain.Intelligence;
 using AtlasFlow.Domain.Planning;
 using AtlasFlow.Orchestration;
 using AtlasFlow.Orchestration.Execution;
@@ -21,6 +22,7 @@ public sealed class RunService : IRunService, IDisposable
     private readonly PlanRepository _plans;
     private readonly EventStore _events;
     private readonly ITaskRunner _runner;
+    private readonly IProjectIntelligenceService _intelligence;
 
     /// <summary>One token per run in flight, so <c>CancelAsync</c> has something to pull.</summary>
     private readonly ConcurrentDictionary<RunId, CancellationTokenSource> _inFlight = new();
@@ -30,13 +32,15 @@ public sealed class RunService : IRunService, IDisposable
         RunRepository runs,
         PlanRepository plans,
         EventStore events,
-        ITaskRunner runner)
+        ITaskRunner runner,
+        IProjectIntelligenceService intelligence)
     {
         _options = options;
         _runs = runs;
         _plans = plans;
         _events = events;
         _runner = runner;
+        _intelligence = intelligence;
     }
 
     private string ProjectId => new DirectoryInfo(_options.ProjectRoot).Name;
@@ -106,7 +110,11 @@ public sealed class RunService : IRunService, IDisposable
             {
                 try
                 {
-                    await engine.ExecuteAsync(run, plan, source.Token).ConfigureAwait(false);
+                    await RecordIntelligenceAsync(ProjectIntelligenceReportFactory.Running(plan))
+                        .ConfigureAwait(false);
+                    Run finished = await engine.ExecuteAsync(run, plan, source.Token).ConfigureAwait(false);
+                    await RecordIntelligenceAsync(ProjectIntelligenceReportFactory.FromRun(plan, finished))
+                        .ConfigureAwait(false);
                 }
 #pragma warning disable CA1031 // Nothing is awaiting this. An escaping
                 // exception would be an unobserved task and a run frozen in
@@ -114,6 +122,8 @@ public sealed class RunService : IRunService, IDisposable
                 catch (Exception)
 #pragma warning restore CA1031
                 {
+                    await RecordIntelligenceAsync(ProjectIntelligenceReportFactory.Failed(plan))
+                        .ConfigureAwait(false);
                     // The engine already records a failure as a task or run
                     // state. Reaching here means it could not, and there is
                     // nowhere better to put it than the run's own final state.
@@ -125,6 +135,27 @@ public sealed class RunService : IRunService, IDisposable
                 }
             },
             CancellationToken.None);
+    }
+
+    /// <summary>
+    /// Project Intelligence is a derived projection. A malformed or
+    /// unavailable history file must not freeze the operational run, whose
+    /// SQLite events remain the rebuildable source of truth.
+    /// </summary>
+    private async Task RecordIntelligenceAsync(TaskReport report)
+    {
+        try
+        {
+            await _intelligence.RecordAsync(report, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (
+            exception is IOException
+            or UnauthorizedAccessException
+            or IntelligenceFormatException)
+        {
+            // The projection can be rebuilt from the plan and run events. The
+            // operational lifecycle must not depend on its file being writable.
+        }
     }
 
     public async Task CancelAsync(RunId id, CancellationToken cancellationToken = default)

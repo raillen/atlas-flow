@@ -1,6 +1,7 @@
 using AtlasFlow.Application.Contracts;
 using AtlasFlow.Domain;
 using AtlasFlow.Domain.Goals;
+using AtlasFlow.Domain.Intelligence;
 using AtlasFlow.Domain.Planning;
 using AtlasFlow.Orchestration.Planning;
 using AtlasFlow.Persistence;
@@ -11,11 +12,15 @@ namespace AtlasFlow.Application.Services;
 public sealed class PlanService(
     AtlasFlowOptions options,
     PlanRepository plans,
-    IGoalService goals) : IPlanService
+    IGoalService goals,
+    IContextService context,
+    IProjectIntelligenceService intelligence) : IPlanService
 {
     private readonly string _projectRoot = options.ProjectRoot;
     private readonly PlanRepository _plans = plans;
     private readonly IGoalService _goals = goals;
+    private readonly IContextService _context = context;
+    private readonly IProjectIntelligenceService _intelligence = intelligence;
 
     public async Task<IReadOnlyList<Plan>> ListForGoalAsync(
         GoalId goalId,
@@ -39,6 +44,13 @@ public sealed class PlanService(
             request.Runner,
             request.IntegrationTarget);
 
+        plan = plan with
+        {
+            Context = await _context.PlanAsync(
+                new ContextPlanRequest { Task = goal.Objective },
+                cancellationToken).ConfigureAwait(false),
+        };
+
         // Validated before it is stored, not before it is run. A plan a person
         // is about to review must not contain a cycle they are expected to
         // spot for themselves.
@@ -49,7 +61,27 @@ public sealed class PlanService(
         }
 
         await _plans.SaveAsync(plan, cancellationToken).ConfigureAwait(false);
+        await RecordIntelligenceAsync(ProjectIntelligenceReportFactory.Planned(plan), cancellationToken)
+            .ConfigureAwait(false);
         return plan;
+    }
+
+    private async Task RecordIntelligenceAsync(
+        TaskReport report,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _intelligence.RecordAsync(report, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (
+            exception is IOException
+            or UnauthorizedAccessException
+            or IntelligenceFormatException)
+        {
+            // Project Intelligence is derived state. A plan remains usable
+            // when its rebuildable history projection cannot be written.
+        }
     }
 
     public async Task<Plan> LockAsync(PlanId id, CancellationToken cancellationToken = default)

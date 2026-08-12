@@ -71,8 +71,13 @@ secret rules the registry enforces.
 
 For v0.2 projects, `atlas.json.context.profiles` defines the LPC/PCA context
 target and hard limits, output limits, expansion rounds and delegation depth.
-The runtime currently implements the bounded planning decision; retrieval,
-context garbage collection and task-report integration remain separate slices.
+The selected decision is persisted with a new Plan snapshot. Plan/Run also
+update the compact Project Intelligence history; retrieval, context garbage
+collection and provider-level usage measurement remain separate slices.
+
+The operational SQLite schema is currently version 4. Existing databases are
+upgraded on startup with the nullable `plans.context` column, so v1 plan rows
+remain readable with no context decision.
 
 The attempt cap is unconditional, since attempts are always countable. Tokens
 and cost are enforced only for usage a runner actually reports; a run whose

@@ -17,10 +17,11 @@
 **Status:** 11 of 13 Goals DONE; P11 and P12 active
 **Current phase:** P12 active — UX foundation
 
-The C# runtime now exposes bounded context planning and a versioned Project
-Intelligence contract for the desktop seam. The repository remains a v0.1
-canonical project; v0.2 migration, retrieval execution and automatic task
-report emission are still separate Goals.
+The C# runtime now exposes bounded context planning, persists the selected
+`ContextPlan` with each plan snapshot, and emits a compact Project Intelligence
+report through the Plan/Run lifecycle. The repository remains a v0.1 canonical
+project; v0.2 migration, retrieval execution, context garbage collection and
+provider-level usage measurement are still separate Goals.
 
 ## How to read the Goal states
 
