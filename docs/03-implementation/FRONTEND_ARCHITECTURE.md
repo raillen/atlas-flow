@@ -94,6 +94,12 @@ receberão diretamente `IDiscussionService`, `IPlanService`, `IRunService` e os
 demais contratos que realmente usam. Isso mantém dependências pequenas e torna
 operações e cancelamento visíveis.
 
+DiscussViewModel segue essa regra: recebe IDiscussionService opcionalmente,
+carrega a conversa mais recente, projeta mensagens e decisões e envia
+AppendMessageRequest com referências relativas. A referência permanece um
+valor do contrato; o Desktop não resolve caminhos, lê arquivos, faz upload ou
+antecipa a validação canônica do serviço.
+
 ## Comandos e eventos
 
 Mutação entra na aplicação como comando por intenção, por exemplo
@@ -132,8 +138,10 @@ mudança é discutida antes de editar `Application/Contracts`.
 
 A fundação implementada contém fallback indisponível, adapter de aplicação
 real, ViewModels de workspace, Plan e Run, tema semântico claro/escuro e App
-Shell. O fluxo de Plan já carrega histórico, cria rascunhos e bloqueia
+Shell. O Define agora tem uma superfície Discuss baseada no contrato público,
+com thread, composer e referências de arquivo/imagem aguardando o serviço de
+aplicação. O fluxo de Plan já carrega histórico, cria rascunhos e bloqueia
 snapshots; o fluxo de Run inicia somente snapshots bloqueados e expõe fila,
 progresso, timeline durável e cancelamento cooperativo. A UI ainda não afirma
-integração com Discuss ou settings; os controles correspondentes permanecem
-desabilitados.
+integração com settings, e Discuss permanece explicitamente indisponível até
+que sua implementação seja registrada no composition root.

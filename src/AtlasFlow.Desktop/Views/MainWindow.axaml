@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:a11y="clr-namespace:Avalonia.Automation;assembly=Avalonia.Controls"
         xmlns:viewModels="clr-namespace:AtlasFlow.Desktop.ViewModels"
+        xmlns:discuss="clr-namespace:AtlasFlow.Domain.Discuss;assembly=AtlasFlow.Domain"
         xmlns:execution="clr-namespace:AtlasFlow.Domain.Execution;assembly=AtlasFlow.Domain"
         xmlns:planning="clr-namespace:AtlasFlow.Domain.Planning;assembly=AtlasFlow.Domain"
         x:Class="AtlasFlow.Desktop.Views.MainWindow"
@@ -175,6 +176,184 @@
             </Grid>
 
             <Grid ColumnDefinitions="2*,*" ColumnSpacing="16">
+              <Border Classes="panel"
+                      Padding="20"
+                      IsVisible="{Binding IsDefineStageSelected}">
+                <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="14">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Conversa de definição" Classes="section-heading" />
+                      <TextBlock Text="Transforme intenção em decisões sem perder o vínculo com a verdade do projeto."
+                                 Classes="muted"
+                                 TextWrapping="Wrap" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="DISCUSS" Classes="eyebrow" />
+                  </Grid>
+
+                  <Border Grid.Row="1" Classes="elevated-panel" Padding="12">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="{Binding Discuss.IntegrationStatusLabel}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Discuss.DiscussionStateLabel}" Classes="micro" />
+                      </StackPanel>
+                      <Button Grid.Column="1"
+                              Classes="atlas-button"
+                              Command="{Binding Discuss.StartDiscussionCommand}"
+                              IsEnabled="{Binding Discuss.CanStartDiscussion}"
+                              a11y:AutomationProperties.Name="Iniciar nova conversa">
+                        Nova conversa
+                      </Button>
+                    </Grid>
+                  </Border>
+
+                  <Border Grid.Row="2"
+                          Classes="elevated-panel"
+                          Padding="14"
+                          IsVisible="{Binding Discuss.IsEmptyState}">
+                    <StackPanel Spacing="8"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                      <TextBlock Text="Nenhuma conversa carregada"
+                                 FontWeight="SemiBold"
+                                 HorizontalAlignment="Center" />
+                      <TextBlock Text="{Binding Discuss.DiscussionSummaryLabel}"
+                                 Classes="secondary"
+                                 TextWrapping="Wrap"
+                                 TextAlignment="Center"
+                                 MaxWidth="520" />
+                      <TextBlock Text="O serviço de Discuss ainda não está registrado neste runtime."
+                                 Classes="micro"
+                                 TextWrapping="Wrap"
+                                 TextAlignment="Center"
+                                 IsVisible="{Binding Discuss.IsServiceUnavailable}" />
+                    </StackPanel>
+                  </Border>
+
+                  <Border Grid.Row="2"
+                          Classes="elevated-panel"
+                          Padding="12"
+                          IsVisible="{Binding Discuss.HasDiscussion}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                      <StackPanel Spacing="10">
+                        <TextBlock Text="{Binding Discuss.DiscussionSummaryLabel}"
+                                   Classes="micro"
+                                   Margin="0,0,0,2" />
+                        <ItemsControl ItemsSource="{Binding Discuss.Messages}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="discuss:DiscussionMessage">
+                              <Border Classes="panel" Padding="10" Margin="0,0,0,8">
+                                <StackPanel Spacing="6">
+                                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <TextBlock Text="{Binding Author}" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding TurnType}"
+                                               Classes="mono micro" />
+                                  </Grid>
+                                  <TextBlock Text="{Binding Content}"
+                                             TextWrapping="Wrap"
+                                             Classes="secondary" />
+                                  <ItemsControl ItemsSource="{Binding References}">
+                                    <ItemsControl.ItemTemplate>
+                                      <DataTemplate x:DataType="discuss:MessageReference">
+                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                                          <TextBlock Text="↳" Classes="micro" />
+                                          <TextBlock Grid.Column="1"
+                                                     Text="{Binding Label}"
+                                                     Classes="micro"
+                                                     ToolTip.Tip="{Binding Path.Value}" />
+                                        </Grid>
+                                      </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                  </ItemsControl>
+                                </StackPanel>
+                              </Border>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </StackPanel>
+                    </ScrollViewer>
+                  </Border>
+
+                  <Grid Grid.Row="3"
+                        RowDefinitions="Auto,Auto,Auto"
+                        RowSpacing="8"
+                        IsVisible="{Binding Discuss.HasDiscussion}">
+                    <TextBox Text="{Binding Discuss.DraftMessage, UpdateSourceTrigger=PropertyChanged}"
+                             Classes="atlas-input"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             MinHeight="76"
+                             PlaceholderText="Escreva a intenção, restrição ou pergunta..."
+                             a11y:AutomationProperties.Name="Mensagem da conversa" />
+
+                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                      <TextBox Text="{Binding Discuss.ReferencePath, UpdateSourceTrigger=PropertyChanged}"
+                               Classes="atlas-input"
+                               PlaceholderText="Caminho relativo no projeto, por exemplo docs/ATLAS.md"
+                               a11y:AutomationProperties.Name="Caminho da referência no projeto" />
+                      <Button Grid.Column="1"
+                              Classes="atlas-button"
+                              Command="{Binding Discuss.AddFileCommand}"
+                              IsEnabled="{Binding Discuss.CanAddReference}"
+                              a11y:AutomationProperties.Name="Adicionar referência de arquivo">
+                        Arquivo
+                      </Button>
+                      <Button Grid.Column="2"
+                              Classes="atlas-button"
+                              Command="{Binding Discuss.AddImageCommand}"
+                              IsEnabled="{Binding Discuss.CanAddReference}"
+                              a11y:AutomationProperties.Name="Adicionar referência de imagem">
+                        Imagem
+                      </Button>
+                    </Grid>
+
+                    <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                      <StackPanel Spacing="4" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <TextBlock Text="{Binding Discuss.ReferenceSummaryLabel}" Classes="micro" />
+                          <Button Classes="atlas-button ghost"
+                                  Command="{Binding Discuss.ClearReferencesCommand}"
+                                  IsEnabled="{Binding Discuss.HasReferences}"
+                                  a11y:AutomationProperties.Name="Limpar referências da mensagem">
+                            Limpar
+                          </Button>
+                        </StackPanel>
+                        <ItemsControl ItemsSource="{Binding Discuss.References}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="discuss:MessageReference">
+                              <TextBlock Text="{Binding Path.Value, StringFormat='↳ {0}'}"
+                                         Classes="micro"
+                                         TextTrimming="CharacterEllipsis" />
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </StackPanel>
+                      <TextBlock Grid.Column="1"
+                                 Text="{Binding Discuss.ComposerStatusLabel}"
+                                 Classes="micro"
+                                 VerticalAlignment="Center" />
+                      <Button Grid.Column="2"
+                              Classes="atlas-button primary"
+                              Command="{Binding Discuss.SendCommand}"
+                              IsEnabled="{Binding Discuss.CanSendMessage}"
+                              a11y:AutomationProperties.Name="Enviar mensagem da conversa">
+                        Enviar
+                      </Button>
+                    </Grid>
+                  </Grid>
+
+                  <Border Grid.Row="4"
+                          IsVisible="{Binding Discuss.HasError}"
+                          Classes="panel"
+                          Padding="10"
+                          BorderBrush="{DynamicResource AtlasDangerBrush}">
+                    <TextBlock Text="{Binding Discuss.ErrorMessage}"
+                               Foreground="{DynamicResource AtlasDangerBrush}"
+                               TextWrapping="Wrap" />
+                  </Border>
+                </Grid>
+              </Border>
+
               <Border Classes="panel" Padding="20" MinHeight="300" IsVisible="{Binding IsPrimarySurfaceVisible}">
                 <StackPanel Spacing="20">
                   <Grid ColumnDefinitions="*,Auto">
@@ -601,6 +780,18 @@
                            TextWrapping="Wrap" />
               </StackPanel>
             </Border>
+
+            <Border Classes="panel" Padding="14">
+              <StackPanel Spacing="8">
+                <TextBlock Text="DECISÕES DE DISCUSS" Classes="eyebrow" />
+                <TextBlock Text="{Binding Discuss.DecisionSummaryLabel}"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="Aceitação e finalização permanecem comandos explícitos do serviço."
+                           Classes="micro"
+                           TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
           </StackPanel>
 
           <Border Grid.Row="2" Classes="elevated-panel" Padding="10">
@@ -610,7 +801,10 @@
                        PlaceholderText="Pergunte ao Atlas sobre este contexto"
                        a11y:AutomationProperties.Name="Mensagem para o Atlas" />
               <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
-                <TextBlock Text="Composer aguardando Discuss" Classes="micro" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Discuss.ComposerStatusLabel}"
+                           Classes="micro"
+                           VerticalAlignment="Center"
+                           TextWrapping="Wrap" />
                 <Button Grid.Column="1"
                         Classes="atlas-button primary"
                         IsEnabled="False"

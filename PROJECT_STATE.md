@@ -28,6 +28,12 @@ inspector and the compact Project Intelligence aggregate in the context rail.
 This is intentionally a decision/summary surface: retrieval payloads and
 unobserved cost are not presented as if they were available to the frontend.
 
+The Define stage now has a contract-first Discuss surface with a rehydratable
+thread, composer, decision summary and project-relative file/image references.
+IDiscussionService is still intentionally unregistered in this C# runtime, so
+the UI reports that boundary explicitly; reference validation and persistence
+remain application responsibilities.
+
 ## How to read the Goal states
 
 Every Goal was audited on 2026-08-10 against its own acceptance criteria. Goals

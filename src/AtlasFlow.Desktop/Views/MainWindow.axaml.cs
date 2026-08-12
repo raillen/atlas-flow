@@ -36,6 +36,7 @@ public sealed partial class MainWindow : Window
             new UnavailableAtlasFlowFrontendGateway(),
             new AvaloniaThemeController(),
             plan,
-            new RunViewModel(new UnavailableRunService(), plan));
+            new RunViewModel(new UnavailableRunService(), plan),
+            new DiscussViewModel());
     }
 }

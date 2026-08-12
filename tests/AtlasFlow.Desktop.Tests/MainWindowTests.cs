@@ -55,6 +55,43 @@ public sealed class MainWindowTests
         }
     }
 
+    [AvaloniaFact]
+    public async Task Define_surface_composes_discuss_controls()
+    {
+        PlanViewModel plan = new(Substitute.For<IPlanService>());
+        WorkspaceViewModel viewModel = new(
+            new UnavailableAtlasFlowFrontendGateway(),
+            new TestThemeController(),
+            plan,
+            new RunViewModel(Substitute.For<IRunService>(), plan),
+            new DiscussViewModel());
+        viewModel.SelectStage("define");
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+
+        MainWindow window = new(viewModel);
+
+        try
+        {
+            window.Show();
+
+            using Bitmap frame = window.CaptureRenderedFrame()
+                ?? throw new InvalidOperationException("A superfície Define não produziu um frame headless.");
+            Button[] buttons = window.GetVisualDescendants().OfType<Button>().ToArray();
+
+            Assert.True(viewModel.IsDefineStageSelected);
+            Assert.False(viewModel.IsPrimarySurfaceVisible);
+            Assert.True(frame.PixelSize.Width >= 960);
+            Assert.True(frame.PixelSize.Height >= 640);
+            Assert.All(
+                buttons,
+                button => Assert.False(string.IsNullOrWhiteSpace(AutomationProperties.GetName(button))));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     private sealed class TestThemeController : IThemeController
     {
         public string CurrentMode => "Escuro";

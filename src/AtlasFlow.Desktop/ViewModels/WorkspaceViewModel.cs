@@ -16,18 +16,21 @@ public sealed partial class WorkspaceViewModel : ObservableObject
     private readonly IThemeController _themeController;
     private readonly PlanViewModel _plan;
     private readonly RunViewModel _run;
+    private readonly DiscussViewModel _discuss;
     private WorkspaceStageViewModel _selectedStage;
 
     public WorkspaceViewModel(
         IAtlasFlowFrontendGateway gateway,
         IThemeController themeController,
         PlanViewModel plan,
-        RunViewModel run)
+        RunViewModel run,
+        DiscussViewModel? discuss = null)
     {
         _gateway = gateway;
         _themeController = themeController;
         _plan = plan;
         _run = run;
+        _discuss = discuss ?? new DiscussViewModel();
 
         Stages =
         [
@@ -59,6 +62,7 @@ public sealed partial class WorkspaceViewModel : ObservableObject
             SetProperty(ref _selectedStage, value);
             OnPropertyChanged(nameof(IsPlanStageSelected));
             OnPropertyChanged(nameof(IsRunStageSelected));
+            OnPropertyChanged(nameof(IsDefineStageSelected));
             OnPropertyChanged(nameof(IsPrimarySurfaceVisible));
         }
     }
@@ -66,6 +70,13 @@ public sealed partial class WorkspaceViewModel : ObservableObject
     public PlanViewModel Plan => _plan;
 
     public RunViewModel Run => _run;
+
+    public DiscussViewModel Discuss => _discuss;
+
+    public bool IsDefineStageSelected => string.Equals(
+        SelectedStage.Key,
+        "define",
+        StringComparison.Ordinal);
 
     public bool IsPlanStageSelected => string.Equals(
         SelectedStage.Key,
@@ -77,7 +88,8 @@ public sealed partial class WorkspaceViewModel : ObservableObject
         "run",
         StringComparison.Ordinal);
 
-    public bool IsPrimarySurfaceVisible => !IsPlanStageSelected && !IsRunStageSelected;
+    public bool IsPrimarySurfaceVisible =>
+        !IsDefineStageSelected && !IsPlanStageSelected && !IsRunStageSelected;
 
     [ObservableProperty]
     public partial string ProjectName { get; private set; } = "Nenhum projeto aberto";
@@ -139,6 +151,7 @@ public sealed partial class WorkspaceViewModel : ObservableObject
                     ? snapshot.Goals.Count > 0 ? snapshot.Goals[0] : null
                     : null,
                 cancellationToken).ConfigureAwait(true);
+            await _discuss.LoadAsync(cancellationToken).ConfigureAwait(true);
             await _run.LoadAsync(cancellationToken).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -150,6 +163,7 @@ public sealed partial class WorkspaceViewModel : ObservableObject
             ErrorMessage = "Não foi possível carregar o workspace. Verifique a integração e tente novamente.";
             ConnectionDescription = "Frontend disponível · integração indisponível";
             await _plan.LoadAsync(null, cancellationToken).ConfigureAwait(true);
+            await _discuss.LoadAsync(cancellationToken).ConfigureAwait(true);
             await _run.LoadAsync(cancellationToken).ConfigureAwait(true);
         }
         finally
