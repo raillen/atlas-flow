@@ -73,8 +73,10 @@ public sealed class VerticalSliceTests
         // answered plausibly would be believed.
         await using ServiceProvider provider = Open(RepositoryRoot());
 
-        Assert.Null(provider.GetService<IRunService>());
         Assert.Null(provider.GetService<IDiscussionService>());
+        Assert.Null(provider.GetService<IRoutingService>());
+        Assert.Null(provider.GetService<ISettingsService>());
+        Assert.Null(provider.GetService<IDocumentationService>());
     }
 
     [Fact]

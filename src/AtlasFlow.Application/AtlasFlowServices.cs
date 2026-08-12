@@ -1,6 +1,8 @@
 using AtlasFlow.Application.Contracts;
 using AtlasFlow.Application.Services;
+using AtlasFlow.Orchestration.Execution;
 using AtlasFlow.Orchestration.Goals;
+using AtlasFlow.Persistence;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -47,17 +49,57 @@ public static class AtlasFlowServices
         services.AddSingleton<IProjectService, ProjectService>();
         services.AddSingleton<IGoalService, GoalService>();
 
-        // Not ported. Left unregistered on purpose: resolving one throws where
-        // it is asked for, naming the service, instead of handing back a stub
-        // that answers plausibly and is believed.
+        // Operational state. One database per project, under .atlas/, because
+        // run state belongs to the project it is about and not to the machine.
+        services.AddSingleton(provider =>
+        {
+            AtlasFlowOptions options = provider.GetRequiredService<AtlasFlowOptions>();
+            return new AtlasFlowDatabase(Path.Combine(options.ProjectRoot, ".atlas", "state.db"));
+        });
+        services.AddSingleton<EventStore>();
+        services.AddSingleton<RunRepository>();
+        services.AddSingleton<PlanRepository>();
+        services.AddSingleton<EvidenceRepository>();
+
+        // The no-op runner is the only one ported. It is not a placeholder:
+        // it is how the scheduler, the state machine and the event stream are
+        // exercised without an agent or a worktree in the way.
+        services.AddSingleton<ITaskRunner, NoOpTaskRunner>();
+
+        services.AddSingleton<IPlanService, PlanService>();
+        services.AddSingleton<IRunService, RunService>();
+
+        // Not ported. Left unregistered on purpose: resolving one returns null
+        // and fails where it is asked for, naming the service, instead of
+        // handing back a stub that answers plausibly and is believed.
         //
         //   IDiscussionService     conversations and the decision ledger
-        //   IPlanService           drawing and locking a task graph
-        //   IRunService            execution and the AG-UI event stream
         //   IRoutingService        which model each role resolved to
         //   ISettingsService       configuration
         //   IDocumentationService  the canonical docs
         return services;
+    }
+
+    /// <summary>
+    /// Opens the operational database. Call once, before resolving a service.
+    /// </summary>
+    /// <remarks>
+    /// Explicit rather than lazy. Creating a database is I/O that can fail —
+    /// a read-only directory, a full disk — and a lazy first-use
+    /// initialization surfaces that failure inside whatever unrelated call
+    /// happened to be first. Here it fails at startup, where a host can say so.
+    /// </remarks>
+    public static async Task<IServiceProvider> InitializeAtlasFlowAsync(
+        this IServiceProvider provider,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(provider);
+
+        await provider.GetRequiredService<AtlasFlowDatabase>()
+            .InitializeAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return provider;
     }
 }
 
