@@ -3,13 +3,13 @@ schema_version: 1
 id: ADR-015-ATLAS-FLOW-V2-FOUNDATION
 title: Fundação determinística do Atlas Flow v2
 status: active
-version: 1
+version: 2
 audience: [developer, maintainer, agent]
 visibility: internal
 authority: canonical
 source: human
 owner: atlas-flow-maintainers
-last_reviewed: 2026-08-11
+last_reviewed: 2026-08-12
 review_interval: 180d
 risk: medium
 ---
@@ -29,21 +29,21 @@ externos para funcionar.
 
 ## Decisão
 
-1. A fundação v2 vive em `src/AtlasFlow.Orchestration/Context/` e usa `record` types de domínio
-   versionados, sem nomes de providers ou modelos no domínio.
-2. `atlas.config.yaml` é o manifesto v2 opcional na migração; projetos legados
-   continuam indexáveis com metadata derivada e recebem um warning explícito.
-3. O registry e o grafo são projeções determinísticas. `atlas validate --write`
-   e `atlas graph --write` os escrevem atomicamente em `.atlas/index/`.
-4. Contexto é selecionado primeiro por `task maps`/`context packs`, depois por
-   busca lexical transparente, com budget e exclusões explicáveis. Embeddings e
-   banco externo não são requisitos.
-5. Custos são append-only em `.atlas/intelligence/ledger.jsonl`; valores
-   observados, estimados e desconhecidos permanecem distintos. O resumo é
-   derivado e pode ser reconstruído.
-6. O primeiro publisher é um builder estático mínimo, com índice de busca local
-   e filtragem de visibilidade. Um gerador externo poderá ser adicionado por
-   adapter sem mudar os contratos canônicos.
+1. A fundação v2 vive em `src/AtlasFlow.Orchestration/Context/` e usa `record`
+   types de domínio versionados, sem nomes de providers ou modelos no domínio.
+2. `atlas.json` é o manifesto v2. Projetos legados continuam indexáveis com o
+   leitor YAML v0.1; a presença de `atlas.json` seleciona v2 e um manifesto v2
+   inválido não cai silenciosamente para o YAML.
+3. O primeiro contrato implementado é um `ContextPlan` bounded: classifica a
+   tarefa, seleciona perfil/estratégia e lê limites de entrada, saída,
+   expansão e delegação. Retrieval, índices e publisher permanecem fatias
+   independentes.
+4. Project Intelligence usa `.atlas/history/project-intelligence.json` como
+   snapshot versionado de relatórios compactos. Traces brutos ficam em SQLite;
+   valores observados, estimados, alocados e desconhecidos permanecem
+   distintos. Escrita é atômica e o resumo é reconstruível.
+5. Registry, grafo, CLI v2 e documentação publicada continuam projeções
+   posteriores. Eles não são simulados pelo contrato de contexto ou pela UI.
 
 ## Consequências
 
@@ -51,21 +51,20 @@ externos para funcionar.
 
 - O mesmo fluxo funciona em projetos novos e legados.
 - CI e agentes podem consumir JSON sem depender da interface desktop.
-- Índices, site e resumo podem ser apagados e regenerados.
+- Índices, site e resumo podem ser apagados e regenerados quando os respectivos
+  publishers forem implementados.
 - A política “observed > estimated > unknown” fica representada no contrato.
 
 ### Limitações aceitas
 
-- A estimativa de tokens é heurística (`len(text) / 4`) até um tokenizer ser
-  configurado.
-- Retrieval de símbolos, delta context e dashboard visual ainda são fases
-  posteriores do RFC.
-- O builder inicial preserva Markdown em HTML escapado; ele é uma base segura,
-  não um site de produção completo.
+- A seleção inicial usa heurísticas léxicas; retrieval de símbolos, delta
+  context e dashboard visual ainda são fases posteriores.
+- O runtime ainda não emite automaticamente um TaskReport ao concluir uma
+  execução.
 
 ## Rejeitadas nesta fase
 
 - Embeddings obrigatórios.
 - ML para estimar custo.
 - Banco de dados externo.
-- Reescrita do runtime de Goals para introduzir o lifecycle v2.
+- Reescrita do runtime de Goals para introduzir o lifecycle v2 nesta fatia.

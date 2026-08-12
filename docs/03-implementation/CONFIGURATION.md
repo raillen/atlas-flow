@@ -20,9 +20,11 @@ operational state, artifact retention, logging/redaction.
 | `state_dir` | `.atlas-flow` | Where operational state lives, relative to the project root |
 | `database_file` | `state.db` | SQLite file inside `state_dir` |
 
-`database_path` resolves to `<project_root>/<state_dir>/<database_file>`. The
-directory is created with a self-ignoring `.gitignore`, so operational state never
-appears in the working repository.
+`database_path` resolves to `<project_root>/<state_dir>/<database_file>`. For a
+v0.2 project with `atlas.json`, the runtime defaults to `.atlas/runtime/atlas.db`;
+the v0.1 reader keeps `.atlas/state.db` for compatibility. The directory is
+created with private permissions, so operational state never appears in the
+working repository.
 
 ## Environment overrides
 
@@ -66,6 +68,11 @@ secret rules the registry enforces.
 | `max_fallback_attempts` | `2` | How far down a role's candidate list a failing task may fall back. |
 | `max_tokens_per_run` | `1000000` | Token ceiling, enforced against reported usage. `0` disables it. |
 | `max_cost_per_run_usd` | `10.0` | Cost ceiling, enforced against reported usage. `0` disables it. |
+
+For v0.2 projects, `atlas.json.context.profiles` defines the LPC/PCA context
+target and hard limits, output limits, expansion rounds and delegation depth.
+The runtime currently implements the bounded planning decision; retrieval,
+context garbage collection and task-report integration remain separate slices.
 
 The attempt cap is unconditional, since attempts are always countable. Tokens
 and cost are enforced only for usage a runner actually reports; a run whose

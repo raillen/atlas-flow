@@ -12,7 +12,7 @@ AtlasFlow.Desktop            AtlasFlow.Cli
         └──────────┬───────────────┘
                    ▼
         AtlasFlow.Application
-          Contracts/  ← the seam. 8 interfaces, 0 implementations.
+          Contracts/  ← the seam. 10 interfaces.
           AtlasFlowServices.AddAtlasFlow(projectRoot)
                    │
                    ▼
@@ -36,12 +36,14 @@ that no longer exists.
 conversation, not a commit — it is the one place where an edit breaks work
 somebody else has in flight.
 
-## The eight services
+## The services
 
 | Interface | Workspace stage |
 | --- | --- |
 | `IProjectService` | opening a directory, the explorer, adaptation |
 | `IGoalService` | the Goal list, and whether a Goal may close |
+| `IContextService` | bounded LPC/PCA context planning |
+| `IProjectIntelligenceService` | compact task reports and project aggregates |
 | `IDiscussionService` | Define — conversation and the decision ledger |
 | `IPlanService` | Plan — draw a graph, review it, lock it |
 | `IRunService` | Run — start, watch, cancel |
@@ -118,17 +120,16 @@ public sealed partial class App : Avalonia.Application
 
 ## State
 
-Written and building: all eight interfaces, the domain types behind them, and
-`AtlasFlowServices.AddAtlasFlow`.
+Written and building: the contracts, domain types and
+`AtlasFlowServices.AddAtlasFlow` wiring. Project inspection, Goals, planning,
+the first run slice, bounded context planning and Project Intelligence are
+registered with real implementations. Discuss, routing, settings and
+documentation remain deliberately unregistered until their implementations
+are ported; the host then fails at the missing capability boundary rather than
+receiving a plausible stub.
 
-**Nothing is registered.** The container is wired but empty, so a host that
-resolves a service today throws. That is deliberate — an empty registration
-that returned null would fail later and further away.
-
-Ported so far: the ACP client (`AtlasFlow.Protocols`), 29 tests. Everything
-else — project inspection, goals, discussions, planning, execution,
-persistence, routing, settings, docs — is still Python under `reference/`.
-
-**Next, and it unblocks the UI:** in-memory fakes for the eight services, so
-the desktop app runs against plausible data before any of the real
-implementations land.
+The v0.2 context contract returns a bounded decision, not a copied context
+payload. The Project Intelligence contract records compact task reports and
+recomputes aggregates with explicit measurement provenance. These boundaries
+are ready for the desktop to consume while retrieval, Discuss and provider
+integration continue independently.

@@ -35,8 +35,12 @@ apps/desktop/src-tauri/gen/schemas
 *.db-shm
 .atlas-flow/
 
-# Atlas Flow v2 derived indexes, site output and intelligence projections.
-.atlas/
+# Atlas Flow v2 derived/runtime state. Project Intelligence history is the
+# durable v0.2 record and remains visible to Git.
+.atlas/runtime/
+.atlas/cache/
+.atlas/index/
+.atlas/site/
 
 # Env / secrets
 .env

@@ -1,8 +1,10 @@
 using AtlasFlow.Application;
 using AtlasFlow.Application.Contracts;
 using AtlasFlow.Domain;
+using AtlasFlow.Domain.Context;
 using AtlasFlow.Domain.Goals;
 using AtlasFlow.Domain.Projects;
+using AtlasFlow.Persistence;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -64,6 +66,53 @@ public sealed class VerticalSliceTests
 
         Assert.NotNull(provider.GetService<IProjectService>());
         Assert.NotNull(provider.GetService<IGoalService>());
+        Assert.NotNull(provider.GetService<IContextService>());
+        Assert.NotNull(provider.GetService<IProjectIntelligenceService>());
+    }
+
+    [Fact]
+    public async Task TheContextContractReturnsABoundedLegacyPlanForThisRepository()
+    {
+        await using ServiceProvider provider = Open(RepositoryRoot());
+        IContextService context = provider.GetRequiredService<IContextService>();
+
+        ContextPlan plan = await context.PlanAsync(new ContextPlanRequest
+        {
+            Task = "inspect the current orchestration boundary",
+        }, CancellationToken.None);
+
+        Assert.Equal(ContextMode.Legacy, plan.Mode);
+        Assert.True(plan.Budget.ContextHardTokens >= plan.Budget.ContextTargetTokens);
+        Assert.True(plan.Budget.OutputHardTokens >= plan.Budget.OutputTargetTokens);
+        Assert.False(plan.DeepRecursionEnabled);
+    }
+
+    [Fact]
+    public async Task AProjectUsingAtlasJsonGetsTheV2RuntimeDatabaseLocation()
+    {
+        string root = Path.Combine(Path.GetTempPath(), $"atlas-v2-runtime-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        try
+        {
+            await File.WriteAllTextAsync(
+                Path.Combine(root, "atlas.json"),
+                "{\"version\": 2, \"framework\": {\"name\": \"project-atlas-framework\", \"version\": \"0.2.0\"}}");
+
+            await using ServiceProvider provider = Open(root);
+            AtlasFlowDatabase database = provider.GetRequiredService<AtlasFlowDatabase>();
+
+            Assert.EndsWith(
+                Path.Combine(".atlas", "runtime", "atlas.db"),
+                database.DatabasePath,
+                StringComparison.Ordinal);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
     }
 
     [Fact]

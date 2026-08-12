@@ -10,3 +10,10 @@ be expressed without SQLite is a Goal type that is wrong.
 - RouteDecision: candidates, selected, reason, constraints.
 - Attempt: task, runner, model/provider, session ref, state.
 - Evidence: Goal/task, type, path/URI, digest, gate.
+- ContextPlan: profile, bounded input/output budget, retrieval strategy, mode,
+  reasons and recursion policy. It is a decision contract, not a copied context
+  payload.
+- TaskReport: task status, components, token usage, honest cost provenance,
+  tests, documentation, debt and evidence pointers.
+- ProjectIntelligenceSnapshot: versioned aggregate plus compact task reports;
+  raw traces remain operational state.

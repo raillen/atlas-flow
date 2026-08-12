@@ -21,6 +21,9 @@ tags:
 
 # Atlas CLI
 
+> **Status:** superfície alvo/documental. O CLI C# atual ainda está em porting
+> e não oferece os comandos abaixo como uma implementação completa.
+
 O CLI v2 oferece a mesma superfície para pessoas, agentes e CI. Dados para
 automação devem usar `--json`; diagnósticos continuam no stderr quando a ação
 falha.
@@ -85,6 +88,9 @@ atlas --root . cost project --write --json
 atlas --root . intelligence summary
 ```
 
-O ledger é `.atlas/intelligence/ledger.jsonl`. Se o provider não fornecer custo
-observado, o resumo mostra `null`/`unknown`; o CLI não transforma estimativa em
-precisão falsa.
+O runtime atual grava Project Intelligence em
+`.atlas/history/project-intelligence.json` para projetos v0.2. Se o provider
+não fornecer custo observado, a provenance permanece `estimated`, `allocated`
+ou `unknown`; o runtime não transforma estimativa em precisão falsa. O ledger
+CLI descrito acima continua uma compatibilidade documental do RFC e ainda não
+é implementado no CLI C#.

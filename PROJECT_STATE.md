@@ -13,9 +13,14 @@
 > escopo depois de ter sido registrado como non-goal em 2026-08-11.
 
 **Project:** Atlas Flow
-**Framework:** Project Atlas Framework 0.1.0 (runtime with v0.2 JSON read compatibility)
+**Framework:** Project Atlas Framework 0.1.0 (runtime with v0.2 JSON, LPC/PCA and Project Intelligence compatibility)
 **Status:** 11 of 13 Goals DONE; P11 and P12 active
 **Current phase:** P12 active — UX foundation
+
+The C# runtime now exposes bounded context planning and a versioned Project
+Intelligence contract for the desktop seam. The repository remains a v0.1
+canonical project; v0.2 migration, retrieval execution and automatic task
+report emission are still separate Goals.
 
 ## How to read the Goal states
 

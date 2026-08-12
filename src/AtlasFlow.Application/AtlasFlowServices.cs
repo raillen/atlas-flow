@@ -1,5 +1,6 @@
 using AtlasFlow.Application.Contracts;
 using AtlasFlow.Application.Services;
+using AtlasFlow.Orchestration.Context;
 using AtlasFlow.Orchestration.Execution;
 using AtlasFlow.Orchestration.Goals;
 using AtlasFlow.Persistence;
@@ -21,9 +22,10 @@ namespace AtlasFlow.Application;
 /// either side reaching into the other.
 /// </para>
 /// <para>
-/// Project inspection, Goals, Plans and the first Run slice are registered
-/// here. Remaining services stay unregistered so a host fails at the boundary
-/// that asks for an unported capability rather than receiving a plausible stub.
+/// Project inspection, Goals, bounded context planning, Project Intelligence,
+/// Plans and the first Run slice are registered here. Remaining services stay
+/// unregistered so a host fails at the boundary that asks for an unported
+/// capability rather than receiving a plausible stub.
 /// </para>
 /// </remarks>
 public static class AtlasFlowServices
@@ -45,15 +47,33 @@ public static class AtlasFlowServices
 
         // Ported and real.
         services.AddSingleton<GoalLoader>();
+        services.AddSingleton<ContextPlanner>(provider =>
+        {
+            AtlasFlowOptions options = provider.GetRequiredService<AtlasFlowOptions>();
+            return new ContextPlanner(options.ProjectRoot);
+        });
         services.AddSingleton<IProjectService, ProjectService>();
         services.AddSingleton<IGoalService, GoalService>();
+        services.AddSingleton<IContextService, ContextService>();
+        services.AddSingleton<ProjectIntelligenceRepository>(provider =>
+        {
+            AtlasFlowOptions options = provider.GetRequiredService<AtlasFlowOptions>();
+            return new ProjectIntelligenceRepository(options.ProjectRoot);
+        });
+        services.AddSingleton<IProjectIntelligenceService, ProjectIntelligenceService>();
 
         // Operational state. One database per project, under .atlas/, because
         // run state belongs to the project it is about and not to the machine.
         services.AddSingleton(provider =>
         {
             AtlasFlowOptions options = provider.GetRequiredService<AtlasFlowOptions>();
-            return new AtlasFlowDatabase(Path.Combine(options.ProjectRoot, ".atlas", "state.db"));
+            string databaseDirectory = File.Exists(Path.Combine(options.ProjectRoot, "atlas.json"))
+                ? Path.Combine(options.ProjectRoot, ".atlas", "runtime")
+                : Path.Combine(options.ProjectRoot, ".atlas");
+            string databaseFile = File.Exists(Path.Combine(options.ProjectRoot, "atlas.json"))
+                ? "atlas.db"
+                : "state.db";
+            return new AtlasFlowDatabase(Path.Combine(databaseDirectory, databaseFile));
         });
         services.AddSingleton<EventStore>();
         services.AddSingleton<RunRepository>();

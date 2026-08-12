@@ -48,6 +48,13 @@ The v0.2 reader recognizes:
 
 This is a read boundary, not a migration. The project remains on its current
 canonical format until a separate migration Goal defines validation,
-conflict handling, atomic writes and rollback evidence. Runtime context
-compilation, bounded LPC/PCA retrieval and Project Intelligence task reports
-remain planned integration slices rather than implicit behavior.
+conflict handling, atomic writes and rollback evidence. The runtime now exposes
+bounded LPC/PCA planning and a versioned Project Intelligence report store, but
+does not yet perform broad retrieval, context garbage collection or automatic
+task-report emission.
+
+The Project Intelligence writer uses
+`.atlas/history/project-intelligence.json` for v0.2, preserves unknown fields,
+validates report size/count/path limits and replaces the file atomically. Token
+and direct-cost aggregates are recomputed from reports; subscription or local
+usage must use non-observed provenance rather than an invented dollar amount.

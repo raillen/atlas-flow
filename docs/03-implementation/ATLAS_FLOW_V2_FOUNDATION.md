@@ -25,51 +25,44 @@ related:
 
 # Atlas Flow v2 Foundation
 
-Esta é a primeira fatia implementada do [AF-EVO-001](../08-rfcs/AF-EVO-001-ATLAS-FLOW-EVOLUTION.md).
-Ela adiciona uma camada determinística de conhecimento e inteligência sem
-alterar o runtime existente de Goals, Runs ou desktop.
+Esta é a segunda fatia de compatibilidade implementada do
+[AF-EVO-001](../08-rfcs/AF-EVO-001-ATLAS-FLOW-EVOLUTION.md). Ela adiciona
+contratos bounded de contexto e Project Intelligence sem alterar o runtime
+existente de Goals, Runs ou desktop.
 
 ## O que existe
 
-- `atlas.config.yaml`: manifesto v2 do projeto;
-- `schemas/`: contratos JSON versionados para manifesto, metadata, task maps,
-  context packs, grafo e custo;
-- `backend/atlas_flow/evolution/documents.py`: front matter, discovery e
-  freshness;
-- `registry.py`: registry e grafo derivados, com escrita atômica em
-  `.atlas/index/`;
-- `validation.py`: validação de manifesto, documentos, IDs, task maps e packs;
-- `context.py`: budgets, contexto obrigatório/opcional/excluído, busca lexical e
-  impacto explicável;
-- `intelligence.py`: ledger JSONL append-only, dívida e resumo reconstruível;
-- `site.py`: publisher estático mínimo com filtragem `public`/`internal`/`private`;
-- `cli.py`: superfície `atlas` para humanos e agentes.
+- `src/AtlasFlow.Orchestration/Context/ContextPlanner.cs`: classificação
+  bounded, perfil, estratégia e limites LPC/PCA;
+- `src/AtlasFlow.Domain/Context/ContextPlan.cs`: contrato de decisão sem
+  payload de contexto;
+- `src/AtlasFlow.Domain/Intelligence/TaskReport.cs`: relatório compacto,
+  token usage e provenance de custo;
+- `src/AtlasFlow.Persistence/ProjectIntelligenceRepository.cs`: leitura,
+  agregação, preservação de campos desconhecidos e escrita atômica;
+- `src/AtlasFlow.Application/Contracts/`: seam consumível pelo desktop para
+  planejar contexto e ler/registrar inteligência.
 
 ## Como usar
 
-Sempre execute a partir da raiz do projeto:
+A validação desta fatia é feita pelo runtime .NET:
 
 ```sh
-dotnet run --project src/AtlasFlow.Cli -- validate --json
-dotnet run --project src/AtlasFlow.Cli -- validate --write
-dotnet run --project src/AtlasFlow.Cli -- impact --changed --json
-dotnet run --project src/AtlasFlow.Cli -- context "context engine" --budget small --json
-dotnet run --project src/AtlasFlow.Cli -- docs build --visibility internal
-dotnet run --project src/AtlasFlow.Cli -- intelligence summary --json
+dotnet build AtlasFlow.slnx --no-restore
+dotnet test AtlasFlow.slnx --no-restore
 ```
 
-O guia completo está em [Atlas CLI](../06-user-guide/ATLAS_CLI.md).
-
-O gate `scripts/validate_all.sh` executa `atlas validate --json` junto com os
-validadores existentes. Assim, uma mudança documental que quebre metadata,
-IDs, task maps ou context packs falha no mesmo fluxo usado pelo CI.
+O CLI C# ainda é uma superfície em porting; os comandos de validação,
+publisher e inteligência descritos no guia de CLI são alvo futuro e não devem
+ser tratados como disponíveis neste estado.
 
 ## Fonte canônica e projeções
 
 O conteúdo Markdown, metadata, manifests, task maps e context packs são fonte
 do projeto. O registry, o grafo, o site e `project-summary.json` são derivados.
-`.atlas/` é ignorado pelo Git e pode ser recriado; ele não substitui decisões,
-Goals ou documentação canônica.
+`atlas.json` e Goals são canônicos no formato v2. O snapshot de inteligência é
+uma projeção durable versionada; SQLite continua operacional e não substitui
+decisões, Goals ou documentação canônica.
 
 ## Compatibilidade
 
@@ -80,6 +73,7 @@ reescrito automaticamente.
 
 ## Limitações da primeira fatia
 
-Ainda não há indexação AST de símbolos, delta context, embeddings, preços de
-providers ou dashboard visual. Quando não existe usage observado, o ledger
-preserva custo monetário como `null` e registra somente os tokens fornecidos.
+Ainda não há indexação AST de símbolos, retrieval progressivo, embeddings,
+preços de providers, emissão automática de reports, CLI v2 ou dashboard visual.
+Quando não existe usage observado, o snapshot preserva provenance não observada
+e não inventa custo direto.
